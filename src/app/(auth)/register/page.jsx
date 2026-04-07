@@ -18,7 +18,10 @@ export default function RegisterPage() {
   const dispatch = useDispatch()
   const router = useRouter()
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL
+  const API_URL =
+    process.env.NODE_ENV === 'production'
+      ? process.env.NEXT_PUBLIC_API_URL
+      : 'http://localhost:4000'
   const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_AVATARS_API_URL || ''
 
   const {

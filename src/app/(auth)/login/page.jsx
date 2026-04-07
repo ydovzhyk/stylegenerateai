@@ -22,7 +22,10 @@ export default function LoginPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const API_URL = process.env.NEXT_PUBLIC_API_URL
+  const API_URL =
+    process.env.NODE_ENV === 'production'
+      ? process.env.NEXT_PUBLIC_API_URL
+      : 'http://localhost:4000'
 
   const resetToken = searchParams.get('resetToken') || ''
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)

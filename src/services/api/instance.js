@@ -1,7 +1,10 @@
 import axios from 'axios'
 import { clearUser } from '@/store/auth/auth-slice'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+const API_URL =
+  process.env.NODE_ENV === 'production'
+    ? process.env.NEXT_PUBLIC_API_URL
+    : 'http://localhost:4000'
 
 export const instance = axios.create({
   baseURL: `${API_URL}/api`,
