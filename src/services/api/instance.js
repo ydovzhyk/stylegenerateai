@@ -6,6 +6,8 @@ const API_URL =
     ? process.env.NEXT_PUBLIC_API_URL
     : 'http://localhost:4000'
 
+    console.log('API_URL in instance.js:', API_URL)
+
 export const instance = axios.create({
   baseURL: `${API_URL}/api`,
   withCredentials: true,
