@@ -113,8 +113,9 @@ export default function LoginPage() {
     e.preventDefault()
     if (!API_URL) return
 
-    const origin = encodeURIComponent(window.location.origin)
-    window.location.href = `${API_URL}/api/google?origin=${origin}`
+    const currentOrigin = encodeURIComponent(window.location.origin)
+
+    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
   }
 
   const form = (
