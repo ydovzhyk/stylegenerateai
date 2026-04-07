@@ -18,12 +18,7 @@ export default function RegisterPage() {
   const dispatch = useDispatch()
   const router = useRouter()
 
-  const currentOrigin = encodeURIComponent(window.location.origin)
-  const API_URL =
-    currentOrigin === 'https://style-generate-ai.vercel.app/'
-      ? process.env.NEXT_PUBLIC_API_URL
-      : 'http://localhost:4000'
-
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
   const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_AVATARS_API_URL || ''
 
   const {
@@ -64,7 +59,8 @@ export default function RegisterPage() {
   const onGoogleClick = (e) => {
     e.preventDefault()
     if (!API_URL) return
-    
+
+    const currentOrigin = encodeURIComponent(window.location.origin)
     window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
   }
 

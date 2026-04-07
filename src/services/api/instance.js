@@ -1,13 +1,7 @@
 import axios from 'axios'
 import { clearUser } from '@/store/auth/auth-slice'
 
-const currentOrigin = encodeURIComponent(window.location.origin)
-const API_URL =
-  currentOrigin === 'https://style-generate-ai.vercel.app/'
-    ? process.env.NEXT_PUBLIC_API_URL
-    : 'http://localhost:4000'
-
-    console.log('API_URL in instance.js:', API_URL)
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 export const instance = axios.create({
   baseURL: `${API_URL}/api`,

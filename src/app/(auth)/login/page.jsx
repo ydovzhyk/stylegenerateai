@@ -23,11 +23,7 @@ export default function LoginPage() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const currentOrigin = encodeURIComponent(window.location.origin)
-  const API_URL =
-    currentOrigin === 'https://style-generate-ai.vercel.app/'
-      ? process.env.NEXT_PUBLIC_API_URL
-      : 'http://localhost:4000'
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
 
   const resetToken = searchParams.get('resetToken') || ''
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
@@ -113,6 +109,7 @@ export default function LoginPage() {
     e.preventDefault()
     if (!API_URL) return
 
+    const currentOrigin = encodeURIComponent(window.location.origin)
     window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
   }
 
