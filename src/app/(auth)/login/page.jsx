@@ -27,6 +27,8 @@ export default function LoginPage() {
       ? process.env.NEXT_PUBLIC_API_URL
       : 'http://localhost:4000'
 
+  console.log('API_URL:', API_URL)
+
   const resetToken = searchParams.get('resetToken') || ''
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
 
