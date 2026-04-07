@@ -22,12 +22,12 @@ export default function LoginPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  const currentOrigin = encodeURIComponent(window.location.origin)
   const API_URL =
-    process.env.NODE_ENV === 'production'
+    currentOrigin === 'https://style-generate-ai.vercel.app/'
       ? process.env.NEXT_PUBLIC_API_URL
       : 'http://localhost:4000'
-
-  console.log('API_URL:', API_URL)
 
   const resetToken = searchParams.get('resetToken') || ''
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
@@ -112,8 +112,6 @@ export default function LoginPage() {
   const onGoogleClick = (e) => {
     e.preventDefault()
     if (!API_URL) return
-
-    const currentOrigin = encodeURIComponent(window.location.origin)
 
     window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
   }

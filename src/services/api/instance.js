@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { clearUser } from '@/store/auth/auth-slice'
 
+const currentOrigin = encodeURIComponent(window.location.origin)
 const API_URL =
-  process.env.NODE_ENV === 'production'
+  currentOrigin === 'https://style-generate-ai.vercel.app/'
     ? process.env.NEXT_PUBLIC_API_URL
     : 'http://localhost:4000'
 
