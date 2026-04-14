@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "clean": "powershell -Command \"if (Test-Path .next) { Remove-Item -Recurse -Force .next }\"",
+    "dev:clean": "npm run clean && next dev",
+    "clean:full": "taskkill /F /IM node.exe && npm run clean",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

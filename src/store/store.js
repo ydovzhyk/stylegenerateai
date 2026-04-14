@@ -13,6 +13,7 @@ import {
 import authReducer from './auth/auth-slice'
 import technicalReducer from './technical/technical-slice'
 import visitorReducer from './visitor/visitor-slice'
+import readyTemplateReducer from './ready-template/ready-template-slice'
 import { setupInterceptors } from '../services/api/instance'
 // import logger from 'redux-logger'
 
@@ -36,6 +37,7 @@ export const store = configureStore({
     auth: finalAuthReducer,
     technical: technicalReducer,
     visitor: visitorReducer,
+    readyTemplate: readyTemplateReducer,
   },
   middleware: (getDefaultMiddleware) => {
     const middlewares = getDefaultMiddleware({

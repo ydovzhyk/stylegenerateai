@@ -1,0 +1,154 @@
+import { createSlice } from '@reduxjs/toolkit';
+import {
+  createReadyTemplate,
+  deleteReadyTemplate,
+  editReadyTemplate,
+  getCategories,
+  addCategory,
+  generateReadyTemplatePreview,
+} from './ready-template-operations'
+
+const initialState = {
+  error: null,
+  message: null,
+  loading: false,
+
+  generationLoading: false,
+  generationError: null,
+  generationResult: null,
+
+  categories: null,
+  readyTemplates: null,
+}
+
+const errMsg = (payload) =>
+  payload?.data?.message ||
+  payload?.message ||
+  'Oops, something went wrong, try again'
+
+const okMsg = (payload, fallback) => payload?.message || fallback
+
+const readyTemplate = createSlice({
+  name: 'readyTemplate',
+  initialState,
+  reducers: {
+    clearReadyTemplateError: (state) => {
+      state.error = null
+    },
+    clearReadyTemplateMessage: (state) => {
+      state.message = null
+    },
+    setReadyTemplateError: (state, action) => {
+      state.error = action.payload
+    },
+    clearReadyTemplateGenerationError: (state) => {
+      state.generationError = null
+    },
+    clearReadyTemplateGenerationResult: (state) => {
+      state.generationResult = null
+    },
+  },
+
+  extraReducers: (builder) => {
+    builder
+      // GET CATEGORIES
+      .addCase(getCategories.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(getCategories.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.categories = payload.values || []
+      })
+      .addCase(getCategories.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+      // ADD CATEGORY
+      .addCase(addCategory.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(addCategory.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.message = okMsg(payload, 'Category added successfully')
+      })
+      .addCase(addCategory.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+
+      // GENERATE PREVIEW
+      .addCase(generateReadyTemplatePreview.pending, (state) => {
+        state.generationLoading = true
+        state.generationError = null
+      })
+      .addCase(generateReadyTemplatePreview.fulfilled, (state, { payload }) => {
+        state.generationLoading = false
+        state.generationResult = payload || null
+      })
+      .addCase(generateReadyTemplatePreview.rejected, (state, { payload }) => {
+        state.generationLoading = false
+        state.generationError = errMsg(payload)
+      })
+
+      // ADD TEMPLATE
+      .addCase(createReadyTemplate.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(createReadyTemplate.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.message = okMsg(payload, 'Template added successfully')
+      })
+      .addCase(createReadyTemplate.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+
+      // EDIT TEMPLATE
+      .addCase(editReadyTemplate.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(editReadyTemplate.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.message = okMsg(payload, 'Template updated successfully')
+      })
+      .addCase(editReadyTemplate.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+
+      // DELETE TEMPLATE
+      .addCase(deleteReadyTemplate.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(deleteReadyTemplate.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.message = okMsg(payload, 'Template deleted successfully')
+      })
+      .addCase(deleteReadyTemplate.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+
+    // GET TEMPLATES
+  },
+})
+
+export default readyTemplate.reducer;
+
+export const {
+  clearReadyTemplateError,
+  clearReadyTemplateMessage,
+  setReadyTemplateError,
+  clearReadyTemplateGenerationError,
+  clearReadyTemplateGenerationResult,
+} = readyTemplate.actions

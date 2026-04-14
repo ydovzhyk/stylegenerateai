@@ -190,7 +190,16 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <div className="mb-6 max-w-3xl sm:mb-6 md:mb-8">
+      <div className="mb-6 max-w-3xl sm:mb-7 md:mb-8">
+        <Text
+          as="p"
+          variant="caption"
+          color="faint"
+          className="mb-3 uppercase tracking-[0.24em] text-primary-soft"
+        >
+          user · settings
+        </Text>
+
         <Text
           as="h1"
           variant="h1"

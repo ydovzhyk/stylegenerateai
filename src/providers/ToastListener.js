@@ -10,6 +10,15 @@ import { translateMyText } from '@/utils/translate/translate'
 import { getAuthError, getAuthMessage } from '@/store/auth/auth-selectors'
 import { clearAuthError, clearAuthMessage } from '@/store/auth/auth-slice'
 
+import {
+  getReadyTemplateError,
+  getReadyTemplateMessage,
+} from '@/store/ready-template/ready-template-selectors'
+import {
+  clearReadyTemplateError,
+  clearReadyTemplateMessage,
+} from '@/store/ready-template/ready-template-slice'
+
 const TOAST_DEDUPE_WINDOW_MS = 900
 
 const toastBaseOptions = {
@@ -115,11 +124,21 @@ export default function ToastListener() {
   const authError = useSelector(getAuthError)
   const authMessage = useSelector(getAuthMessage)
 
+  const readyTemplateError = useSelector(getReadyTemplateError)
+  const readyTemplateMessage = useSelector(getReadyTemplateMessage)
+
   useToastPair({
     error: authError,
     message: authMessage,
     clearError: clearAuthError,
     clearMessage: clearAuthMessage,
+  })
+
+  useToastPair({
+    error: readyTemplateError,
+    message: readyTemplateMessage,
+    clearError: clearReadyTemplateError,
+    clearMessage: clearReadyTemplateMessage,
   })
 
   return null

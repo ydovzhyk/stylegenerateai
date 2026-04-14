@@ -53,7 +53,14 @@ const ClientLayout = ({ children }) => {
         isAuthenticated={isAuthenticated}
       />
 
-      <main className="flex-1">{children}</main>
+      <main className="relative flex-1 min-h-[calc(100svh-76px)] overflow-hidden border-t border-primary/10">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute left-0 top-0 h-[220px] w-[220px] rounded-full bg-primary/10 blur-3xl sm:h-[280px] sm:w-[280px] md:h-[320px] md:w-[320px]" />
+          <div className="absolute bottom-0 right-0 h-[180px] w-[180px] rounded-full bg-cyan-400/10 blur-3xl sm:h-[220px] sm:w-[220px] md:h-[260px] md:w-[260px]" />
+        </div>
+
+        <div className="relative h-full">{children}</div>
+      </main>
 
       <ScrollToTopButton />
     </div>

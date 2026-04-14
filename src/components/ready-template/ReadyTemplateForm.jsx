@@ -1,42 +1,41 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createReadyTemplate } from '@/services/api/ready-template'
+import { Controller, useForm } from 'react-hook-form'
+import { useDispatch, useSelector } from 'react-redux'
+
+import {
+  addCategory,
+  createReadyTemplate,
+  getCategories,
+} from '@/store/ready-template/ready-template-operations'
+import {
+  getReadyTemplateCategories,
+  getReadyTemplateLoading,
+} from '@/store/ready-template/ready-template-selectors'
+
+import { generateReadyTemplatePreview } from '@/store/ready-template/ready-template-operations'
+import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
 import Text from '@/components/shared/text/Text'
-import { useTranslate } from '../../utils/translate/translate'
+import TemplatePreviewGenerator from '@/components/ready-template/TemplatePreviewGenerator'
+import { useTranslate } from '@/utils/translate/translate'
 
-const initialForm = {
-  title: '',
-  slug: '',
-  category: 'portrait',
-  tags: '',
-  previewFile: null,
-  basePrompt: '',
-  isPublished: true,
-}
-
-const initialErrors = {
+const DEFAULT_VALUES = {
   title: '',
   slug: '',
   category: '',
   tags: '',
-  previewFile: '',
+  previewFile: null,
+  previewSourceKey: '',
+  useInCreateYourLook: false,
   basePrompt: '',
+  isPublished: true,
+  newCategory: '',
 }
-
-const categoryOptions = [
-  'portrait',
-  'fantasy',
-  'anime',
-  'cinematic',
-  'professional',
-  'sci-fi',
-  'kids',
-  'other',
-]
 
 function makeSlug(value) {
   return String(value || '')
@@ -54,426 +53,647 @@ function normalizeTags(value) {
     .filter(Boolean)
 }
 
-function validateField(field, value, fullForm) {
-  switch (field) {
-    case 'title': {
-      const title = String(value || '').trim()
-      if (!title) return 'Template title is required.'
-      if (title.length < 2) return 'Title must be at least 2 characters.'
-      if (title.length > 80) return 'Title must be at most 80 characters.'
-      return ''
-    }
+function validateTitle(value) {
+  const title = String(value || '').trim()
 
-    case 'slug': {
-      const rawSlug = String(value || '').trim()
-      const fallbackTitle = fullForm?.title || ''
-      const finalSlug = makeSlug(rawSlug || fallbackTitle)
+  if (!title) return 'Template title is required'
+  if (title.length < 2) return 'Title must be at least 2 characters'
+  if (title.length > 80) return 'Title must be at most 80 characters'
 
-      if (!finalSlug) return 'Slug is required.'
-      if (finalSlug.length < 2) return 'Slug must be at least 2 characters.'
-      if (finalSlug.length > 100) return 'Slug must be at most 100 characters.'
-      if (!/^[a-z0-9-]+$/.test(finalSlug)) {
-        return 'Slug can contain only lowercase letters, numbers, and hyphens.'
-      }
-
-      return ''
-    }
-
-    case 'category': {
-      if (!categoryOptions.includes(value))
-        return 'Please select a valid category.'
-      return ''
-    }
-
-    case 'tags': {
-      const tags = normalizeTags(value)
-      if (tags.length > 20) return 'Use no more than 20 tags.'
-      const hasTooLongTag = tags.some((tag) => tag.length > 30)
-      if (hasTooLongTag) return 'Each tag must be at most 30 characters.'
-      return ''
-    }
-
-    case 'basePrompt': {
-      const prompt = String(value || '').trim()
-      if (!prompt) return 'Base prompt is required.'
-      if (prompt.length < 10)
-        return 'Base prompt must be at least 10 characters.'
-      if (prompt.length > 5000)
-        return 'Base prompt must be at most 5000 characters.'
-      return ''
-    }
-
-    case 'previewFile': {
-      if (!value) return 'Preview image is required.'
-      if (value && !String(value.type || '').startsWith('image/')) {
-        return 'Only image files are allowed.'
-      }
-      return ''
-    }
-
-    default:
-      return ''
-  }
+  return true
 }
 
-function validateForm(form) {
-  return {
-    title: validateField('title', form.title, form),
-    slug: validateField('slug', form.slug, form),
-    category: validateField('category', form.category, form),
-    tags: validateField('tags', form.tags, form),
-    previewFile: validateField('previewFile', form.previewFile, form),
-    basePrompt: validateField('basePrompt', form.basePrompt, form),
+function validatePreviewSourceKey(value, formValues) {
+  const useInCreateYourLook = Boolean(formValues?.useInCreateYourLook)
+  const previewSourceKey = String(value || '').trim()
+
+  if (!useInCreateYourLook) return true
+
+  if (!previewSourceKey) {
+    return 'Create Your Look preview requires a prototype-based source'
   }
+
+  return true
+}
+
+function validateSlug(value, fullForm) {
+  const rawSlug = String(value || '').trim()
+  const fallbackTitle = String(fullForm?.title || '').trim()
+  const finalSlug = makeSlug(rawSlug || fallbackTitle)
+
+  if (!finalSlug) return 'Slug is required'
+  if (finalSlug.length < 2) return 'Slug must be at least 2 characters'
+  if (finalSlug.length > 100) return 'Slug must be at most 100 characters'
+  if (!/^[a-z0-9-]+$/.test(finalSlug)) {
+    return 'Slug can contain only lowercase letters, numbers, and hyphens'
+  }
+
+  return true
+}
+
+function validateCategory(value, availableCategories = []) {
+  const normalized = String(value || '').trim()
+  const allowed = availableCategories.map((item) => String(item.value || ''))
+
+  if (!normalized) return 'Category is required'
+  if (!allowed.includes(normalized)) return 'Please select a valid category'
+
+  return true
+}
+
+function validateTags(value) {
+  const tags = normalizeTags(value)
+
+  if (tags.length > 20) return 'Use no more than 20 tags'
+
+  const hasTooLongTag = tags.some((tag) => tag.length > 30)
+  if (hasTooLongTag) return 'Each tag must be at most 30 characters'
+
+  return true
+}
+
+function validateBasePrompt(value) {
+  const prompt = String(value || '').trim()
+
+  if (!prompt) return 'Base prompt is required'
+  if (prompt.length < 10) return 'Base prompt must be at least 10 characters'
+  if (prompt.length > 5000) return 'Base prompt must be at most 5000 characters'
+
+  return true
+}
+
+function validatePreviewFile(file) {
+  if (!file) return 'Preview image is required'
+  if (!String(file.type || '').startsWith('image/')) {
+    return 'Only image files are allowed'
+  }
+
+  return true
+}
+
+function validateNewCategory(value) {
+  const normalized = String(value || '').trim()
+
+  if (!normalized) return 'Category name is required'
+  if (normalized.length < 2)
+    return 'Category name must be at least 2 characters'
+  if (normalized.length > 40)
+    return 'Category name must be at most 40 characters'
+
+  return true
 }
 
 export default function ReadyTemplateForm() {
-  const [form, setForm] = useState(initialForm)
-  const [errors, setErrors] = useState(initialErrors)
-  const [touched, setTouched] = useState({})
+  const dispatch = useDispatch()
+
+  const categories = useSelector(getReadyTemplateCategories) || []
+  const loading = useSelector(getReadyTemplateLoading)
+
   const [dragActive, setDragActive] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [previewSrc, setPreviewSrc] = useState('')
+  const [appliedPreviewSrc, setAppliedPreviewSrc] = useState('')
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
 
-  const parsedTags = useMemo(() => normalizeTags(form.tags), [form.tags])
-  const generatedSlug = useMemo(() => makeSlug(form.title), [form.title])
+  const [previewGeneratorResetKey, setPreviewGeneratorResetKey] = useState(0)
 
-  const categorySelectOptions = useMemo(
-    () =>
-      categoryOptions.map((option) => ({
-        value: option,
-        label: option,
-      })),
-    [],
-  )
+  const tCategory = useTranslate('Category', { caseMode: 'sentence' })
+  const tCategoryHint = useTranslate('Choose the closest template group.', {
+    caseMode: 'sentence',
+  })
+  const tSelectOption = useTranslate('Select option', { caseMode: 'sentence' })
+  const tPreviewAlt = useTranslate('Template preview image', {
+    caseMode: 'sentence',
+  })
 
-  const tPreviewImage = useTranslate('Preview image')
-  const tFormats = useTranslate('JPG, PNG, WEBP')
-  const tReplacePreview = useTranslate(
-    'Click or drag another image to replace the preview.',
-  )
-  const tDropPreview = useTranslate('Drop preview image here')
-  const tPreviewHint = useTranslate(
-    'Use a strong visual example of the final style. This image can later be shown in the template gallery.',
-  )
+  const categorySelectOptions = useMemo(() => {
+    return categories.map((item) => {
+      if (typeof item === 'string') {
+        return {
+          value: item,
+          label: item,
+        }
+      }
 
-  const tTemplateTitle = useTranslate('Template title')
-  const tTemplateTitlePlaceholder = useTranslate('Avatar Style Portrait')
-  const tTemplateTitleHint = useTranslate('2–80 characters.')
+      return {
+        value: item.slug || item.value || '',
+        label: item.title || item.label || item.slug || '',
+      }
+    })
+  }, [categories])
 
-  const tSlug = useTranslate('Slug')
-  const tSlugPlaceholder = useTranslate('avatar-style-portrait')
-  const tSlugHint = useTranslate('Leave empty to generate from title.')
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    reset,
+    getValues,
+    trigger,
+    setError,
+    clearErrors,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+    defaultValues: DEFAULT_VALUES,
+  })
 
-  const tCategory = useTranslate('Category')
-  const tCategoryHint = useTranslate('Choose the closest template group.')
+  const watchedTitle = watch('title')
+  const watchedSlug = watch('slug')
+  const watchedCategory = watch('category')
+  const watchedTags = watch('tags')
+  const watchedBasePrompt = watch('basePrompt')
+  const watchedPreviewFile = watch('previewFile')
+  const watchedPublished = watch('isPublished')
+  const watchedPreviewSourceKey = watch('previewSourceKey')
+  const watchedUseInCreateYourLook = watch('useInCreateYourLook')
 
-  const tTags = useTranslate('Tags')
-  const tTagsPlaceholder = useTranslate('avatar, alien, blue, sci-fi, close-up')
-  const tTagsHint = useTranslate('Comma-separated tags.')
-
-  const tBasePrompt = useTranslate('Base prompt')
-  const tBasePromptPlaceholder = useTranslate(
-    'Ultra-detailed cinematic close-up portrait...',
-  )
-  const tBasePromptHint = useTranslate(
-    'Describe the style and generation intent.',
-  )
-
-  const tPublishedInGallery = useTranslate('Published in gallery')
-  const tDraftPayloadPreview = useTranslate('Draft payload preview')
-  const tSaveTemplateDraft = useTranslate('Save template draft')
-  const tResetForm = useTranslate('Reset form')
+  const parsedTags = useMemo(() => normalizeTags(watchedTags), [watchedTags])
+  const generatedSlug = useMemo(() => makeSlug(watchedTitle), [watchedTitle])
 
   useEffect(() => {
-    if (!form.previewFile) {
+    dispatch(getCategories())
+  }, [dispatch])
+
+  useEffect(() => {
+    if (!watchedCategory && categorySelectOptions.length > 0) {
+      setValue('category', categorySelectOptions[0].value, {
+        shouldValidate: false,
+      })
+    }
+  }, [watchedCategory, categorySelectOptions, setValue])
+
+  useEffect(() => {
+    if (!watchedPreviewFile) {
       setPreviewSrc('')
       return
     }
 
-    const objectUrl = URL.createObjectURL(form.previewFile)
+    const objectUrl = URL.createObjectURL(watchedPreviewFile)
     setPreviewSrc(objectUrl)
 
     return () => URL.revokeObjectURL(objectUrl)
-  }, [form.previewFile])
+  }, [watchedPreviewFile])
 
-  const setFieldError = (field, value, nextForm) => {
-    setErrors((prev) => ({
-      ...prev,
-      [field]: validateField(field, value, nextForm),
-    }))
-  }
-
-  const handleChange = (field) => (e) => {
-    const value =
-      e?.target?.type === 'checkbox' ? e.target.checked : e.target.value
-
-    setForm((prev) => {
-      const nextForm = {
-        ...prev,
-        [field]: value,
-      }
-
-      if (touched[field]) {
-        setFieldError(field, value, nextForm)
-      }
-
-      if (field === 'title' && touched.slug && !nextForm.slug.trim()) {
-        setFieldError('slug', nextForm.slug, nextForm)
-      }
-
-      return nextForm
+  const handleFile = async (file) => {
+    setValue('previewFile', file || null, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
     })
-  }
 
-  const handleBlur = (field) => () => {
-    setTouched((prev) => ({
-      ...prev,
-      [field]: true,
-    }))
-
-    setErrors((prev) => ({
-      ...prev,
-      [field]: validateField(field, form[field], form),
-    }))
-  }
-
-  const handleFile = (file) => {
-    if (!file) return
-
-    setForm((prev) => {
-      const nextForm = {
-        ...prev,
-        previewFile: file,
-      }
-
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        previewFile: touched.previewFile
-          ? validateField('previewFile', file, nextForm)
-          : prevErrors.previewFile,
-      }))
-
-      return nextForm
+    setValue('previewSourceKey', '', {
+      shouldDirty: true,
+      shouldTouch: false,
+      shouldValidate: true,
     })
+
+    setValue('useInCreateYourLook', false, {
+      shouldDirty: true,
+      shouldTouch: false,
+      shouldValidate: false,
+    })
+
+    await trigger(['previewFile', 'previewSourceKey'])
   }
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault()
     setDragActive(false)
 
-    const file = e.dataTransfer?.files?.[0]
-    handleFile(file)
+    const file = e.dataTransfer?.files?.[0] || null
+    setAppliedPreviewSrc('')
+    await handleFile(file)
+  }
+
+  const handleApplyGeneratedPreview = async ({
+    previewFile,
+    previewUrl,
+    previewSourceKey,
+  }) => {
+    setValue('previewFile', previewFile || null, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+
+    setValue('previewSourceKey', previewSourceKey || '', {
+      shouldDirty: true,
+      shouldTouch: false,
+      shouldValidate: true,
+    })
+
+    if (!previewSourceKey) {
+      setValue('useInCreateYourLook', false, {
+        shouldDirty: true,
+        shouldTouch: false,
+        shouldValidate: false,
+      })
+    }
+
+    setAppliedPreviewSrc(previewUrl || '')
+    await trigger(['previewFile', 'previewSourceKey'])
+  }
+
+  const handleGeneratePreview = async ({
+    prompt,
+    sourceFile,
+    sourceMode,
+    prototype,
+    output,
+    photoQuality,
+  }) => {
+    const safePrompt = String(prompt || '').trim()
+
+    if (!safePrompt) {
+      throw new Error('Generation prompt is required')
+    }
+
+    if (!sourceFile) {
+      throw new Error('Source photo is required')
+    }
+
+    if (!output?.id) {
+      throw new Error('Output format is required')
+    }
+
+    const formData = new FormData()
+    formData.append('prompt', safePrompt)
+    formData.append('sourceImage', sourceFile)
+    formData.append('sourceMode', sourceMode || 'prototype')
+    formData.append('outputId', output.id)
+
+    if (prototype?.gender) {
+      formData.append('prototypeGender', prototype.gender)
+    }
+
+    if (prototype?.view) {
+      formData.append('prototypeView', prototype.view)
+    }
+
+    if (prototype?.tone) {
+      formData.append('prototypeTone', prototype.tone)
+    }
+
+    if (photoQuality?.id) {
+      formData.append('photoQualityId', photoQuality.id)
+    }
+
+    const data = await dispatch(generateReadyTemplatePreview(formData)).unwrap()
+
+    if (!data?.previewUrl) {
+      throw new Error(data?.message || 'Failed to generate preview')
+    }
+
+    return {
+      previewUrl: data.previewUrl,
+      file: data.previewUrl.startsWith('data:')
+        ? dataUrlToFile(data.previewUrl, 'generated-preview.png')
+        : null,
+    }
   }
 
   const handleReset = () => {
-    setForm(initialForm)
-    setErrors(initialErrors)
-    setTouched({})
+    reset({
+      ...DEFAULT_VALUES,
+      category: categorySelectOptions[0]?.value || '',
+    })
     setDragActive(false)
+    setPreviewSrc('')
+    setAppliedPreviewSrc('')
+    setPreviewGeneratorResetKey((prev) => prev + 1)
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleAddCategory = async () => {
+    const value = String(getValues('newCategory') || '').trim()
 
-    const nextTouched = {
-      title: true,
-      slug: true,
-      category: true,
-      tags: true,
-      previewFile: true,
-      basePrompt: true,
+    const validation = validateNewCategory(value)
+    if (validation !== true) {
+      setError('newCategory', {
+        type: 'manual',
+        message: validation,
+      })
+      return
     }
 
-    const nextErrors = validateForm(form)
+    clearErrors('newCategory')
 
-    setTouched(nextTouched)
-    setErrors(nextErrors)
+    try {
+      setIsAddingCategory(true)
 
-    const hasErrors = Object.values(nextErrors).some(Boolean)
-    if (hasErrors) return
+      await dispatch(
+        addCategory({
+          value: value,
+        }),
+      ).unwrap()
 
-    setSubmitting(true)
+      setValue('newCategory', '', {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      })
+    } catch (error) {
+      const message =
+        error?.data?.message || error?.message || 'Failed to add category'
 
+      setError('newCategory', {
+        type: 'server',
+        message,
+      })
+    } finally {
+      setIsAddingCategory(false)
+    }
+  }
+
+  const onSubmit = async (values) => {
     try {
       const formData = new FormData()
 
-      formData.append('title', form.title.trim())
-      formData.append('slug', makeSlug(form.slug || form.title))
-      formData.append('category', form.category)
-      formData.append('basePrompt', form.basePrompt.trim())
-      formData.append('isPublished', String(form.isPublished))
-      formData.append('preview', form.previewFile)
+      formData.append('title', String(values.title || '').trim())
+      formData.append('slug', makeSlug(values.slug || values.title))
+      formData.append('category', String(values.category || '').trim())
+      formData.append('basePrompt', String(values.basePrompt || '').trim())
+      formData.append('isPublished', String(Boolean(values.isPublished)))
+      formData.append('preview', values.previewFile)
+      formData.append('previewSourceKey', String(values.previewSourceKey || ''))
+      formData.append(
+        'useInCreateYourLook',
+        String(Boolean(values.useInCreateYourLook)),
+      )
 
-      normalizeTags(form.tags).forEach((tag) => {
+      normalizeTags(values.tags).forEach((tag) => {
         formData.append('tags', tag)
       })
 
-      const { data } = await createReadyTemplate(formData)
+      await dispatch(createReadyTemplate(formData)).unwrap()
 
-      console.log('Created template:', data)
-      setForm(initialForm)
-      setErrors(initialErrors)
-      setTouched({})
+      reset({
+        ...DEFAULT_VALUES,
+        category: categorySelectOptions[0]?.value || '',
+      })
       setDragActive(false)
+      setPreviewSrc('')
+      setAppliedPreviewSrc('')
+      setPreviewGeneratorResetKey((prev) => prev + 1)
     } catch (error) {
-      console.error(error)
-      alert(error?.response?.data?.message || 'Something went wrong')
-    } finally {
-      setSubmitting(false)
+      const message =
+        error?.data?.message || error?.message || 'Something went wrong'
+
+      setError('title', {
+        type: 'server',
+        message,
+      })
     }
   }
 
+  const payloadPreview = useMemo(
+    () => ({
+      title: String(watchedTitle || '').trim(),
+      slug: makeSlug(watchedSlug || watchedTitle),
+      category: watchedCategory,
+      tags: parsedTags,
+      previewSourceKey: String(watchedPreviewSourceKey || ''),
+      useInCreateYourLook: Boolean(watchedUseInCreateYourLook),
+      basePrompt: String(watchedBasePrompt || '').trim(),
+      isPublished: Boolean(watchedPublished),
+    }),
+    [
+      watchedTitle,
+      watchedSlug,
+      watchedCategory,
+      parsedTags,
+      watchedPreviewSourceKey,
+      watchedUseInCreateYourLook,
+      watchedBasePrompt,
+      watchedPublished,
+    ],
+  )
+
   return (
     <form
-      onSubmit={handleSubmit}
-      className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]"
+      onSubmit={handleSubmit(onSubmit)}
+      noValidate
+      className="grid gap-6 xl:grid-cols-[1.04fr_0.96fr]"
     >
-      <section className="gradient-border-card p-4 md:p-6">
+      <section className="gradient-border-card p-4 sm:p-5 md:p-6 lg:p-7">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Text as="h2" variant="h3" color="white">
-            {tPreviewImage}
-          </Text>
+          <div className="max-w-[70%]">
+            <Text as="h2" variant="h3" color="white" caseMode="sentence">
+              Preview image
+            </Text>
 
-          <span className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-foreground-muted">
-            {tFormats}
-          </span>
+            <Text
+              as="p"
+              variant="body-sm"
+              color="muted"
+              caseMode="sentence"
+              className="mt-2 max-w-2xl"
+            >
+              Generate a preview then apply the result as the final template
+              image.
+            </Text>
+          </div>
+
+          <Text
+            as="span"
+            variant="caption"
+            color="faint"
+            className="inline-flex w-fit items-center rounded-full border border-white/10 bg-white/5 px-3 py-1"
+          >
+            JPG, PNG, WEBP
+          </Text>
         </div>
 
-        <label
-          onDragOver={(e) => {
-            e.preventDefault()
-            setDragActive(true)
-          }}
-          onDragLeave={() => setDragActive(false)}
-          onDrop={handleDrop}
-          className={`flex min-h-[320px] cursor-pointer flex-col items-center justify-center rounded-[28px] border border-dashed p-4 text-center transition md:min-h-[420px] md:p-6 ${
-            dragActive
-              ? 'border-primary bg-primary/10'
-              : 'border-white/15 bg-background-soft/70 hover:border-primary/60 hover:bg-background-soft'
-          }`}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => {
-              setTouched((prev) => ({ ...prev, previewFile: true }))
-              handleFile(e.target.files?.[0])
+        <TemplatePreviewGenerator
+          value={watchedPreviewFile}
+          onApply={handleApplyGeneratedPreview}
+          onGenerate={handleGeneratePreview}
+          disabled={isSubmitting}
+          resetSignal={previewGeneratorResetKey}
+        />
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+          <div className="mb-4">
+            <Text as="h3" variant="body" color="white" caseMode="sentence">
+              Final preview image
+            </Text>
+
+            <Text
+              as="p"
+              variant="body-sm"
+              color="muted"
+              caseMode="sentence"
+              className="mt-2"
+            >
+              You can still replace the final preview manually by uploading
+              another image.
+            </Text>
+          </div>
+
+          <label
+            onDragOver={(e) => {
+              e.preventDefault()
+              setDragActive(true)
             }}
+            onDragLeave={() => setDragActive(false)}
+            onDrop={handleDrop}
+            className={[
+              'flex min-h-[240px] w-full cursor-pointer flex-col items-center justify-center rounded-[24px] border border-dashed p-4 text-center transition sm:min-h-[300px] md:min-h-[360px] md:p-6',
+              dragActive
+                ? 'border-primary bg-primary/10'
+                : 'border-white/15 bg-background-soft/70 hover:border-primary/60 hover:bg-background-soft',
+            ].join(' ')}
+          >
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0] || null
+                setAppliedPreviewSrc('')
+                await handleFile(file)
+              }}
+            />
+
+            {previewSrc || appliedPreviewSrc ? (
+              <div className="w-full">
+                <div className="overflow-hidden rounded-[22px] border border-white/10 bg-background-soft p-2 md:p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={previewSrc || appliedPreviewSrc}
+                    alt={tPreviewAlt}
+                    className="mx-auto max-h-[240px] w-auto rounded-[18px] object-contain sm:max-h-[320px] md:max-h-[520px]"
+                  />
+                </div>
+
+                <Text
+                  as="p"
+                  variant="body-sm"
+                  color="muted"
+                  caseMode="sentence"
+                  className="mx-auto mt-4 max-w-[560px]"
+                >
+                  Click or drag another image to replace the final preview.
+                </Text>
+              </div>
+            ) : (
+              <div className="max-w-md">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/15 text-2xl text-primary-soft shadow-violet-soft">
+                  ⤴
+                </div>
+
+                <Text as="h3" variant="h3" color="white" caseMode="sentence">
+                  Drop final preview image here
+                </Text>
+
+                <Text
+                  as="p"
+                  variant="body-sm"
+                  color="muted"
+                  caseMode="sentence"
+                  className="mt-3"
+                >
+                  You can use the generated result above or replace it with your
+                  own uploaded preview image.
+                </Text>
+              </div>
+            )}
+          </label>
+
+          <input
+            type="hidden"
+            {...register('previewFile', {
+              validate: validatePreviewFile,
+            })}
           />
 
-          {previewSrc ? (
-            <div className="w-full">
-              <div className="overflow-hidden rounded-[24px] border border-white/10 bg-background-soft p-2 md:p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={previewSrc}
-                  alt="Template preview"
-                  className="mx-auto max-h-[260px] w-auto rounded-[20px] object-contain md:max-h-[520px]"
-                />
-              </div>
+          <input
+            type="hidden"
+            {...register('previewSourceKey', {
+              validate: (value) => validatePreviewSourceKey(value, getValues()),
+            })}
+          />
 
-              <Text as="p" variant="body-sm" color="muted" className="mt-4">
-                {tReplacePreview}
-              </Text>
+          {errors.previewFile?.message ? (
+            <div className="mt-2 min-h-5 text-xs leading-5 text-danger">
+              {errors.previewFile?.message || '\u00A0'}
             </div>
-          ) : (
-            <div className="max-w-md">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/20 bg-primary/15 text-2xl text-primary-soft shadow-violet-soft">
-                ⤴
-              </div>
+          ) : null}
 
-              <Text as="h3" variant="h3" color="white">
-                {tDropPreview}
-              </Text>
-
-              <Text as="p" variant="body-sm" color="muted" className="mt-3">
-                {tPreviewHint}
-              </Text>
+          {errors.previewSourceKey?.message ? (
+            <div className="mt-2 min-h-5 text-xs leading-5 text-danger">
+              {errors.previewSourceKey.message}
             </div>
-          )}
-        </label>
-
-        <div className="mt-3 min-h-5 text-xs leading-5 text-danger">
-          {touched.previewFile ? errors.previewFile || '\u00A0' : '\u00A0'}
+          ) : null}
         </div>
       </section>
 
-      <section className="gradient-border-card p-4 md:p-6">
+      <section className="gradient-border-card p-4 sm:p-5 md:p-6 lg:p-7">
+        <div className="mb-5 max-w-2xl">
+          <Text as="h2" variant="h3" color="white" caseMode="sentence">
+            Template details
+          </Text>
+
+          <Text
+            as="p"
+            variant="body-sm"
+            color="muted"
+            caseMode="sentence"
+            className="mt-2"
+          >
+            Define the reusable style metadata and the base prompt for
+            generation.
+          </Text>
+        </div>
+
         <div className="grid gap-4 md:gap-5">
           <Input
             id="template-title"
-            label={tTemplateTitle}
-            value={form.title}
-            onChange={handleChange('title')}
-            onBlur={handleBlur('title')}
-            placeholder={tTemplateTitlePlaceholder}
-            error={touched.title ? errors.title : ''}
-            hint={tTemplateTitleHint}
+            label="Template title"
+            type="text"
+            placeholder="Avatar Style Portrait"
+            hint="2–80 characters."
             required
-            inputClassName="h-12"
+            caseMode="sentence"
+            {...register('title', {
+              validate: validateTitle,
+            })}
+            error={errors.title?.message}
+            inputClassName="h-10"
           />
 
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               id="template-slug"
-              label={tSlug}
-              value={form.slug}
-              onChange={handleChange('slug')}
-              onBlur={handleBlur('slug')}
-              placeholder={generatedSlug || tSlugPlaceholder}
-              error={touched.slug ? errors.slug : ''}
-              hint={tSlugHint}
-              inputClassName="h-12"
+              label="Slug"
+              type="text"
+              placeholder={generatedSlug || 'avatar-style-portrait'}
+              hint="Leave empty to generate from title."
+              caseMode="sentence"
+              {...register('slug', {
+                validate: (value) => validateSlug(value, getValues()),
+              })}
+              error={errors.slug?.message}
+              inputClassName="h-10"
             />
 
-            <Select
-              id="template-category"
-              label={tCategory}
-              value={
-                categorySelectOptions.find(
-                  (option) => option.value === form.category,
-                ) || null
-              }
-              onChange={(option) => {
-                const value = option?.value || ''
-                setForm((prev) => {
-                  const nextForm = {
-                    ...prev,
-                    category: value,
-                  }
-
-                  if (touched.category) {
-                    setErrors((prevErrors) => ({
-                      ...prevErrors,
-                      category: validateField('category', value, nextForm),
-                    }))
-                  }
-
-                  return nextForm
-                })
-              }}
-              onBlur={handleBlur('category')}
-              options={categorySelectOptions}
-              error={touched.category ? errors.category : ''}
-              hint={tCategoryHint}
+            <Input
+              id="template-tags"
+              label="Tags"
+              type="text"
+              placeholder="avatar, alien, blue, sci-fi, close-up"
+              hint="Comma-separated tags."
+              caseMode="sentence"
+              {...register('tags', {
+                validate: validateTags,
+              })}
+              error={errors.tags?.message}
+              inputClassName="h-10"
             />
           </div>
 
-          <Input
-            id="template-tags"
-            label={tTags}
-            value={form.tags}
-            onChange={handleChange('tags')}
-            onBlur={handleBlur('tags')}
-            placeholder={tTagsPlaceholder}
-            error={touched.tags ? errors.tags : ''}
-            hint={tTagsHint}
-            inputClassName="h-12"
-          />
-
-          {parsedTags.length > 0 && (
+          {parsedTags.length > 0 ? (
             <div className="-mt-1 flex flex-wrap gap-2">
               {parsedTags.map((tag) => (
                 <span
@@ -484,33 +704,122 @@ export default function ReadyTemplateForm() {
                 </span>
               ))}
             </div>
-          )}
+          ) : null}
+
+          <Controller
+            name="category"
+            control={control}
+            rules={{
+              validate: (value) =>
+                validateCategory(value, categorySelectOptions),
+            }}
+            render={({ field }) => (
+              <Select
+                id="template-category"
+                label={tCategory}
+                value={
+                  categorySelectOptions.find(
+                    (option) => option.value === field.value,
+                  ) || null
+                }
+                onChange={(option) => {
+                  field.onChange(option?.value || '')
+                  clearErrors('category')
+                }}
+                options={categorySelectOptions}
+                error={errors.category?.message}
+                hint={tCategoryHint}
+                placeholder={tSelectOption}
+                caseMode="sentence"
+              />
+            )}
+          />
+
+          <div className="rounded-2xl border border-white/10 bg-background-soft/80 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex-1">
+                <Input
+                  id="template-new-category"
+                  label="Add new category"
+                  type="text"
+                  placeholder="For example: watercolor"
+                  hint="Create a new category for future templates."
+                  caseMode="sentence"
+                  {...register('newCategory')}
+                  error={errors.newCategory?.message}
+                  inputClassName="h-10"
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleAddCategory}
+                loading={isAddingCategory}
+                disabled={isAddingCategory || loading}
+                fullWidth
+                className="min-h-10 rounded-2xl sm:w-auto sm:self-center"
+              >
+                Add category
+              </Button>
+            </div>
+          </div>
 
           <Input
             id="template-base-prompt"
             as="textarea"
             rows={12}
-            label={tBasePrompt}
-            value={form.basePrompt}
-            onChange={handleChange('basePrompt')}
-            onBlur={handleBlur('basePrompt')}
-            placeholder={tBasePromptPlaceholder}
-            error={touched.basePrompt ? errors.basePrompt : ''}
-            hint={tBasePromptHint}
+            label="Base prompt"
+            placeholder="Ultra-detailed cinematic close-up portrait..."
+            hint="Describe the style and generation intent."
             required
+            caseMode="sentence"
+            {...register('basePrompt', {
+              validate: validateBasePrompt,
+            })}
+            error={errors.basePrompt?.message}
           />
 
           <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
             <input
               type="checkbox"
-              checked={form.isPublished}
-              onChange={handleChange('isPublished')}
+              {...register('isPublished')}
               className="h-4 w-4 accent-[var(--primary)]"
             />
 
-            <Text as="span" variant="body-sm" color="soft">
-              {tPublishedInGallery}
+            <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
+              Published in gallery
             </Text>
+          </label>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
+            <input
+              type="checkbox"
+              {...register('useInCreateYourLook')}
+              disabled={!watchedPreviewSourceKey}
+              className="h-4 w-4 accent-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50"
+            />
+
+            <div className="flex flex-col">
+              <Text
+                as="span"
+                variant="body-sm"
+                color="soft"
+                caseMode="sentence"
+              >
+                Use on Create Your Look page
+              </Text>
+
+              <Text
+                as="span"
+                variant="caption"
+                color="muted"
+                caseMode="sentence"
+              >
+                Available only for previews generated from built-in prototype
+                photos.
+              </Text>
+            </div>
           </label>
 
           <div className="rounded-2xl border border-white/10 bg-background-soft/80 p-4">
@@ -518,46 +827,37 @@ export default function ReadyTemplateForm() {
               as="p"
               variant="caption"
               color="faint"
+              caseMode="sentence"
               className="uppercase tracking-[0.2em]"
             >
-              {tDraftPayloadPreview}
+              Draft payload preview
             </Text>
 
             <pre className="mt-3 overflow-x-auto whitespace-pre-wrap text-sm leading-6 text-foreground-soft">
-              {JSON.stringify(
-                {
-                  title: form.title.trim(),
-                  slug: makeSlug(form.slug || form.title),
-                  category: form.category,
-                  tags: parsedTags,
-                  basePrompt: form.basePrompt.trim(),
-                  isPublished: form.isPublished,
-                },
-                null,
-                2,
-              )}
+              {JSON.stringify(payloadPreview, null, 2)}
             </pre>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               type="submit"
-              disabled={submitting}
-              loading={submitting}
+              loading={isSubmitting}
+              disabled={isSubmitting}
               fullWidth
-              className="sm:w-auto"
+              className="min-h-12 rounded-2xl sm:w-auto"
             >
-              {tSaveTemplateDraft}
+              Save template draft
             </Button>
 
             <Button
               type="button"
               variant="secondary"
               onClick={handleReset}
+              disabled={isSubmitting}
               fullWidth
-              className="sm:w-auto"
+              className="min-h-12 rounded-2xl sm:w-auto"
             >
-              {tResetForm}
+              Reset form
             </Button>
           </div>
         </div>

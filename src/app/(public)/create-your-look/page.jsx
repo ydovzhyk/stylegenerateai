@@ -1,12 +1,8 @@
-import ReadyTemplateForm from '@/components/ready-template/ReadyTemplateForm'
+'use client'
+
 import Text from '@/components/shared/text/Text'
 
-export const metadata = {
-  title: 'Ready Template | Style Generate AI',
-  description: 'Create and manage ready-made image templates',
-}
-
-export default function ReadyTemplatePage() {
+export default function CreateYourLookPage() {
   return (
     <div>
       <div className="mb-6 max-w-3xl sm:mb-7 md:mb-8">
@@ -16,7 +12,7 @@ export default function ReadyTemplatePage() {
           color="faint"
           className="mb-3 uppercase tracking-[0.24em] text-primary-soft"
         >
-          admin · ready-template
+          site · create-your-look
         </Text>
 
         <Text
@@ -26,7 +22,7 @@ export default function ReadyTemplatePage() {
           caseMode="sentence"
           className="max-w-[92%] sm:max-w-none"
         >
-          Add new template
+          Create Your Look
         </Text>
 
         <Text
@@ -36,12 +32,11 @@ export default function ReadyTemplatePage() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Upload a preview image and save a ready-made base prompt for your
-          internal library of reusable styles.
+          Transform your photo into a new visual identity with curated AI
+          styles. Explore cinematic, fantasy, artistic, and modern looks, then
+          generate a polished result in just a few clicks.
         </Text>
       </div>
-
-      <ReadyTemplateForm />
     </div>
   )
 }
