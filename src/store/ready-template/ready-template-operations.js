@@ -1,11 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
   axiosGetCategories,
-  axiosAddCategory,
   axiosGenerateReadyTemplatePreview,
   axiosCreateReadyTemplate,
   axiosDeleteReadyTemplate,
   axiosEditReadyTemplate,
+  axiosGetCategory,
 } from '@/services/api/ready-template'
 import { axiosAutogenerateReadyTemplates } from '../../services/api/autogenerate'
 
@@ -29,18 +29,18 @@ export const getCategories = createAsyncThunk(
   }
 )
 
-export const addCategory = createAsyncThunk(
-  'ready-templates/addCategory',
-  async (userData, { rejectWithValue, dispatch }) => {
+export const getCategory = createAsyncThunk(
+  'ready-templates/get-category',
+  async (payload, { rejectWithValue }) => {
     try {
-      const data = await axiosAddCategory(userData)
-      dispatch(getCategories())
+      const data = await axiosGetCategory(payload)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)
     }
-  }
+  },
 )
+
 
 export const generateReadyTemplatePreview = createAsyncThunk(
   'ready-templates/generatePreview',

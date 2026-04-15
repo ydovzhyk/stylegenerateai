@@ -5,8 +5,8 @@ export const axiosGetCategories = async () => {
   return data
 }
 
-export const axiosAddCategory = async (payload) => {
-  const { data } = await instance.post('/ready-templates/add-category', payload)
+export const axiosGetCategory = async (payload) => {
+  const { data } = await instance.post('/ready-templates/get-category', payload)
   return data
 }
 

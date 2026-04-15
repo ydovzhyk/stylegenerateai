@@ -232,6 +232,7 @@ export default function TemplatePreviewGenerator({
         previewFile: generatedFile,
         previewUrl: generatedPreview,
         previewSourceKey,
+        basePrompt: generationPrompt.trim(),
       })
       return
     }
@@ -242,6 +243,7 @@ export default function TemplatePreviewGenerator({
       previewFile: file,
       previewUrl: generatedPreview,
       previewSourceKey,
+      basePrompt: generationPrompt.trim(),
     })
   }
 

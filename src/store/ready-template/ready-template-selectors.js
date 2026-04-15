@@ -6,6 +6,8 @@ export const getReadyTemplateLoading = ({ readyTemplate }) =>
 
 export const getReadyTemplateCategories = ({ readyTemplate }) =>
   readyTemplate.categories
+export const getReadyTemplatePromtCategory = ({ readyTemplate }) =>
+  readyTemplate.promptCategory
 
 export const getReadyTemplateGenerationLoading = ({ readyTemplate }) =>
   readyTemplate.generationLoading

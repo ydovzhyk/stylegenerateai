@@ -5,16 +5,19 @@ import { Controller, useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 
 import {
-  addCategory,
+  autogenerateReadyTemplates,
   createReadyTemplate,
   getCategories,
+  getCategory,
+  generateReadyTemplatePreview,
 } from '@/store/ready-template/ready-template-operations'
 import {
   getReadyTemplateCategories,
   getReadyTemplateLoading,
+  getReadyTemplatePromtCategory,
 } from '@/store/ready-template/ready-template-selectors'
+import { clearPromptCategory } from '@/store/ready-template/ready-template-slice'
 
-import { generateReadyTemplatePreview } from '@/store/ready-template/ready-template-operations'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 
 import Button from '@/components/shared/button/Button'
@@ -34,7 +37,6 @@ const DEFAULT_VALUES = {
   useInCreateYourLook: false,
   basePrompt: '',
   isPublished: true,
-  newCategory: '',
 }
 
 function makeSlug(value) {
@@ -131,28 +133,20 @@ function validatePreviewFile(file) {
   return true
 }
 
-function validateNewCategory(value) {
-  const normalized = String(value || '').trim()
-
-  if (!normalized) return 'Category name is required'
-  if (normalized.length < 2)
-    return 'Category name must be at least 2 characters'
-  if (normalized.length > 40)
-    return 'Category name must be at most 40 characters'
-
-  return true
-}
-
 export default function ReadyTemplateForm() {
   const dispatch = useDispatch()
 
   const categories = useSelector(getReadyTemplateCategories) || []
+  const promptCategory = useSelector(getReadyTemplatePromtCategory)
   const loading = useSelector(getReadyTemplateLoading)
 
   const [dragActive, setDragActive] = useState(false)
   const [previewSrc, setPreviewSrc] = useState('')
   const [appliedPreviewSrc, setAppliedPreviewSrc] = useState('')
-  const [isAddingCategory, setIsAddingCategory] = useState(false)
+
+  const [autogenPerCategory, setAutogenPerCategory] = useState(1)
+  const [autogenLimitCategories, setAutogenLimitCategories] = useState(1)
+  const [autogenDryRun, setAutogenDryRun] = useState(true)
 
   const [previewGeneratorResetKey, setPreviewGeneratorResetKey] = useState(0)
 
@@ -165,20 +159,12 @@ export default function ReadyTemplateForm() {
     caseMode: 'sentence',
   })
 
-  const categorySelectOptions = useMemo(() => {
-    return categories.map((item) => {
-      if (typeof item === 'string') {
-        return {
-          value: item,
-          label: item,
-        }
-      }
 
-      return {
-        value: item.slug || item.value || '',
-        label: item.title || item.label || item.slug || '',
-      }
-    })
+  const categorySelectOptions = useMemo(() => {
+    return categories.map((item) => ({
+      value: item,
+      label: item,
+    }))
   }, [categories])
 
   const {
@@ -223,6 +209,25 @@ export default function ReadyTemplateForm() {
       })
     }
   }, [watchedCategory, categorySelectOptions, setValue])
+
+  useEffect(() => {
+    const resolvedCategory = String(promptCategory || '').trim()
+
+    if (!resolvedCategory) return
+
+    const existsInOptions = categorySelectOptions.some(
+      (option) => option.value === resolvedCategory,
+    )
+
+    if (!existsInOptions) return
+
+    setValue('category', resolvedCategory, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+    clearErrors('category')
+  }, [promptCategory, categorySelectOptions, setValue, clearErrors])
 
   useEffect(() => {
     if (!watchedPreviewFile) {
@@ -271,7 +276,10 @@ export default function ReadyTemplateForm() {
     previewFile,
     previewUrl,
     previewSourceKey,
+    basePrompt,
   }) => {
+    const safePrompt = String(basePrompt || '').trim()
+
     setValue('previewFile', previewFile || null, {
       shouldDirty: true,
       shouldTouch: true,
@@ -284,6 +292,12 @@ export default function ReadyTemplateForm() {
       shouldValidate: true,
     })
 
+    setValue('basePrompt', safePrompt, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+
     if (!previewSourceKey) {
       setValue('useInCreateYourLook', false, {
         shouldDirty: true,
@@ -293,7 +307,16 @@ export default function ReadyTemplateForm() {
     }
 
     setAppliedPreviewSrc(previewUrl || '')
-    await trigger(['previewFile', 'previewSourceKey'])
+    await trigger(['previewFile', 'previewSourceKey', 'basePrompt'])
+
+    if (safePrompt.length >= 10) {
+      try {
+        dispatch(clearPromptCategory())
+        await dispatch(getCategory({ prompt: safePrompt })).unwrap()
+      } catch {
+        // category resolve failure should not break preview apply flow
+      }
+    }
   }
 
   const handleGeneratePreview = async ({
@@ -359,51 +382,11 @@ export default function ReadyTemplateForm() {
       ...DEFAULT_VALUES,
       category: categorySelectOptions[0]?.value || '',
     })
+    dispatch(clearPromptCategory())
     setDragActive(false)
     setPreviewSrc('')
     setAppliedPreviewSrc('')
     setPreviewGeneratorResetKey((prev) => prev + 1)
-  }
-
-  const handleAddCategory = async () => {
-    const value = String(getValues('newCategory') || '').trim()
-
-    const validation = validateNewCategory(value)
-    if (validation !== true) {
-      setError('newCategory', {
-        type: 'manual',
-        message: validation,
-      })
-      return
-    }
-
-    clearErrors('newCategory')
-
-    try {
-      setIsAddingCategory(true)
-
-      await dispatch(
-        addCategory({
-          value: value,
-        }),
-      ).unwrap()
-
-      setValue('newCategory', '', {
-        shouldDirty: false,
-        shouldTouch: false,
-        shouldValidate: false,
-      })
-    } catch (error) {
-      const message =
-        error?.data?.message || error?.message || 'Failed to add category'
-
-      setError('newCategory', {
-        type: 'server',
-        message,
-      })
-    } finally {
-      setIsAddingCategory(false)
-    }
   }
 
   const onSubmit = async (values) => {
@@ -432,6 +415,7 @@ export default function ReadyTemplateForm() {
         ...DEFAULT_VALUES,
         category: categorySelectOptions[0]?.value || '',
       })
+      dispatch(clearPromptCategory())
       setDragActive(false)
       setPreviewSrc('')
       setAppliedPreviewSrc('')
@@ -469,6 +453,16 @@ export default function ReadyTemplateForm() {
       watchedPublished,
     ],
   )
+
+  const handleAutogenerate = async () => {
+    await dispatch(
+      autogenerateReadyTemplates({
+        perCategory: Number(autogenPerCategory),
+        limitCategories: Number(autogenLimitCategories),
+        dryRun: Boolean(autogenDryRun),
+      }),
+    ).unwrap()
+  }
 
   return (
     <form
@@ -735,36 +729,6 @@ export default function ReadyTemplateForm() {
             )}
           />
 
-          <div className="rounded-2xl border border-white/10 bg-background-soft/80 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex-1">
-                <Input
-                  id="template-new-category"
-                  label="Add new category"
-                  type="text"
-                  placeholder="For example: watercolor"
-                  hint="Create a new category for future templates."
-                  caseMode="sentence"
-                  {...register('newCategory')}
-                  error={errors.newCategory?.message}
-                  inputClassName="h-10"
-                />
-              </div>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleAddCategory}
-                loading={isAddingCategory}
-                disabled={isAddingCategory || loading}
-                fullWidth
-                className="min-h-10 rounded-2xl sm:w-auto sm:self-center"
-              >
-                Add category
-              </Button>
-            </div>
-          </div>
-
           <Input
             id="template-base-prompt"
             as="textarea"
@@ -859,6 +823,80 @@ export default function ReadyTemplateForm() {
             >
               Reset form
             </Button>
+          </div>
+
+          <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
+            <div className="mb-4">
+              <Text as="h3" variant="body" color="white" caseMode="sentence">
+                AI template autogeneration
+              </Text>
+
+              <Text
+                as="p"
+                variant="body-sm"
+                color="muted"
+                caseMode="sentence"
+                className="mt-2"
+              >
+                Send autogeneration settings to the server.
+              </Text>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <Input
+                id="autogen-per-category"
+                label="Templates per category"
+                type="number"
+                min="1"
+                max="20"
+                value={autogenPerCategory}
+                onChange={(e) => setAutogenPerCategory(e.target.value)}
+                caseMode="sentence"
+                inputClassName="h-10"
+              />
+
+              <Input
+                id="autogen-limit-categories"
+                label="Limit categories"
+                type="number"
+                min="1"
+                max="100"
+                value={autogenLimitCategories}
+                onChange={(e) => setAutogenLimitCategories(e.target.value)}
+                caseMode="sentence"
+                inputClassName="h-10"
+              />
+            </div>
+
+            <label className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={autogenDryRun}
+                onChange={(e) => setAutogenDryRun(e.target.checked)}
+                className="h-4 w-4 accent-[var(--primary)]"
+              />
+
+              <Text
+                as="span"
+                variant="body-sm"
+                color="soft"
+                caseMode="sentence"
+              >
+                Dry run
+              </Text>
+            </label>
+
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              <Button
+                type="button"
+                onClick={handleAutogenerate}
+                disabled={loading}
+                fullWidth
+                className="min-h-12 rounded-2xl sm:w-auto"
+              >
+                Run autogeneration
+              </Button>
+            </div>
           </div>
         </div>
       </section>
