@@ -5,7 +5,7 @@ import {
   axiosCreateReadyTemplate,
   axiosDeleteReadyTemplate,
   axiosEditReadyTemplate,
-  axiosGetCategory,
+  axiosResolvePromptMetadata,
 } from '@/services/api/ready-template'
 import { axiosAutogenerateReadyTemplates } from '../../services/api/autogenerate'
 
@@ -29,11 +29,11 @@ export const getCategories = createAsyncThunk(
   }
 )
 
-export const getCategory = createAsyncThunk(
-  'ready-templates/get-category',
+export const resolvePromptMetadata = createAsyncThunk(
+  'ready-templates/resolve-prompt-metadata',
   async (payload, { rejectWithValue }) => {
     try {
-      const data = await axiosGetCategory(payload)
+      const data = await axiosResolvePromptMetadata(payload)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

@@ -5,8 +5,11 @@ export const axiosGetCategories = async () => {
   return data
 }
 
-export const axiosGetCategory = async (payload) => {
-  const { data } = await instance.post('/ready-templates/get-category', payload)
+export const axiosResolvePromptMetadata = async (payload) => {
+  const { data } = await instance.post(
+    '/ready-templates/resolve-prompt-metadata',
+    payload,
+  )
   return data
 }
 

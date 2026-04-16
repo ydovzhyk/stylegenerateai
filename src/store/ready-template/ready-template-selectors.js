@@ -6,12 +6,17 @@ export const getReadyTemplateLoading = ({ readyTemplate }) =>
 
 export const getReadyTemplateCategories = ({ readyTemplate }) =>
   readyTemplate.categories
+
+//resolve-prompt-metadata
 export const getReadyTemplatePromtCategory = ({ readyTemplate }) =>
   readyTemplate.promptCategory
+export const getReadyTemplateSuggestedTitle = ({ readyTemplate }) =>
+  readyTemplate.suggestedTitle
+export const getReadyTemplateSuggestedTags = ({ readyTemplate }) =>
+  readyTemplate.suggestedTags
+export const getReadyTemplateResolveMetadataLoading = ({ readyTemplate }) =>
+  readyTemplate.resolveMetadataLoading
 
-export const getReadyTemplateGenerationLoading = ({ readyTemplate }) =>
-  readyTemplate.generationLoading
-export const getReadyTemplateGenerationError = ({ readyTemplate }) =>
-  readyTemplate.generationError
-export const getReadyTemplateGenerationResult = ({ readyTemplate }) =>
-  readyTemplate.generationResult
+// autogenerate
+export const getReadyTemplateAutoGenerationLoading = ({ readyTemplate }) =>
+  readyTemplate.autoGenerationLoading

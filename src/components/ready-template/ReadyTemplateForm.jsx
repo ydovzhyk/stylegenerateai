@@ -5,20 +5,23 @@ import { Controller, useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 
 import {
-  autogenerateReadyTemplates,
   createReadyTemplate,
   getCategories,
-  getCategory,
+  resolvePromptMetadata,
   generateReadyTemplatePreview,
 } from '@/store/ready-template/ready-template-operations'
 import {
   getReadyTemplateCategories,
-  getReadyTemplateLoading,
   getReadyTemplatePromtCategory,
+  getReadyTemplateSuggestedTitle,
+  getReadyTemplateSuggestedTags,
+  getReadyTemplateResolveMetadataLoading,
 } from '@/store/ready-template/ready-template-selectors'
-import { clearPromptCategory } from '@/store/ready-template/ready-template-slice'
+import { clearResolvePromptMetadata } from '@/store/ready-template/ready-template-slice'
 
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+
+import ReadyTemplateAutogeneratePanel from '@/components/ready-template/ReadyTemplateAutogeneratePanel'
 
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
@@ -138,15 +141,13 @@ export default function ReadyTemplateForm() {
 
   const categories = useSelector(getReadyTemplateCategories) || []
   const promptCategory = useSelector(getReadyTemplatePromtCategory)
-  const loading = useSelector(getReadyTemplateLoading)
+  const suggestedTitle = useSelector(getReadyTemplateSuggestedTitle)
+  const suggestedTags = useSelector(getReadyTemplateSuggestedTags)
+  const resolveMetadataLoading = useSelector(getReadyTemplateResolveMetadataLoading)
 
   const [dragActive, setDragActive] = useState(false)
   const [previewSrc, setPreviewSrc] = useState('')
   const [appliedPreviewSrc, setAppliedPreviewSrc] = useState('')
-
-  const [autogenPerCategory, setAutogenPerCategory] = useState(1)
-  const [autogenLimitCategories, setAutogenLimitCategories] = useState(1)
-  const [autogenDryRun, setAutogenDryRun] = useState(true)
 
   const [previewGeneratorResetKey, setPreviewGeneratorResetKey] = useState(0)
 
@@ -158,7 +159,6 @@ export default function ReadyTemplateForm() {
   const tPreviewAlt = useTranslate('Template preview image', {
     caseMode: 'sentence',
   })
-
 
   const categorySelectOptions = useMemo(() => {
     return categories.map((item) => ({
@@ -230,14 +230,39 @@ export default function ReadyTemplateForm() {
   }, [promptCategory, categorySelectOptions, setValue, clearErrors])
 
   useEffect(() => {
+    const resolvedTitle = String(suggestedTitle || '').trim()
+    if (!resolvedTitle) return
+    setValue('title', resolvedTitle, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+    clearErrors('title')
+  }, [suggestedTitle, setValue, clearErrors])
+
+  useEffect(() => {
+    if (!Array.isArray(suggestedTags) || suggestedTags.length === 0) return
+    const resolvedTags = suggestedTags
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .join(', ')
+    if (!resolvedTags) return
+    setValue('tags', resolvedTags, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    })
+
+    clearErrors('tags')
+  }, [suggestedTags, setValue, clearErrors])
+
+  useEffect(() => {
     if (!watchedPreviewFile) {
       setPreviewSrc('')
       return
     }
-
     const objectUrl = URL.createObjectURL(watchedPreviewFile)
     setPreviewSrc(objectUrl)
-
     return () => URL.revokeObjectURL(objectUrl)
   }, [watchedPreviewFile])
 
@@ -311,10 +336,10 @@ export default function ReadyTemplateForm() {
 
     if (safePrompt.length >= 10) {
       try {
-        dispatch(clearPromptCategory())
-        await dispatch(getCategory({ prompt: safePrompt })).unwrap()
+        dispatch(clearResolvePromptMetadata())
+        await dispatch(resolvePromptMetadata({ prompt: safePrompt })).unwrap()
       } catch {
-        // category resolve failure should not break preview apply flow
+        // no-op
       }
     }
   }
@@ -382,7 +407,7 @@ export default function ReadyTemplateForm() {
       ...DEFAULT_VALUES,
       category: categorySelectOptions[0]?.value || '',
     })
-    dispatch(clearPromptCategory())
+    dispatch(clearResolvePromptMetadata())
     setDragActive(false)
     setPreviewSrc('')
     setAppliedPreviewSrc('')
@@ -415,7 +440,7 @@ export default function ReadyTemplateForm() {
         ...DEFAULT_VALUES,
         category: categorySelectOptions[0]?.value || '',
       })
-      dispatch(clearPromptCategory())
+      dispatch(clearResolvePromptMetadata())
       setDragActive(false)
       setPreviewSrc('')
       setAppliedPreviewSrc('')
@@ -453,16 +478,6 @@ export default function ReadyTemplateForm() {
       watchedPublished,
     ],
   )
-
-  const handleAutogenerate = async () => {
-    await dispatch(
-      autogenerateReadyTemplates({
-        perCategory: Number(autogenPerCategory),
-        limitCategories: Number(autogenLimitCategories),
-        dryRun: Boolean(autogenDryRun),
-      }),
-    ).unwrap()
-  }
 
   return (
     <form
@@ -805,8 +820,8 @@ export default function ReadyTemplateForm() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Button
               type="submit"
-              loading={isSubmitting}
-              disabled={isSubmitting}
+              loading={isSubmitting || resolveMetadataLoading}
+              disabled={isSubmitting || resolveMetadataLoading}
               fullWidth
               className="min-h-12 rounded-2xl sm:w-auto"
             >
@@ -825,79 +840,7 @@ export default function ReadyTemplateForm() {
             </Button>
           </div>
 
-          <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 sm:p-5">
-            <div className="mb-4">
-              <Text as="h3" variant="body" color="white" caseMode="sentence">
-                AI template autogeneration
-              </Text>
-
-              <Text
-                as="p"
-                variant="body-sm"
-                color="muted"
-                caseMode="sentence"
-                className="mt-2"
-              >
-                Send autogeneration settings to the server.
-              </Text>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input
-                id="autogen-per-category"
-                label="Templates per category"
-                type="number"
-                min="1"
-                max="20"
-                value={autogenPerCategory}
-                onChange={(e) => setAutogenPerCategory(e.target.value)}
-                caseMode="sentence"
-                inputClassName="h-10"
-              />
-
-              <Input
-                id="autogen-limit-categories"
-                label="Limit categories"
-                type="number"
-                min="1"
-                max="100"
-                value={autogenLimitCategories}
-                onChange={(e) => setAutogenLimitCategories(e.target.value)}
-                caseMode="sentence"
-                inputClassName="h-10"
-              />
-            </div>
-
-            <label className="mt-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
-              <input
-                type="checkbox"
-                checked={autogenDryRun}
-                onChange={(e) => setAutogenDryRun(e.target.checked)}
-                className="h-4 w-4 accent-[var(--primary)]"
-              />
-
-              <Text
-                as="span"
-                variant="body-sm"
-                color="soft"
-                caseMode="sentence"
-              >
-                Dry run
-              </Text>
-            </label>
-
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-              <Button
-                type="button"
-                onClick={handleAutogenerate}
-                disabled={loading}
-                fullWidth
-                className="min-h-12 rounded-2xl sm:w-auto"
-              >
-                Run autogeneration
-              </Button>
-            </div>
-          </div>
+          <ReadyTemplateAutogeneratePanel />
         </div>
       </section>
     </form>
