@@ -6,6 +6,8 @@ import {
   axiosDeleteReadyTemplate,
   axiosEditReadyTemplate,
   axiosResolvePromptMetadata,
+  axiosGetYourLookPreviewTemplates,
+  axiosGetYourLookSearchTemplates,
 } from '@/services/api/ready-template'
 import { axiosAutogenerateReadyTemplates } from '../../services/api/autogenerate'
 
@@ -26,7 +28,7 @@ export const getCategories = createAsyncThunk(
     } catch (e) {
       return toReject(e, rejectWithValue)
     }
-  }
+  },
 )
 
 export const resolvePromptMetadata = createAsyncThunk(
@@ -41,7 +43,6 @@ export const resolvePromptMetadata = createAsyncThunk(
   },
 )
 
-
 export const generateReadyTemplatePreview = createAsyncThunk(
   'ready-templates/generatePreview',
   async (formData, { rejectWithValue }) => {
@@ -53,6 +54,19 @@ export const generateReadyTemplatePreview = createAsyncThunk(
     }
   },
 )
+
+export const getYourLookPreviewTemplates = createAsyncThunk(
+  'ready-templates/get-your-look-preview',
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await axiosGetYourLookPreviewTemplates()
+      return data
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
 export const createReadyTemplate = createAsyncThunk(
   'ready-templates/createReadyTemplate',
   async (userData, { rejectWithValue }) => {
@@ -74,7 +88,7 @@ export const deleteReadyTemplate = createAsyncThunk(
     } catch (e) {
       return toReject(e, rejectWithValue)
     }
-  }
+  },
 )
 
 export const editReadyTemplate = createAsyncThunk(
@@ -86,7 +100,7 @@ export const editReadyTemplate = createAsyncThunk(
     } catch (e) {
       return toReject(e, rejectWithValue)
     }
-  }
+  },
 )
 
 export const autogenerateReadyTemplates = createAsyncThunk(
@@ -94,6 +108,18 @@ export const autogenerateReadyTemplates = createAsyncThunk(
   async (payload, { rejectWithValue }) => {
     try {
       const data = await axiosAutogenerateReadyTemplates(payload)
+      return data
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const getYourLookSearchTemplates = createAsyncThunk(
+  'ready-templates/get-your-look-search',
+  async (payload = {}, { rejectWithValue }) => {
+    try {
+      const data = await axiosGetYourLookSearchTemplates(payload)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

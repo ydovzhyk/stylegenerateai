@@ -7,7 +7,7 @@ export const getReadyTemplateLoading = ({ readyTemplate }) =>
 export const getReadyTemplateCategories = ({ readyTemplate }) =>
   readyTemplate.categories
 
-//resolve-prompt-metadata
+// resolve-prompt-metadata
 export const getReadyTemplatePromtCategory = ({ readyTemplate }) =>
   readyTemplate.promptCategory
 export const getReadyTemplateSuggestedTitle = ({ readyTemplate }) =>
@@ -20,3 +20,20 @@ export const getReadyTemplateResolveMetadataLoading = ({ readyTemplate }) =>
 // autogenerate
 export const getReadyTemplateAutoGenerationLoading = ({ readyTemplate }) =>
   readyTemplate.autoGenerationLoading
+
+// create-your-look
+export const getYourLookPreviewTemplates = ({ readyTemplate }) =>
+  readyTemplate.yourLookPreviewTemplates
+
+// create-your-look search
+export const getYourLookSearchTemplates = ({ readyTemplate }) =>
+  readyTemplate.yourLookSearchTemplates
+
+export const getCreateYourLookSearchParams = ({ readyTemplate }) =>
+  readyTemplate.createYourLookSearchParams
+
+export const getHasMoreSearchResults = ({ readyTemplate }) =>
+  readyTemplate.hasMoreSearchResults
+
+export const getYourLookSearchLoading = ({ readyTemplate }) =>
+  readyTemplate.yourLookSearchLoading

@@ -7,6 +7,8 @@ import {
   generateReadyTemplatePreview,
   getCategories,
   resolvePromptMetadata,
+  getYourLookPreviewTemplates,
+  getYourLookSearchTemplates,
 } from './ready-template-operations'
 
 const initialState = {
@@ -19,11 +21,29 @@ const initialState = {
 
   autoGenerationLoading: false,
 
-  //resolve-prompt-metadata
+  // resolve-prompt-metadata
   promptCategory: null,
   suggestedTitle: null,
   suggestedTags: null,
   resolveMetadataLoading: false,
+
+  // create-your-look
+  yourLookPreviewTemplates: {
+    man: [],
+    woman: [],
+  },
+  yourLookFeaturedTemplates: [],
+
+  // create-your-look search
+  yourLookSearchTemplates: [],
+  createYourLookSearchParams: {
+    query: '',
+    selectedCategory: 'All',
+    page: 1,
+    limit: 10,
+  },
+  hasMoreSearchResults: false,
+  yourLookSearchLoading: false,
 }
 
 const errMsg = (payload) =>
@@ -50,6 +70,27 @@ const readyTemplate = createSlice({
       state.promptCategory = null
       state.suggestedTitle = null
       state.suggestedTags = null
+    },
+    setCreateYourLookSearchParams: (state, action) => {
+      state.createYourLookSearchParams = {
+        ...state.createYourLookSearchParams,
+        ...action.payload,
+      }
+    },
+    clearCreateYourLookSearchTemplates: (state) => {
+      state.yourLookSearchTemplates = []
+      state.hasMoreSearchResults = false
+    },
+    resetCreateYourLookSearchState: (state) => {
+      state.yourLookSearchTemplates = []
+      state.hasMoreSearchResults = false
+      state.yourLookSearchLoading = false
+      state.createYourLookSearchParams = {
+        query: '',
+        selectedCategory: 'All',
+        page: 1,
+        limit: 10,
+      }
     },
   },
 
@@ -91,7 +132,7 @@ const readyTemplate = createSlice({
         state.error = errMsg(payload)
       })
 
-      // GENERATE PREVIEW (генеруємо превью картинки по промту)
+      // GENERATE PREVIEW
       .addCase(generateReadyTemplatePreview.pending, (state) => {
         state.error = null
         state.message = null
@@ -159,6 +200,45 @@ const readyTemplate = createSlice({
         state.autoGenerationLoading = false
         state.error = errMsg(payload)
       })
+
+      // GET YOUR LOOK PREVIEW TEMPLATES
+      .addCase(getYourLookPreviewTemplates.pending, (state) => {
+        state.error = null
+      })
+      .addCase(getYourLookPreviewTemplates.fulfilled, (state, { payload }) => {
+        state.yourLookPreviewTemplates = {
+          man: payload?.values?.man || [],
+          woman: payload?.values?.woman || [],
+        }
+      })
+      .addCase(getYourLookPreviewTemplates.rejected, (state, { payload }) => {
+        state.error = errMsg(payload)
+      })
+
+      // GET YOUR LOOK SEARCH TEMPLATES
+      .addCase(getYourLookSearchTemplates.pending, (state) => {
+        state.yourLookSearchLoading = true
+        state.error = null
+      })
+      .addCase(
+        getYourLookSearchTemplates.fulfilled,
+        (state, { payload, meta }) => {
+          const mode = meta.arg?.mode || 'replace'
+          const nextTemplates = payload?.templates || []
+
+          state.yourLookSearchLoading = false
+          state.yourLookSearchTemplates =
+            mode === 'append'
+              ? [...state.yourLookSearchTemplates, ...nextTemplates]
+              : nextTemplates
+
+          state.hasMoreSearchResults = payload?.hasMore || false
+        },
+      )
+      .addCase(getYourLookSearchTemplates.rejected, (state, { payload }) => {
+        state.yourLookSearchLoading = false
+        state.error = errMsg(payload)
+      })
   },
 })
 
@@ -169,4 +249,7 @@ export const {
   clearReadyTemplateMessage,
   setReadyTemplateError,
   clearResolvePromptMetadata,
+  setCreateYourLookSearchParams,
+  clearCreateYourLookSearchTemplates,
+  resetCreateYourLookSearchState,
 } = readyTemplate.actions

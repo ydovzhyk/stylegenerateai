@@ -598,3 +598,24 @@ a {
     font-size: 0.9rem;
   }
 }
+
+@keyframes premium-shine-sweep {
+  0% {
+    transform: translateX(0) skewX(-22deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(360%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+.animate-premium-shine-sweep {
+  animation: premium-shine-sweep 950ms ease-out 1;
+}

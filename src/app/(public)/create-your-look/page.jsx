@@ -1,18 +1,32 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import CreateYourLookAnimatedPreview from '@/components/create-your-look/CreateYourLookAnimatedPreview'
+import CreateYourLookSearch from '@/components/create-your-look/CreateYourLookSearch'
+import { getYourLookPreviewTemplates } from '@/store/ready-template/ready-template-operations'
+import { getYourLookPreviewTemplates as selectYourLookPreviewTemplates } from '@/store/ready-template/ready-template-selectors'
+
 import Text from '@/components/shared/text/Text'
 
 export default function CreateYourLookPage() {
+  const dispatch = useDispatch()
+  const previewGroups = useSelector(selectYourLookPreviewTemplates)
+
+  useEffect(() => {
+    dispatch(getYourLookPreviewTemplates())
+  }, [dispatch])
+
   return (
-    <div>
-      <div className="mb-6 max-w-3xl sm:mb-7 md:mb-8">
+    <div className='flex flex-col gap-8'>
+      <div className="max-w-3xl">
         <Text
           as="p"
           variant="caption"
           color="faint"
           className="mb-3 uppercase tracking-[0.24em] text-primary-soft"
         >
-          site · create-your-look
+          site · CREATE YOUR LOOK
         </Text>
 
         <Text
@@ -37,6 +51,8 @@ export default function CreateYourLookPage() {
           generate a polished result in just a few clicks.
         </Text>
       </div>
+      <CreateYourLookAnimatedPreview previewGroups={previewGroups} />
+      <CreateYourLookSearch />
     </div>
   )
 }
