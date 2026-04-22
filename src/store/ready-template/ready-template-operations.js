@@ -21,9 +21,9 @@ const toReject = (error, rejectWithValue) => {
 
 export const getCategories = createAsyncThunk(
   'ready-templates/getCategories',
-  async (_, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const data = await axiosGetCategories()
+      const data = await axiosGetCategories(params)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)
@@ -117,9 +117,9 @@ export const autogenerateReadyTemplates = createAsyncThunk(
 
 export const getYourLookSearchTemplates = createAsyncThunk(
   'ready-templates/get-your-look-search',
-  async (payload = {}, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const data = await axiosGetYourLookSearchTemplates(payload)
+      const data = await axiosGetYourLookSearchTemplates(params)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

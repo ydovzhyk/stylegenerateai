@@ -16,7 +16,7 @@ const initialState = {
   message: null,
   loading: false,
 
-  categories: null,
+  categories: [],
   readyTemplates: null,
 
   autoGenerationLoading: false,

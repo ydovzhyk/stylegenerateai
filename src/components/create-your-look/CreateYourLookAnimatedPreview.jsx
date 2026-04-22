@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useTranslate } from '@/utils/translate/translate'
 import Text from '@/components/shared/text/Text'
 
 const PROTOTYPE_BY_KEY = {
@@ -200,13 +201,15 @@ function AnimatedAfterImage({
 }
 
 function BeforeImagePanel({ src, alt }) {
+  const beforeText = useTranslate('Before', { caseMode: 'title' })
+
   return (
     <div className="relative min-h-[280px] border-r border-white/10 bg-background-soft/70 sm:min-h-[360px] lg:min-h-[420px]">
       <StaticImage src={src} alt={alt} objectPosition="center" />
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/70 via-black/15 to-transparent px-4 pb-4 pt-12">
         <span className="inline-flex rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/80 backdrop-blur-sm">
-          Before
+          {beforeText}
         </span>
       </div>
     </div>
@@ -221,6 +224,8 @@ function AfterImagePanel({
   accentText,
   shineSeed,
 }) {
+  const afterText = useTranslate('After', { caseMode: 'title' })
+
   return (
     <div className="relative min-h-[280px] bg-background-soft/70 sm:min-h-[360px] lg:min-h-[420px]">
       <AnimatedAfterImage
@@ -235,7 +240,7 @@ function AfterImagePanel({
           shineSeed={`after-${shineSeed}`}
           className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] backdrop-blur-sm ${accentBorder} ${accentText} bg-black/25`}
         >
-          After
+          {afterText}
         </ShinyBadge>
       </div>
     </div>
@@ -246,6 +251,16 @@ function PreviewCard({ item, accent = 'primary', contentKey }) {
   if (!item) return null
 
   const { accentGlow, accentBorder, accentText } = getAccentClasses(accent)
+
+  const malePreviewText = useTranslate('male preview', { caseMode: 'lower' })
+  const femalePreviewText = useTranslate('female preview', {
+    caseMode: 'lower',
+  })
+  const aiTransformationText = useTranslate('AI transformation', {
+    caseMode: 'none',
+  })
+  const beforeAltText = useTranslate('before', { caseMode: 'lower' })
+  const afterAltText = useTranslate('after', { caseMode: 'lower' })
 
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm">
@@ -261,14 +276,14 @@ function PreviewCard({ item, accent = 'primary', contentKey }) {
           <span
             className={`inline-flex rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
           >
-            {item.gender === 'man' ? 'male preview' : 'female preview'}
+            {item.gender === 'man' ? malePreviewText : femalePreviewText}
           </span>
 
           <ShinyBadge
             shineSeed={`ai-${contentKey}`}
             className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55"
           >
-            AI transformation
+            {aiTransformationText}
           </ShinyBadge>
         </div>
 
@@ -296,11 +311,14 @@ function PreviewCard({ item, accent = 'primary', contentKey }) {
       </div>
 
       <div className="relative grid grid-cols-2">
-        <BeforeImagePanel src={item.beforeSrc} alt={`${item.title} before`} />
+        <BeforeImagePanel
+          src={item.beforeSrc}
+          alt={`${item.title} ${beforeAltText}`}
+        />
 
         <AfterImagePanel
           src={item.afterSrc}
-          alt={`${item.title} after`}
+          alt={`${item.title} ${afterAltText}`}
           imageKey={`after-${contentKey}-${item.afterSrc}`}
           accentBorder={accentBorder}
           accentText={accentText}

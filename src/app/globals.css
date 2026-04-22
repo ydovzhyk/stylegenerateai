@@ -181,8 +181,8 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid rgba(0, 213, 255, 0.9);
-  outline-offset: 2px;
+  outline: 1px solid rgba(0, 213, 255, 0.9);
+  outline-offset: 1px;
 }
 
 * {
@@ -373,8 +373,8 @@ a {
 
   .input-dark:focus,
   .textarea-dark:focus {
-    border-color: rgba(124, 92, 255, 0.55);
-    box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
+    border-color: rgba(124, 92, 255, 0.42);
+    box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.16);
     outline: none;
   }
 

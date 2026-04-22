@@ -3,21 +3,31 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { getCategories } from '@/store/ready-template/ready-template-operations'
+import {
+  getCategories,
+  getYourLookSearchTemplates,
+} from '@/store/ready-template/ready-template-operations'
 import {
   getCreateYourLookSearchParams,
   getReadyTemplateCategories,
+  getYourLookSearchLoading,
 } from '@/store/ready-template/ready-template-selectors'
 import { setCreateYourLookSearchParams } from '@/store/ready-template/ready-template-slice'
+
+import { useTranslate, translateTextTo } from '@/utils/translate/translate'
+import { useLanguage } from '@/providers/languageContext'
+import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
 
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+
 function getPageSize(width) {
-  if (width < 640) return 4
-  if (width < 1024) return 6
-  return 8
+  if (width < 640) return 5
+  if (width < 1024) return 7
+  return 9
 }
 
 function chunkArray(items = [], size = 8) {
@@ -30,17 +40,40 @@ function chunkArray(items = [], size = 8) {
   return result
 }
 
+function TranslatedInlineText({ text, className, caseMode = 'auto' }) {
+  const translated = useTranslate(text, { caseMode })
+
+  return <span className={className}>{translated}</span>
+}
+
 export default function CreateYourLookSearch() {
   const dispatch = useDispatch()
+  const { languageIndex } = useLanguage()
 
   const categories = useSelector(getReadyTemplateCategories) || []
-  const { query, selectedCategory } = useSelector(getCreateYourLookSearchParams)
+  const appliedSearchParams = useSelector(getCreateYourLookSearchParams)
+  const yourLookSearchLoading = useSelector(getYourLookSearchLoading)
+
+  const [localQuery, setLocalQuery] = useState(appliedSearchParams?.query || '')
+  const [localSelectedCategory, setLocalSelectedCategory] = useState(
+    appliedSearchParams?.selectedCategory || 'All',
+  )
 
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(8)
 
   useEffect(() => {
-    dispatch(getCategories())
+    dispatch(getCategories({ withCount: true }))
+  }, [dispatch])
+
+  useEffect(() => {
+    dispatch(
+      getYourLookSearchTemplates({
+        ...appliedSearchParams,
+        mode: 'replace',
+      }),
+    )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch])
 
   useEffect(() => {
@@ -68,6 +101,23 @@ export default function CreateYourLookSearch() {
       })
   }, [categories])
 
+  const searchStats = useMemo(() => {
+    const totalTemplates = visibleCategories.reduce(
+      (sum, item) => sum + Number(item?.templatesCount || 0),
+      0,
+    )
+
+    return {
+      totalCategories: visibleCategories.length,
+      totalTemplates,
+    }
+  }, [visibleCategories])
+
+  const translatedStatsText = useTranslate(
+    `Explore ${searchStats.totalTemplates} looks across ${searchStats.totalCategories} categories`,
+    { caseMode: 'sentence' },
+  )
+
   const pages = useMemo(() => {
     return chunkArray(visibleCategories, pageSize)
   }, [visibleCategories, pageSize])
@@ -83,10 +133,10 @@ export default function CreateYourLookSearch() {
   }, [page, pages.length])
 
   useEffect(() => {
-    if (selectedCategory === 'All') return
+    if (localSelectedCategory === 'All') return
 
     const activeIndex = visibleCategories.findIndex(
-      (item) => item?.value === selectedCategory,
+      (item) => item?.value === localSelectedCategory,
     )
 
     if (activeIndex === -1) return
@@ -96,62 +146,124 @@ export default function CreateYourLookSearch() {
     if (nextPage !== page) {
       setPage(nextPage)
     }
-  }, [selectedCategory, visibleCategories, pageSize, page])
+  }, [localSelectedCategory, visibleCategories, pageSize, page])
+
+  // const handleSubmit = (e) => {
+  //   e.preventDefault()
+
+  //   const normalizedQuery = String(localQuery || '').trim()
+  //   const normalizedCategory = localSelectedCategory || 'All'
+
+  //   const nextParams = {
+  //     query: normalizedQuery,
+  //     selectedCategory: normalizedCategory,
+  //     page: 1,
+  //     limit: appliedSearchParams?.limit || 10,
+  //   }
+
+  //   dispatch(setCreateYourLookSearchParams(nextParams))
+  //   dispatch(
+  //     getYourLookSearchTemplates({
+  //       ...nextParams,
+  //       mode: 'replace',
+  //     }),
+  //   )
+  // }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    const normalizedQuery = String(localQuery || '').trim()
+    const normalizedCategory = localSelectedCategory || 'All'
+
+    let searchQuery = normalizedQuery
+
+    const currentLangCode =
+      languagesAndCodes?.languages?.[languageIndex]?.code || 'en'
+
+    if (normalizedQuery && currentLangCode !== 'en') {
+      searchQuery = await translateTextTo(
+        normalizedQuery,
+        'en',
+        currentLangCode,
+      )
+    }
+
+    const nextParams = {
+      query: searchQuery,
+      selectedCategory: normalizedCategory,
+      page: 1,
+      limit: appliedSearchParams?.limit || 10,
+    }
+
+    dispatch(setCreateYourLookSearchParams(nextParams))
+    dispatch(
+      getYourLookSearchTemplates({
+        ...nextParams,
+        mode: 'replace',
+      }),
+    )
+  }
 
   return (
-    <section className="gradient-border-card p-4 sm:p-5 md:p-6">
-      <div className="mb-5 max-w-2xl">
-        <Text as="h2" variant="h3" color="white" caseMode="sentence">
+    <section className="gradient-border-card p-5 sm:p-6 lg:p-7">
+      <div className="max-w-3xl">
+        <Text as="h2" variant="h2" color="white" caseMode="sentence">
           Search your look
         </Text>
 
         <Text
           as="p"
-          variant="body-sm"
+          variant="body"
           color="muted"
           caseMode="sentence"
-          className="mt-2"
+          className="mt-3 max-w-2xl"
         >
           Search by style, mood, or phrase and refine results by category.
         </Text>
+
+        <Text
+          as="p"
+          variant="body-sm"
+          color="soft"
+          translate={false}
+          className="mt-2"
+        >
+          {translatedStatsText}
+        </Text>
       </div>
 
-      <div className="grid gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.02] p-4 sm:p-5"
+      >
         <Input
           id="create-your-look-search"
           type="text"
-          label="Search"
           placeholder="Search styles, moods, looks..."
-          value={query}
-          onChange={(e) => {
-            dispatch(
-              setCreateYourLookSearchParams({
-                query: e.target.value,
-                page: 1,
-              }),
-            )
-            setPage(0)
-          }}
-          inputClassName="h-11"
+          value={localQuery}
+          onChange={(e) => setLocalQuery(e.target.value)}
+          inputClassName="h-[40px] rounded-full w-full md:w-1/2"
           caseMode="sentence"
         />
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Button
             type="button"
-            variant={selectedCategory === 'All' ? 'primary' : 'secondary'}
+            variant={localSelectedCategory === 'All' ? 'primary' : 'secondary'}
             onClick={() => {
-              dispatch(
-                setCreateYourLookSearchParams({
-                  selectedCategory: 'All',
-                  page: 1,
-                }),
-              )
+              setLocalSelectedCategory('All')
               setPage(0)
             }}
-            className="min-h-10 rounded-full px-4"
+            size="sm"
+            className="rounded-full px-5"
           >
-            All
+            <span className="inline-flex items-center gap-2">
+              <TranslatedInlineText text="All" />
+              <span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[11px] leading-none text-white/80">
+                {searchStats.totalTemplates}
+              </span>
+            </span>
           </Button>
 
           {hasPrev ? (
@@ -159,33 +271,35 @@ export default function CreateYourLookSearch() {
               type="button"
               variant="secondary"
               onClick={() => setPage((prev) => Math.max(prev - 1, 0))}
-              className="min-h-10 rounded-full px-4"
+              size="sm"
+              className="rounded-full px-5"
+              aria-label="Previous categories"
             >
-              ← Previous
+              <ChevronLeft size={16} />
             </Button>
           ) : null}
 
           {currentPageItems.map((item) => {
-            const isActive = selectedCategory === item.value
+            const isActive = localSelectedCategory === item.value
 
             return (
               <Button
                 key={item.value}
                 type="button"
                 variant={isActive ? 'primary' : 'secondary'}
-                onClick={() =>
-                  dispatch(
-                    setCreateYourLookSearchParams({
-                      selectedCategory: item.value,
-                      page: 1,
-                    }),
-                  )
-                }
-                className="min-h-10 rounded-full px-4"
+                onClick={() => {
+                  setLocalSelectedCategory(item.value)
+                  setPage(0)
+                }}
+                size="sm"
+                className="rounded-full px-5"
               >
                 <span className="inline-flex items-center gap-2">
-                  <span>{item.value}</span>
-                  <span className="rounded-full bg-black/20 px-2 py-0.5 text-[11px] leading-none text-white/80">
+                  <TranslatedInlineText
+                    text={item.value}
+                    className="max-w-[180px] truncate"
+                  />
+                  <span className="rounded-full border border-white/10 bg-black/20 px-2 py-0.5 text-[11px] leading-none text-white/80">
                     {item.templatesCount}
                   </span>
                 </span>
@@ -200,13 +314,27 @@ export default function CreateYourLookSearch() {
               onClick={() =>
                 setPage((prev) => Math.min(prev + 1, pages.length - 1))
               }
-              className="min-h-10 rounded-full px-4"
+              size="sm"
+              className="rounded-full px-5"
+              aria-label="Next categories"
             >
-              More →
+              <ChevronRight size={16} />
             </Button>
           ) : null}
         </div>
-      </div>
+
+        <div className="mt-4 flex justify-start border-t border-white/8 pt-4">
+          <Button
+            type="submit"
+            variant="primary"
+            loading={yourLookSearchLoading}
+            size="sm"
+            className="rounded-full px-6"
+          >
+            Search
+          </Button>
+        </div>
+      </form>
     </section>
   )
 }

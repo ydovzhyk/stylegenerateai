@@ -1,7 +1,9 @@
 import { instance } from './instance'
 
-export const axiosGetCategories = async () => {
-  const { data } = await instance.get('/ready-templates/categories')
+export const axiosGetCategories = async (params = {}) => {
+  const { data } = await instance.get('/ready-templates/categories', {
+    params,
+  })
   return data
 }
 
@@ -34,10 +36,16 @@ export const axiosGetYourLookPreviewTemplates = async () => {
 
 //axiosGetYourLookFeaturedTemplates
 //axiosGetYourLookSearchTemplates
-export const axiosGetYourLookSearchTemplates = async (query, selectedCategory) => {
-  const { data } = await instance.get(
-    `/ready-templates/get-your-look-search?query=${query}&category=${selectedCategory}&limit=10`,
-  )
+export const axiosGetYourLookSearchTemplates = async (params = {}) => {
+  const { query, selectedCategory, page, limit } = params
+  const { data } = await instance.get('/ready-templates/get-your-look-search', {
+    params: {
+      query,
+      category: selectedCategory,
+      limit,
+      page,
+    },
+  })
   return data
 }
 

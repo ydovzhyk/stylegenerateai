@@ -169,6 +169,35 @@ export async function translateMyText(text = '', languageIndex) {
   }
 }
 
+//User text to English
+export async function translateTextTo(text = '', to = 'en', from = '') {
+  const str = Array.isArray(text) ? text.join('') : String(text ?? '')
+  if (!str.trim()) return ''
+
+  if (from && from === to) return str
+
+  const key = `${from || 'auto'}::${to}::${str}`
+  if (_cache.has(key)) return _cache.get(key)
+
+  try {
+    const res = await fetch('/api/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: str, to, from }),
+    })
+
+    if (!res.ok) return str
+
+    const data = await res.json()
+    const out = data?.result ?? str
+
+    _cache.set(key, out)
+    return out
+  } catch {
+    return str
+  }
+}
+
 export const useTranslate = (text, options = {}) => {
   const [translatedText, setTranslatedText] = useState(String(text ?? ''))
   const { languageIndex } = useLanguage()

@@ -4,20 +4,21 @@ import clsx from 'clsx'
 import { useTranslate } from '@/utils/translate/translate'
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-55'
+  'inline-flex items-center justify-center gap-2 rounded-full border font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-300 disabled:cursor-not-allowed disabled:opacity-55'
 
 const variantClasses = {
   primary:
-    'text-white bg-[linear-gradient(135deg,#6c4df2_0%,#7c5cff_55%,#8d72ff_100%)] shadow-[0_10px_30px_rgba(124,92,255,0.28)] hover:translate-y-[-1px] hover:bg-[linear-gradient(135deg,#7a5bff_0%,#8b72ff_55%,#a18dff_100%)] hover:shadow-[0_14px_34px_rgba(124,92,255,0.34)]',
+    'border-transparent text-white bg-[linear-gradient(135deg,#6c4df2_0%,#7c5cff_55%,#8d72ff_100%)] shadow-[0_10px_30px_rgba(124,92,255,0.28)] hover:translate-y-[-1px] hover:bg-[linear-gradient(135deg,#7a5bff_0%,#8b72ff_55%,#a18dff_100%)] hover:shadow-[0_14px_34px_rgba(124,92,255,0.34)]',
   secondary:
-    'text-white border border-white/12 bg-white/4 hover:border-cyan-400/40 hover:bg-white/6 hover:shadow-[0_0_0_1px_rgba(0,213,255,0.14)]',
-  ghost: 'text-[var(--text-soft)] hover:bg-white/6 hover:text-white',
+    'border-white/12 text-white bg-white/4 hover:border-cyan-400/40 hover:bg-white/6 hover:shadow-[0_0_0_1px_rgba(0,213,255,0.14)]',
+  ghost:
+    'border-transparent text-[var(--text-soft)] bg-transparent hover:bg-white/6 hover:text-white',
 }
 
 const sizeClasses = {
   sm: 'min-h-10 px-4 text-sm',
-  md: 'min-h-12 px-6 text-sm',
-  lg: 'min-h-14 px-7 text-base',
+  md: 'min-h-10 px-4 text-sm',
+  lg: 'min-h-10 px-4 text-sm',
 }
 
 function SideVisual({ icon, image, alt = '' }) {
