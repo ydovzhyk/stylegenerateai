@@ -37,3 +37,7 @@ export const getHasMoreSearchResults = ({ readyTemplate }) =>
 
 export const getYourLookSearchLoading = ({ readyTemplate }) =>
   readyTemplate.yourLookSearchLoading
+export const getIsEmptyResultsSearch = ({ readyTemplate }) =>
+  readyTemplate.isEmptyResultsSearch
+export const getIsManualSearch = ({ readyTemplate }) =>
+  readyTemplate.isManualSearch

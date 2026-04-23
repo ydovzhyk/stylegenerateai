@@ -44,6 +44,8 @@ const initialState = {
   },
   hasMoreSearchResults: false,
   yourLookSearchLoading: false,
+  isEmptyResultsSearch: false,
+  isManualSearch: false,
 }
 
 const errMsg = (payload) =>
@@ -85,6 +87,7 @@ const readyTemplate = createSlice({
       state.yourLookSearchTemplates = []
       state.hasMoreSearchResults = false
       state.yourLookSearchLoading = false
+      state.isEmptyResultsSearch = false
       state.createYourLookSearchParams = {
         query: '',
         selectedCategory: 'All',
@@ -92,6 +95,9 @@ const readyTemplate = createSlice({
         limit: 10,
       }
     },
+    setIsManualSearch: (state, action) => {
+      state.isManualSearch = action.payload
+    }
   },
 
   extraReducers: (builder) => {
@@ -219,6 +225,7 @@ const readyTemplate = createSlice({
       .addCase(getYourLookSearchTemplates.pending, (state) => {
         state.yourLookSearchLoading = true
         state.error = null
+        state.isEmptyResultsSearch = false
       })
       .addCase(
         getYourLookSearchTemplates.fulfilled,
@@ -227,16 +234,28 @@ const readyTemplate = createSlice({
           const nextTemplates = payload?.templates || []
 
           state.yourLookSearchLoading = false
-          state.yourLookSearchTemplates =
-            mode === 'append'
-              ? [...state.yourLookSearchTemplates, ...nextTemplates]
-              : nextTemplates
-
           state.hasMoreSearchResults = payload?.hasMore || false
+
+          if (mode === 'append') {
+            state.yourLookSearchTemplates = [
+              ...state.yourLookSearchTemplates,
+              ...nextTemplates,
+            ]
+            return
+          }
+
+          if (nextTemplates.length > 0) {
+            state.yourLookSearchTemplates = nextTemplates
+            state.isEmptyResultsSearch = false
+          } else {
+            state.isEmptyResultsSearch = true
+            state.isManualSearch = false
+          }
         },
       )
       .addCase(getYourLookSearchTemplates.rejected, (state, { payload }) => {
         state.yourLookSearchLoading = false
+        state.isManualSearch = false
         state.error = errMsg(payload)
       })
   },
@@ -252,4 +271,5 @@ export const {
   setCreateYourLookSearchParams,
   clearCreateYourLookSearchTemplates,
   resetCreateYourLookSearchState,
+  setIsManualSearch,
 } = readyTemplate.actions

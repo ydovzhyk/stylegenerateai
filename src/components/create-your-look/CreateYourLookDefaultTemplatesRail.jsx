@@ -1,0 +1,617 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { motion, useReducedMotion } from 'motion/react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import {
+  getCreateYourLookSearchParams,
+  getHasMoreSearchResults,
+  getReadyTemplateCategories,
+  getYourLookSearchLoading,
+  getYourLookSearchTemplates,
+} from '@/store/ready-template/ready-template-selectors'
+import { getYourLookSearchTemplates as getYourLookSearchTemplatesOperation } from '@/store/ready-template/ready-template-operations'
+import { setCreateYourLookSearchParams } from '@/store/ready-template/ready-template-slice'
+
+import Text from '@/components/shared/text/Text'
+import Button from '@/components/shared/button/Button'
+import { useTranslate } from '@/utils/translate/translate'
+
+const AUTO_SCROLL_SPEED = 0.42
+const LOAD_MORE_OFFSET = 520
+const RESUME_DELAY_MS = 1400
+const PROGRESS_THUMB_WIDTH = 28
+
+function mapTemplateItem(item) {
+  return {
+    id: item?._id || item?.slug || String(item?.previewUrl || Math.random()),
+    title: String(item?.title || '').trim(),
+    category: String(item?.category || '').trim(),
+    previewUrl: String(item?.previewUrl || '').trim(),
+    slug: String(item?.slug || '').trim(),
+  }
+}
+
+function getScrollStep(container) {
+  if (!container) return 320
+  return Math.max(container.clientWidth * 0.72, 260)
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value))
+}
+
+function RailTemplateCard({ item, onPause, onResume }) {
+  const reducedMotion = useReducedMotion()
+
+  if (!item?.previewUrl) return null
+
+  return (
+    <motion.article
+      initial={reducedMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
+      animate={reducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: reducedMotion ? 0 : 0.55,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      onMouseEnter={onPause}
+      onMouseLeave={onResume}
+      onFocus={onPause}
+      onBlur={onResume}
+      className="group relative w-[240px] shrink-0 overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:w-[260px] lg:w-[280px]"
+    >
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[-10%] top-[-12%] h-28 w-28 rounded-full bg-primary/12 blur-3xl" />
+        <div className="absolute bottom-[-12%] right-[-12%] h-24 w-24 rounded-full bg-cyan-400/10 blur-3xl" />
+      </div>
+
+      <div className="relative aspect-[4/5] overflow-hidden">
+        <motion.img
+          src={item.previewUrl}
+          alt={item.title}
+          className="h-full w-full object-cover"
+          whileHover={reducedMotion ? undefined : { scale: 1.045 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        />
+
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(3,6,18,0.9)_0%,rgba(3,6,18,0.24)_38%,rgba(3,6,18,0.05)_66%,rgba(3,6,18,0.02)_100%)]" />
+
+        <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
+          {item.category ? (
+            <span className="mb-2 inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary-soft backdrop-blur-sm">
+              {item.category}
+            </span>
+          ) : null}
+
+          <Text
+            as="h3"
+            variant="body"
+            color="white"
+            caseMode="sentence"
+            className="line-clamp-2 pr-2"
+          >
+            {item.title}
+          </Text>
+        </div>
+      </div>
+    </motion.article>
+  )
+}
+
+export default function CreateYourLookDefaultTemplatesRail() {
+  const dispatch = useDispatch()
+  const reducedMotion = useReducedMotion()
+  const templatesRaw = useSelector(getYourLookSearchTemplates)
+  const searchParams = useSelector(getCreateYourLookSearchParams)
+  const loading = useSelector(getYourLookSearchLoading)
+  const hasMore = useSelector(getHasMoreSearchResults)
+  const categories = useSelector(getReadyTemplateCategories) || []
+
+  const isSearchMode =
+    searchParams.query ||
+    (searchParams.selectedCategory && searchParams.selectedCategory !== 'All')
+
+  const templates = useMemo(
+    () =>
+      (templatesRaw || [])
+        .map(mapTemplateItem)
+        .filter((item) => item.previewUrl),
+    [templatesRaw],
+  )
+
+  const totalTemplates = useMemo(() => {
+    return categories.reduce(
+      (sum, item) => sum + Number(item?.templatesCount || 0),
+      0,
+    )
+  }, [categories])
+
+  const railTitle = useTranslate('Explore looks', { caseMode: 'sentence' })
+  const railText = useTranslate(
+    isSearchMode
+      ? `Found ${templatesRaw.length} templates matching your search`
+      : `Explore ${totalTemplates || templates.length} curated templates and find the look that reflects your individuality best.`,
+    { caseMode: 'sentence' },
+  )
+
+  const containerRef = useRef(null)
+  const trackRef = useRef(null)
+  const progressTrackRef = useRef(null)
+  const progressThumbRef = useRef(null)
+  const firstTrackWidthRef = useRef(0)
+  const frameRef = useRef(null)
+  const resumeTimerRef = useRef(null)
+  const isAppendingRef = useRef(false)
+  const isDraggingProgressRef = useRef(false)
+
+  const [isHovered, setIsHovered] = useState(false)
+  const [isPointerDown, setIsPointerDown] = useState(false)
+  const [isScrollable, setIsScrollable] = useState(false)
+
+  const shouldLoop = isScrollable
+
+  const renderedTemplates = useMemo(() => {
+    if (!shouldLoop) return templates
+    return [...templates, ...templates]
+  }, [templates, shouldLoop])
+
+  const applyThumbOffset = useCallback((progressValue) => {
+    const trackWidth = progressTrackRef.current?.clientWidth || 0
+    const thumbNode = progressThumbRef.current
+    if (!thumbNode || trackWidth <= 0) return
+
+    const travel = Math.max(trackWidth - PROGRESS_THUMB_WIDTH, 0)
+    const offset = progressValue * travel
+    thumbNode.style.transform = `translateX(${offset}px)`
+  }, [])
+
+  const pauseAutoScroll = useCallback(() => {
+    setIsHovered(true)
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current)
+      resumeTimerRef.current = null
+    }
+  }, [])
+
+  const resumeAutoScrollImmediately = useCallback(() => {
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current)
+      resumeTimerRef.current = null
+    }
+    setIsHovered(false)
+  }, [])
+
+  const resumeAutoScrollWithDelay = useCallback(() => {
+    if (resumeTimerRef.current) {
+      clearTimeout(resumeTimerRef.current)
+    }
+
+    resumeTimerRef.current = setTimeout(() => {
+      setIsHovered(false)
+    }, RESUME_DELAY_MS)
+  }, [])
+
+  const updateProgress = useCallback(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    let maxScrollable = node.scrollWidth - node.clientWidth
+    let currentScrollLeft = node.scrollLeft
+
+    if (shouldLoop && firstTrackWidthRef.current > 0) {
+      maxScrollable = firstTrackWidthRef.current
+      currentScrollLeft = currentScrollLeft % firstTrackWidthRef.current
+    }
+
+    if (maxScrollable <= 0) {
+      applyThumbOffset(0)
+      return
+    }
+
+    const nextProgress = clamp(currentScrollLeft / maxScrollable, 0, 1)
+    applyThumbOffset(nextProgress)
+  }, [applyThumbOffset, shouldLoop])
+
+  const setScrollFromProgress = useCallback(
+    (nextProgress, behavior = 'auto') => {
+      const node = containerRef.current
+      if (!node) return
+
+      const safeProgress = clamp(nextProgress, 0, 1)
+
+      let maxScrollable = node.scrollWidth - node.clientWidth
+      if (shouldLoop && firstTrackWidthRef.current > 0) {
+        maxScrollable = firstTrackWidthRef.current
+      }
+
+      const targetLeft = safeProgress * maxScrollable
+
+      if (behavior === 'smooth') {
+        node.scrollTo({ left: targetLeft, behavior: 'smooth' })
+      } else {
+        node.scrollLeft = targetLeft
+      }
+
+      applyThumbOffset(safeProgress)
+    },
+    [applyThumbOffset, shouldLoop],
+  )
+
+  const maybeLoadMore = useCallback(() => {
+    const node = containerRef.current
+    if (!node || loading || !hasMore || isAppendingRef.current) return
+
+    const distanceToEnd =
+      node.scrollWidth - (node.scrollLeft + node.clientWidth)
+
+    if (distanceToEnd <= LOAD_MORE_OFFSET) {
+      const nextPage = Number(searchParams?.page || 1) + 1
+
+      isAppendingRef.current = true
+      dispatch(setCreateYourLookSearchParams({ page: nextPage }))
+      dispatch(
+        getYourLookSearchTemplatesOperation({
+          ...searchParams,
+          page: nextPage,
+          mode: 'append',
+        }),
+      )
+    }
+  }, [dispatch, hasMore, loading, searchParams])
+
+  useEffect(() => {
+    if (!loading) {
+      isAppendingRef.current = false
+    }
+  }, [loading])
+
+  useEffect(() => {
+    const node = containerRef.current
+    const trackNode = trackRef.current
+
+    if (!node || !trackNode) return
+
+    const measure = () => {
+      const containerWidth = node.clientWidth
+      const trackWidth = trackNode.scrollWidth
+
+      const scrollable = trackWidth > containerWidth + 2
+      setIsScrollable(scrollable)
+
+      if (!scrollable) {
+        firstTrackWidthRef.current = 0
+        applyThumbOffset(0)
+        node.scrollLeft = 0
+        return
+      }
+
+      if (shouldLoop) {
+        const halfWidth = trackNode.scrollWidth / 2
+        firstTrackWidthRef.current = halfWidth
+      }
+    }
+
+    measure()
+
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => measure())
+        : null
+
+    if (resizeObserver) {
+      resizeObserver.observe(node)
+      resizeObserver.observe(trackNode)
+      if (progressTrackRef.current)
+        resizeObserver.observe(progressTrackRef.current)
+    }
+
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect()
+    }
+  }, [applyThumbOffset, renderedTemplates, shouldLoop, templates])
+
+  useEffect(() => {
+    const node = containerRef.current
+    const trackNode = trackRef.current
+
+    if (!node || !trackNode || !shouldLoop) {
+      firstTrackWidthRef.current = 0
+      return
+    }
+
+    const halfWidth = trackNode.scrollWidth / 2
+    firstTrackWidthRef.current = halfWidth
+
+    if (node.scrollLeft === 0 && halfWidth > 0) {
+      node.scrollLeft = 1
+    }
+  }, [renderedTemplates, shouldLoop])
+
+  const handlePrev = useCallback(() => {
+    const node = containerRef.current
+    if (!node || !isScrollable) return
+
+    pauseAutoScroll()
+    node.scrollBy({
+      left: -getScrollStep(node),
+      behavior: 'smooth',
+    })
+    resumeAutoScrollWithDelay()
+  }, [isScrollable, pauseAutoScroll, resumeAutoScrollWithDelay])
+
+  const handleNext = useCallback(() => {
+    const node = containerRef.current
+    if (!node || !isScrollable) return
+
+    pauseAutoScroll()
+    node.scrollBy({
+      left: getScrollStep(node),
+      behavior: 'smooth',
+    })
+    maybeLoadMore()
+    resumeAutoScrollWithDelay()
+  }, [isScrollable, maybeLoadMore, pauseAutoScroll, resumeAutoScrollWithDelay])
+
+  useEffect(() => {
+    if (reducedMotion || !isScrollable) return
+
+    const node = containerRef.current
+    if (!node) return
+
+    let rafId = null
+
+    const tick = () => {
+      if (!node) return
+
+      if (!isHovered && !isPointerDown && !isDraggingProgressRef.current) {
+        if (shouldLoop && firstTrackWidthRef.current > 0) {
+          if (node.scrollLeft >= firstTrackWidthRef.current) {
+            node.scrollLeft -= firstTrackWidthRef.current
+          }
+        }
+
+        node.scrollLeft += AUTO_SCROLL_SPEED
+        maybeLoadMore()
+        updateProgress()
+      }
+
+      rafId = requestAnimationFrame(tick)
+    }
+
+    rafId = requestAnimationFrame(tick)
+    frameRef.current = rafId
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [
+    isHovered,
+    isPointerDown,
+    isScrollable,
+    maybeLoadMore,
+    reducedMotion,
+    shouldLoop,
+    updateProgress,
+  ])
+
+  useEffect(() => {
+    updateProgress()
+  }, [templates, isScrollable, updateProgress])
+
+  useEffect(() => {
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current)
+      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current)
+    }
+  }, [])
+
+  const handleScroll = useCallback(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    if (shouldLoop && firstTrackWidthRef.current > 0) {
+      if (node.scrollLeft >= firstTrackWidthRef.current) {
+        node.scrollLeft -= firstTrackWidthRef.current
+      } else if (node.scrollLeft <= 0) {
+        node.scrollLeft += firstTrackWidthRef.current
+      }
+    }
+
+    maybeLoadMore()
+    updateProgress()
+  }, [maybeLoadMore, shouldLoop, updateProgress])
+
+  const handleProgressPointerMove = useCallback(
+    (clientX, isDrag = true) => {
+      const trackNode = progressTrackRef.current
+      if (!trackNode || !isScrollable) return
+
+      const rect = trackNode.getBoundingClientRect()
+      const trackWidth = rect.width
+      if (trackWidth <= 0) return
+
+      const rawX = clientX - rect.left
+      const safeX = clamp(rawX, 0, trackWidth)
+      const nextProgress = safeX / trackWidth
+
+      setScrollFromProgress(nextProgress, isDrag ? 'auto' : 'smooth')
+    },
+    [isScrollable, setScrollFromProgress],
+  )
+
+  const handleProgressPointerDown = useCallback(
+    (e) => {
+      if (!isScrollable) return
+
+      e.preventDefault()
+      isDraggingProgressRef.current = true
+      pauseAutoScroll()
+      handleProgressPointerMove(e.clientX, true)
+
+      const onMove = (event) => {
+        handleProgressPointerMove(event.clientX, true)
+      }
+
+      const onUp = () => {
+        isDraggingProgressRef.current = false
+        window.removeEventListener('pointermove', onMove)
+        window.removeEventListener('pointerup', onUp)
+        resumeAutoScrollWithDelay()
+      }
+
+      window.addEventListener('pointermove', onMove)
+      window.addEventListener('pointerup', onUp)
+    },
+    [
+      handleProgressPointerMove,
+      isScrollable,
+      pauseAutoScroll,
+      resumeAutoScrollWithDelay,
+    ],
+  )
+
+  if (!templates.length && !loading) return null
+
+  return (
+    <section className="gradient-border-card overflow-hidden p-5 sm:p-6 lg:p-7">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div className="max-w-2xl">
+          <Text as="h2" variant="h2" color="white" caseMode="sentence">
+            {railTitle}
+          </Text>
+
+          <Text
+            as="p"
+            variant="body"
+            color="muted"
+            caseMode="sentence"
+            className="mt-3 max-w-[720px]"
+          >
+            {railText}
+          </Text>
+        </div>
+
+        <div className="hidden items-center gap-2 md:flex">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handlePrev}
+            className="rounded-full border-white/10 bg-white/[0.04] px-4 hover:bg-white/[0.08]"
+            aria-label="Scroll left"
+            disabled={!isScrollable}
+          >
+            <ChevronLeft size={18} />
+          </Button>
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleNext}
+            className="rounded-full border-white/10 bg-white/[0.04] px-4 hover:bg-white/[0.08]"
+            aria-label="Scroll right"
+            disabled={!isScrollable}
+          >
+            <ChevronRight size={18} />
+          </Button>
+        </div>
+      </div>
+
+      <div className="relative">
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background/65 via-background/30 to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background/65 via-background/30 to-transparent" />
+
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          onMouseEnter={pauseAutoScroll}
+          onMouseLeave={resumeAutoScrollImmediately}
+          onPointerDown={() => {
+            setIsPointerDown(true)
+            pauseAutoScroll()
+          }}
+          onPointerUp={() => {
+            setIsPointerDown(false)
+            resumeAutoScrollWithDelay()
+          }}
+          onPointerCancel={() => {
+            setIsPointerDown(false)
+            resumeAutoScrollWithDelay()
+          }}
+          className="hide-scrollbar overflow-x-auto overflow-y-hidden"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}
+        >
+          <div
+            ref={trackRef}
+            className="flex w-max gap-4 pr-4 sm:gap-5 sm:pr-5"
+          >
+            {renderedTemplates.map((item, index) => (
+              <RailTemplateCard
+                key={`${item.id}-${index}`}
+                item={item}
+                onPause={pauseAutoScroll}
+                onResume={resumeAutoScrollImmediately}
+              />
+            ))}
+
+            {loading ? (
+              <>
+                <div className="h-[300px] w-[240px] shrink-0 animate-pulse rounded-[26px] border border-white/8 bg-white/[0.03] sm:w-[260px] lg:w-[280px]" />
+                <div className="hidden h-[300px] w-[240px] shrink-0 animate-pulse rounded-[26px] border border-white/8 bg-white/[0.03] sm:block sm:w-[260px] lg:w-[280px]" />
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1 pl-1 sm:pl-2">
+            <div
+              ref={progressTrackRef}
+              onPointerDown={handleProgressPointerDown}
+              className={`relative h-1.5 w-full rounded-full bg-white/8 ${
+                isScrollable ? 'cursor-pointer' : 'cursor-default'
+              }`}
+            >
+              <div
+                ref={progressThumbRef}
+                className="absolute top-0 h-full rounded-full bg-primary/90"
+                style={{
+                  width: `${PROGRESS_THUMB_WIDTH}px`,
+                  transform: 'translateX(0px)',
+                  willChange: 'transform',
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 md:hidden">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handlePrev}
+              className="rounded-full border-white/10 bg-white/[0.04] px-4 hover:bg-white/[0.08]"
+              aria-label="Scroll left"
+              disabled={!isScrollable}
+            >
+              <ChevronLeft size={18} />
+            </Button>
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleNext}
+              className="rounded-full border-white/10 bg-white/[0.04] px-4 hover:bg-white/[0.08]"
+              aria-label="Scroll right"
+              disabled={!isScrollable}
+            >
+              <ChevronRight size={18} />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}

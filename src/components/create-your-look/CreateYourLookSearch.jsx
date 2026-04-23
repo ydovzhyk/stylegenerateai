@@ -11,8 +11,9 @@ import {
   getCreateYourLookSearchParams,
   getReadyTemplateCategories,
   getYourLookSearchLoading,
+  getIsEmptyResultsSearch,
 } from '@/store/ready-template/ready-template-selectors'
-import { setCreateYourLookSearchParams } from '@/store/ready-template/ready-template-slice'
+import { setCreateYourLookSearchParams, setIsManualSearch } from '@/store/ready-template/ready-template-slice'
 
 import { useTranslate, translateTextTo } from '@/utils/translate/translate'
 import { useLanguage } from '@/providers/languageContext'
@@ -53,6 +54,7 @@ export default function CreateYourLookSearch() {
   const categories = useSelector(getReadyTemplateCategories) || []
   const appliedSearchParams = useSelector(getCreateYourLookSearchParams)
   const yourLookSearchLoading = useSelector(getYourLookSearchLoading)
+  const isEmptyResultsSearch = useSelector(getIsEmptyResultsSearch)
 
   const [localQuery, setLocalQuery] = useState(appliedSearchParams?.query || '')
   const [localSelectedCategory, setLocalSelectedCategory] = useState(
@@ -118,6 +120,11 @@ export default function CreateYourLookSearch() {
     { caseMode: 'sentence' },
   )
 
+  const emptyResultsText = useTranslate(
+    'No templates were found for your search. Try another phrase or category.',
+    { caseMode: 'sentence' },
+  )
+
   const pages = useMemo(() => {
     return chunkArray(visibleCategories, pageSize)
   }, [visibleCategories, pageSize])
@@ -125,6 +132,10 @@ export default function CreateYourLookSearch() {
   const currentPageItems = pages[page] || []
   const hasPrev = page > 0
   const hasNext = page < pages.length - 1
+
+  const isSearchMode =
+    Boolean(appliedSearchParams?.query) ||
+    appliedSearchParams?.selectedCategory !== 'All'
 
   useEffect(() => {
     if (page > pages.length - 1) {
@@ -147,28 +158,6 @@ export default function CreateYourLookSearch() {
       setPage(nextPage)
     }
   }, [localSelectedCategory, visibleCategories, pageSize, page])
-
-  // const handleSubmit = (e) => {
-  //   e.preventDefault()
-
-  //   const normalizedQuery = String(localQuery || '').trim()
-  //   const normalizedCategory = localSelectedCategory || 'All'
-
-  //   const nextParams = {
-  //     query: normalizedQuery,
-  //     selectedCategory: normalizedCategory,
-  //     page: 1,
-  //     limit: appliedSearchParams?.limit || 10,
-  //   }
-
-  //   dispatch(setCreateYourLookSearchParams(nextParams))
-  //   dispatch(
-  //     getYourLookSearchTemplates({
-  //       ...nextParams,
-  //       mode: 'replace',
-  //     }),
-  //   )
-  // }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -196,6 +185,7 @@ export default function CreateYourLookSearch() {
       limit: appliedSearchParams?.limit || 10,
     }
 
+    dispatch(setIsManualSearch(true))
     dispatch(setCreateYourLookSearchParams(nextParams))
     dispatch(
       getYourLookSearchTemplates({
@@ -335,6 +325,14 @@ export default function CreateYourLookSearch() {
           </Button>
         </div>
       </form>
+
+      {!yourLookSearchLoading && isSearchMode && isEmptyResultsSearch ? (
+        <div className="mt-4 rounded-[20px] border border-white/10 bg-white/[0.02] px-4 py-3">
+          <Text as="p" variant="body-sm" color="muted" caseMode="sentence">
+            {emptyResultsText}
+          </Text>
+        </div>
+      ) : null}
     </section>
   )
 }
