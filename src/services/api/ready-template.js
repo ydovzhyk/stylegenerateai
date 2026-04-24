@@ -49,6 +49,14 @@ export const axiosGetYourLookSearchTemplates = async (params = {}) => {
   return data
 }
 
+export const axiosGenerateYourLookClientImage = async (formData) => {
+  const { data } = await instance.post(
+    '/ready-templates/generate-your-look',
+    formData,
+  )
+  return data
+}
+
 export const axiosEditReadyTemplate = async (id, payload) => {
   const { data } = await instance.patch(`/ready-templates/${id}`, payload)
   return data

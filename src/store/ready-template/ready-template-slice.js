@@ -9,6 +9,7 @@ import {
   resolvePromptMetadata,
   getYourLookPreviewTemplates,
   getYourLookSearchTemplates,
+  generateYourLookClientImage,
 } from './ready-template-operations'
 
 const initialState = {
@@ -46,6 +47,9 @@ const initialState = {
   yourLookSearchLoading: false,
   isEmptyResultsSearch: false,
   isManualSearch: false,
+
+  // selected template for create image from client image
+  selectedYourLookTemplate: null,
 }
 
 const errMsg = (payload) =>
@@ -97,7 +101,13 @@ const readyTemplate = createSlice({
     },
     setIsManualSearch: (state, action) => {
       state.isManualSearch = action.payload
-    }
+    },
+    setSelectedYourLookTemplate: (state, action) => {
+      state.selectedYourLookTemplate = action.payload
+    },
+    clearSelectedYourLookTemplate: (state) => {
+      state.selectedYourLookTemplate = null
+    },
   },
 
   extraReducers: (builder) => {
@@ -258,6 +268,19 @@ const readyTemplate = createSlice({
         state.isManualSearch = false
         state.error = errMsg(payload)
       })
+
+      // GENERATE YOUR LOOK CLIENT IMAGE
+      .addCase(generateYourLookClientImage.pending, (state) => {
+        state.error = null
+        state.message = null
+      })
+      .addCase(generateYourLookClientImage.fulfilled, (state, { payload }) => {
+        state.message = payload?.message || 'Image generated successfully'
+      })
+      .addCase(generateYourLookClientImage.rejected, (state, { payload }) => {
+        state.error = errMsg(payload)
+        state.message = null
+      })
   },
 })
 
@@ -272,4 +295,6 @@ export const {
   clearCreateYourLookSearchTemplates,
   resetCreateYourLookSearchState,
   setIsManualSearch,
+  setSelectedYourLookTemplate,
+  clearSelectedYourLookTemplate,
 } = readyTemplate.actions

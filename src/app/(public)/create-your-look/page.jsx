@@ -11,8 +11,10 @@ import {
   getYourLookPreviewTemplates as selectYourLookPreviewTemplates,
   getYourLookSearchLoading,
   getIsManualSearch,
+  getSelectedYourLookTemplate,
 } from '@/store/ready-template/ready-template-selectors'
 import { setIsManualSearch } from '@/store/ready-template/ready-template-slice'
+import CreateYourLookGenerateClientImage from '@/components/create-your-look/CreateYourLookGenerateClientImage'
 import Text from '@/components/shared/text/Text'
 
 export default function CreateYourLookPage() {
@@ -22,9 +24,13 @@ export default function CreateYourLookPage() {
   const loading = useSelector(getYourLookSearchLoading)
   const isEmptyResultsSearch = useSelector(getIsEmptyResultsSearch)
   const isManualSearch = useSelector(getIsManualSearch)
+  const selectedTemplate = useSelector(getSelectedYourLookTemplate)
 
   const railRef = useRef(null)
   const prevLoadingRef = useRef(false)
+
+  const generateRef = useRef(null)
+  const prevSelectedTemplateIdRef = useRef(null)
 
   useEffect(() => {
     dispatch(getYourLookPreviewTemplates())
@@ -52,6 +58,27 @@ export default function CreateYourLookPage() {
 
     prevLoadingRef.current = loading
   }, [loading, isManualSearch, isEmptyResultsSearch, dispatch])
+
+  useEffect(() => {
+    if (!selectedTemplate?.id) return
+
+    const isNewSelection =
+      prevSelectedTemplateIdRef.current !== selectedTemplate.id
+    prevSelectedTemplateIdRef.current = selectedTemplate.id
+
+    if (!isNewSelection) return
+
+    requestAnimationFrame(() => {
+      const headerOffset = 120
+      const elementTop =
+        (generateRef.current?.getBoundingClientRect().top || 0) + window.scrollY
+
+      window.scrollTo({
+        top: elementTop - headerOffset,
+        behavior: 'smooth',
+      })
+    })
+  }, [selectedTemplate?.id])
 
   return (
     <div className="flex flex-col gap-12">
@@ -95,6 +122,10 @@ export default function CreateYourLookPage() {
       </div>
 
       <CreateYourLookSearch />
+
+      <div ref={generateRef}>
+        <CreateYourLookGenerateClientImage template={selectedTemplate} />
+      </div>
     </div>
   )
 }

@@ -12,7 +12,10 @@ import {
   getYourLookSearchTemplates,
 } from '@/store/ready-template/ready-template-selectors'
 import { getYourLookSearchTemplates as getYourLookSearchTemplatesOperation } from '@/store/ready-template/ready-template-operations'
-import { setCreateYourLookSearchParams } from '@/store/ready-template/ready-template-slice'
+import {
+  setCreateYourLookSearchParams,
+  setSelectedYourLookTemplate,
+} from '@/store/ready-template/ready-template-slice'
 
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
@@ -42,13 +45,22 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
 }
 
-function RailTemplateCard({ item, onPause, onResume }) {
+function RailTemplateCard({ item, onPause, onResume, onSelect }) {
   const reducedMotion = useReducedMotion()
 
   if (!item?.previewUrl) return null
 
   return (
     <motion.article
+      role="button"
+      tabIndex={0}
+      onClick={() => onSelect?.(item)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onSelect?.(item)
+        }
+      }}
       initial={reducedMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
       animate={reducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
       transition={{
@@ -59,7 +71,7 @@ function RailTemplateCard({ item, onPause, onResume }) {
       onMouseLeave={onResume}
       onFocus={onPause}
       onBlur={onResume}
-      className="group relative w-[240px] shrink-0 overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:w-[260px] lg:w-[280px]"
+      className="group relative w-[240px] shrink-0 cursor-pointer overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition hover:border-primary/30 sm:w-[260px] lg:w-[280px]"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-[-12%] h-28 w-28 rounded-full bg-primary/12 blur-3xl" />
@@ -127,7 +139,6 @@ export default function CreateYourLookDefaultTemplatesRail() {
     )
   }, [categories])
 
-  const railTitle = useTranslate('Explore looks', { caseMode: 'sentence' })
   const railText = useTranslate(
     isSearchMode
       ? `Found ${templatesRaw.length} templates matching your search`
@@ -473,12 +484,21 @@ export default function CreateYourLookDefaultTemplatesRail() {
 
   if (!templates.length && !loading) return null
 
+  const handleSelectTemplate = useCallback(
+    (item) => {
+      if (!item?.id) return
+      pauseAutoScroll()
+      dispatch(setSelectedYourLookTemplate(item))
+    },
+    [dispatch, pauseAutoScroll],
+  )
+
   return (
     <section className="gradient-border-card overflow-hidden p-5 sm:p-6 lg:p-7">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div className="max-w-2xl">
           <Text as="h2" variant="h2" color="white" caseMode="sentence">
-            {railTitle}
+            Explore looks
           </Text>
 
           <Text
@@ -554,6 +574,7 @@ export default function CreateYourLookDefaultTemplatesRail() {
                 item={item}
                 onPause={pauseAutoScroll}
                 onResume={resumeAutoScrollImmediately}
+                onSelect={handleSelectTemplate}
               />
             ))}
 

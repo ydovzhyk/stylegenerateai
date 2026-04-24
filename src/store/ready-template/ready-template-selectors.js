@@ -41,3 +41,5 @@ export const getIsEmptyResultsSearch = ({ readyTemplate }) =>
   readyTemplate.isEmptyResultsSearch
 export const getIsManualSearch = ({ readyTemplate }) =>
   readyTemplate.isManualSearch
+export const getSelectedYourLookTemplate = ({ readyTemplate }) =>
+  readyTemplate.selectedYourLookTemplate

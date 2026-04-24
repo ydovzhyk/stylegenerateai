@@ -8,6 +8,7 @@ import {
   axiosResolvePromptMetadata,
   axiosGetYourLookPreviewTemplates,
   axiosGetYourLookSearchTemplates,
+  axiosGenerateYourLookClientImage,
 } from '@/services/api/ready-template'
 import { axiosAutogenerateReadyTemplates } from '../../services/api/autogenerate'
 
@@ -120,6 +121,18 @@ export const getYourLookSearchTemplates = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     try {
       const data = await axiosGetYourLookSearchTemplates(params)
+      return data
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const generateYourLookClientImage = createAsyncThunk(
+  'ready-templates/generate-your-look',
+  async (formData, { rejectWithValue }) => {
+    try {
+      const data = await axiosGenerateYourLookClientImage(formData)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

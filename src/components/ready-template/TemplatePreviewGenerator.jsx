@@ -5,6 +5,7 @@ import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 import {
   OUTPUT_FORMATS,
   getOutputFormat,
@@ -43,21 +44,6 @@ function makePreviewSourceKey({ gender, view, tone, sourceUploadFile }) {
   if (sourceUploadFile) return ''
   if (!gender || !view || !tone) return ''
   return `${gender}_${view}_${tone}`
-}
-
-function dataUrlToFile(dataUrl, filename = 'generated-preview.png') {
-  const [meta, content] = String(dataUrl || '').split(',')
-  const mimeMatch = meta?.match(/data:(.*?);base64/)
-  const mime = mimeMatch?.[1] || 'image/png'
-  const binary = atob(content || '')
-  const len = binary.length
-  const bytes = new Uint8Array(len)
-
-  for (let i = 0; i < len; i += 1) {
-    bytes[i] = binary.charCodeAt(i)
-  }
-
-  return new File([bytes], filename, { type: mime })
 }
 
 async function srcToFile(src, filename = 'prototype-reference.png') {
