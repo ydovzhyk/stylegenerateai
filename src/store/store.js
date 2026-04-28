@@ -14,6 +14,7 @@ import authReducer from './auth/auth-slice'
 import technicalReducer from './technical/technical-slice'
 import visitorReducer from './visitor/visitor-slice'
 import readyTemplateReducer from './ready-template/ready-template-slice'
+import generationUsageReducer from './generation-usage/generation-usage-slice'
 import { setupInterceptors } from '../services/api/instance'
 // import logger from 'redux-logger'
 
@@ -38,6 +39,7 @@ export const store = configureStore({
     technical: technicalReducer,
     visitor: visitorReducer,
     readyTemplate: readyTemplateReducer,
+    generationUsage: generationUsageReducer,
   },
   middleware: (getDefaultMiddleware) => {
     const middlewares = getDefaultMiddleware({

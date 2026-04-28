@@ -1,7 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { initVisitor, updateVisitor } from './visitor-operations'
-
-const VISITOR_KEY = 'style-generate-ai:visitorId'
+import { initVisitor } from './visitor-operations'
 
 const errMsg = (payload) =>
   payload?.data?.message ||
@@ -22,12 +20,6 @@ const visitorSlice = createSlice({
     clearVisitorId(state) {
       state.id = null
       state.visitor = null
-
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(VISITOR_KEY)
-        }
-      } catch {}
     },
 
     clearVisitorError(state) {
@@ -58,20 +50,6 @@ const visitorSlice = createSlice({
         state.visitor = payload || null
       })
       .addCase(initVisitor.rejected, (state, { payload }) => {
-        state.error = errMsg(payload)
-      })
-
-      // UPDATE VISITOR
-      .addCase(updateVisitor.pending, (state) => {
-        state.error = null
-      })
-      .addCase(updateVisitor.fulfilled, (state, { payload }) => {
-        const vid = String(payload?.visitorId || '').trim()
-
-        if (vid) state.id = vid
-        state.visitor = payload || state.visitor
-      })
-      .addCase(updateVisitor.rejected, (state, { payload }) => {
         state.error = errMsg(payload)
       })
   },

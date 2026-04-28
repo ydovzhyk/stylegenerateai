@@ -4,16 +4,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 const visitorClient = axios.create({
   baseURL: `${API_URL}/api`,
+  withCredentials: true,
 })
 
-export const axiosGetVisitor = async ({ visitorId } = {}) => {
-  const { data } = await visitorClient.get('/visitor/init', {
-    params: visitorId ? { visitorId } : undefined,
-  })
-  return data
-}
-
-export const axiosUpdateVisitor = async (userData) => {
-  const { data } = await visitorClient.post('/visitor/update', userData)
+export const axiosGetVisitor = async () => {
+  const { data } = await visitorClient.get('/visitor/init')
   return data
 }

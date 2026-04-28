@@ -12,6 +12,9 @@ import {
 } from '../../services/api/auth'
 import { clearUser } from './auth-slice';
 import { resetVisitor } from '../visitor/visitor-slice';
+import { initVisitor } from '../visitor/visitor-operations'
+import { getGenerationUsage } from '../generation-usage/generation-usage-operations'
+import { resetGenerationUsage } from '../generation-usage/generation-usage-slice'
 
 const toReject = (error, rejectWithValue) => {
   const status = error?.response?.status || 0
@@ -25,6 +28,9 @@ export const login = createAsyncThunk(
   try {
     const data = await axiosLogin(userData)
     dispatch(resetVisitor())
+    dispatch(resetGenerationUsage())
+    dispatch(getGenerationUsage())
+
     return data
   } catch (e) {
     return toReject(e, rejectWithValue)
@@ -37,6 +43,9 @@ export const registration = createAsyncThunk(
     try {
       const data = await axiosRegister(userData)
       dispatch(resetVisitor())
+      dispatch(resetGenerationUsage())
+      dispatch(getGenerationUsage())
+
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)
@@ -51,16 +60,25 @@ export const logout = createAsyncThunk('auth/logout', async (_, { dispatch }) =>
     // no-op
   } finally {
     dispatch(clearUser())
+    dispatch(resetGenerationUsage())
     dispatch(resetVisitor())
+    dispatch(initVisitor())
   }
   return { ok: true }
 })
 
 export const getCurrentUser = createAsyncThunk(
   'auth/current',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      return await axiosGetCurrentUser()
+      const data = await axiosGetCurrentUser()
+
+      if (data?.user) {
+        dispatch(resetGenerationUsage())
+        dispatch(getGenerationUsage())
+      }
+
+      return data
     } catch (e) {
       return toReject(e, rejectWithValue)
     }
@@ -98,7 +116,9 @@ export const deleteUser = createAsyncThunk('auth/delete', async (userId, { dispa
     // no-op
   } finally {
     dispatch(clearUser())
+    dispatch(resetGenerationUsage())
     dispatch(resetVisitor())
+    dispatch(initVisitor())
   }
   return { ok: true }
 })

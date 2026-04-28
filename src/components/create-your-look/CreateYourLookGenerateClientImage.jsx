@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { generateYourLookClientImage } from '@/store/ready-template/ready-template-operations'
+import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
 import { getVisitorId } from '../../store/visitor/visitor-selectors'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
@@ -16,7 +17,6 @@ import { ImagePlus, Sparkles } from 'lucide-react'
 export default function CreateYourLookGenerateClientImage({ template }) {
   const inputRef = useRef(null)
   const dispatch = useDispatch()
-
   const visitorId = useSelector(getVisitorId)
 
   const {
@@ -39,6 +39,22 @@ export default function CreateYourLookGenerateClientImage({ template }) {
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [loading, setLoading] = useState(false)
   const [generatedFile, setGeneratedFile] = useState(null)
+  const resultRef = useRef(null)
+
+  const scrollToResult = () => {
+    if (!resultRef.current) return
+
+    const yOffset = -150
+    const y =
+      resultRef.current.getBoundingClientRect().top +
+      window.pageYOffset +
+      yOffset
+
+    window.scrollTo({
+      top: y,
+      behavior: 'smooth',
+    })
+  }
 
   useEffect(() => {
     return () => {
@@ -90,12 +106,24 @@ export default function CreateYourLookGenerateClientImage({ template }) {
       if (previewUrl) {
         setGeneratedPreview(previewUrl)
 
+        requestAnimationFrame(() => {
+          scrollToResult()
+        })
+
+        if (isLogin) {
+          dispatch(getGenerationUsage())
+        } else if (visitorId) {
+          dispatch(getGenerationUsage())
+        }
+
         if (previewUrl.startsWith('data:')) {
           setGeneratedFile(dataUrlToFile(previewUrl, 'your-look-result.png'))
         } else {
           setGeneratedFile(null)
         }
       }
+    } catch (error) {
+      dispatch(getGenerationUsage())
     } finally {
       setLoading(false)
     }
@@ -204,7 +232,10 @@ export default function CreateYourLookGenerateClientImage({ template }) {
             </Text>
           </div>
 
-          <div className="relative flex h-[360px] items-center justify-center overflow-hidden rounded-[22px] border border-white/10 bg-background-soft/70 sm:h-[460px] lg:h-[560px]">
+          <div
+            ref={resultRef}
+            className="relative flex h-[360px] items-center justify-center overflow-hidden rounded-[22px] border border-white/10 bg-background-soft/70 sm:h-[460px] lg:h-[560px]"
+          >
             {generatedPreview ? (
               <>
                 <img

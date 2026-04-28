@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
-import { axiosUpdateVisitor, axiosGetVisitor } from '../../services/api/visitor'
-
-const VISITOR_KEY = 'style-generate-ai:visitorId'
+import { axiosGetVisitor } from '../../services/api/visitor'
+import { getGenerationUsage } from '../generation-usage/generation-usage-operations'
 
 const toReject = (error, rejectWithValue) => {
   const status = error?.response?.status || 0
@@ -11,16 +10,14 @@ const toReject = (error, rejectWithValue) => {
 
 export const initVisitor = createAsyncThunk(
   'visitor/init',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      const existingId =
-        typeof window !== 'undefined' ? localStorage.getItem(VISITOR_KEY) : null
-
-      const data = await axiosGetVisitor({ visitorId: existingId })
+      const data = await axiosGetVisitor()
 
       const visitorId = String(data?.visitorId || '').trim()
-      if (visitorId && typeof window !== 'undefined') {
-        localStorage.setItem(VISITOR_KEY, visitorId)
+
+      if (visitorId) {
+        dispatch(getGenerationUsage())
       }
 
       return data
@@ -40,15 +37,3 @@ export const initVisitor = createAsyncThunk(
     },
   },
 )
-
-export const updateVisitor = createAsyncThunk(
-  'visitor/update',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const data = await axiosUpdateVisitor(userData)
-      return data
-    } catch (e) {
-      return toReject(e, rejectWithValue)
-    }
-  }
-);

@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 import { login, forgotPassword } from '@/store/auth/auth-operations'
+import { getVisitorId } from '@/store/visitor/visitor-selectors'
 
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
@@ -22,6 +23,8 @@ export default function LoginPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const visitorId = useSelector(getVisitorId)
+  const safeVisitorId = encodeURIComponent(visitorId || '')
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -67,6 +70,7 @@ export default function LoginPage() {
         login({
           email: data.email.trim(),
           password: data.password,
+          visitorId: visitorId || '',
         }),
       ).unwrap()
 
@@ -110,7 +114,7 @@ export default function LoginPage() {
     if (!API_URL) return
 
     const currentOrigin = encodeURIComponent(window.location.origin)
-    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
+    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}&visitorId=${safeVisitorId}`
   }
 
   const form = (

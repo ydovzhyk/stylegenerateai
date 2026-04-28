@@ -1,10 +1,11 @@
 'use client'
 
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import { useRouter } from 'next/navigation'
 
 import { registration } from '@/store/auth/auth-operations'
+import { getVisitorId } from '@/store/visitor/visitor-selectors'
 
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
@@ -17,6 +18,8 @@ function validateEmail(value) {
 export default function RegisterPage() {
   const dispatch = useDispatch()
   const router = useRouter()
+  const visitorId = useSelector(getVisitorId)
+  const safeVisitorId = encodeURIComponent(visitorId || '')
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL
   const DEFAULT_AVATAR = process.env.NEXT_PUBLIC_AVATARS_API_URL || ''
@@ -45,6 +48,7 @@ export default function RegisterPage() {
         email: data.email.trim(),
         password: data.password,
         userAvatar: DEFAULT_AVATAR,
+        visitorId: visitorId || '',
       }
 
       await dispatch(registration(payload)).unwrap()
@@ -61,7 +65,7 @@ export default function RegisterPage() {
     if (!API_URL) return
 
     const currentOrigin = encodeURIComponent(window.location.origin)
-    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
+    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}&visitorId=${safeVisitorId}`
   }
 
   const form = (

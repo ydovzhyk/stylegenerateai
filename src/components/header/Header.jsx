@@ -65,6 +65,7 @@ function MobileMenu({
   languageSlot,
   authSlot,
   userSlot,
+  usageSlot = null,
   isAuthenticated = false,
 }) {
   useEffect(() => {
@@ -127,6 +128,15 @@ function MobileMenu({
           ) : null}
 
           <div className="space-y-4">
+            {usageSlot ? (
+              <div className="gradient-border-card p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-foreground-faint">
+                  Generations
+                </p>
+                {usageSlot}
+              </div>
+            ) : null}
+
             {languageSlot ? (
               <div className="gradient-border-card p-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-foreground-faint">
@@ -156,6 +166,7 @@ export default function Header({
   languageSlot = null,
   authSlot = null,
   userSlot = null,
+  usageSlot = null,
   isAuthenticated = false,
   className,
 }) {
@@ -188,6 +199,7 @@ export default function Header({
           </div>
 
           <div className="hidden items-center gap-3 justify-self-end lg:flex">
+            {usageSlot}
             {languageSlot ? (
               <div className="min-w-[132px]">{languageSlot}</div>
             ) : null}
@@ -195,6 +207,10 @@ export default function Header({
           </div>
 
           <div className="flex items-center gap-2 justify-self-end lg:hidden">
+            {usageSlot ? (
+              <div className="max-w-[132px]">{usageSlot}</div>
+            ) : null}
+
             <BurgerButton
               open={mobileOpen}
               onClick={() => setMobileOpen((prev) => !prev)}
@@ -210,6 +226,7 @@ export default function Header({
         languageSlot={languageSlot}
         authSlot={authSlot}
         userSlot={userSlot}
+        usageSlot={usageSlot}
         isAuthenticated={isAuthenticated}
       />
     </>

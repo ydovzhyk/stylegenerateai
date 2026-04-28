@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useSelector } from 'react-redux'
 import Header from '@/components/header/Header'
 import HeaderUserMenu from '@/components/header/HeaderUserMenu'
+import GenerationUsageBadge from '@/components/shared/generation/GenerationUsageBadge'
 import TranslateMe from '@/utils/translate/translate'
 import Button from '@/components/shared/button/Button'
 import Logo from '../components/shared/logo/Logo'
@@ -50,6 +51,7 @@ const ClientLayout = ({ children }) => {
           </div>
         }
         userSlot={<HeaderUserMenu user={user} />}
+        usageSlot={<GenerationUsageBadge />}
         isAuthenticated={isAuthenticated}
       />
 
