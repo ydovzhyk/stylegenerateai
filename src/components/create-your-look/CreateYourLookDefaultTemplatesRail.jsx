@@ -82,7 +82,8 @@ function RailTemplateCard({ item, onPause, onResume, onSelect }) {
         <motion.img
           src={item.previewUrl}
           alt={item.title}
-          className="absolute inset-[-1px] h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover"
+          // className="absolute inset-[-1px] h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover"
+          className="absolute inset-[-1px] h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover object-[50%_5%]"
           whileHover={reducedMotion ? undefined : { scale: 1.045 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         />

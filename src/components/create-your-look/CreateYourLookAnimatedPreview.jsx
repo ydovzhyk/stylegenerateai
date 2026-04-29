@@ -124,7 +124,7 @@ function PreviewImageCard({
               key={imageKey}
               src={src}
               alt={alt}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover object-[50%_5%]"
               initial={
                 reducedMotion
                   ? { opacity: 0 }
@@ -147,7 +147,7 @@ function PreviewImageCard({
           <motion.img
             src={src}
             alt={alt}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-[50%_5%]"
             whileHover={reducedMotion ? undefined : { scale: 1.045 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           />
