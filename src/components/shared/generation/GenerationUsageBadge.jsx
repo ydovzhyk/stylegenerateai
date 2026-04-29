@@ -6,15 +6,30 @@ import { Sparkles, Infinity } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import { getGenerationUsageData } from '@/store/generation-usage/generation-usage-selectors'
 
-function getUsageLabel(usage) {
-  if (usage?.isUnlimited) return (
-    <Text as="span" variant="caption" color="white" caseMode="sentence">
-      Unlimited
-    </Text>
-  )
+function getEffectiveValues(usage) {
+  const remainingDaily = Number(usage?.remainingDaily ?? 0)
+  const remainingMonthly = Number(usage?.remainingMonthly ?? 0)
 
-  const remaining = Number(usage?.remainingDaily ?? 0)
-  const limit = Number(usage?.dailyLimit ?? 0)
+  const dailyLimit = Number(usage?.dailyLimit ?? 0)
+  const monthlyLimit = Number(usage?.monthlyLimit ?? 0)
+
+  const remaining = Math.max(Math.min(remainingDaily, remainingMonthly), 0)
+
+  const limit = Math.max(Math.min(dailyLimit, monthlyLimit), 0)
+
+  return { remaining, limit }
+}
+
+function getUsageLabel(usage) {
+  if (usage?.isUnlimited) {
+    return (
+      <Text as="span" variant="caption" color="white" caseMode="sentence">
+        Unlimited
+      </Text>
+    )
+  }
+
+  const { remaining, limit } = getEffectiveValues(usage)
 
   return `${remaining}/${limit}`
 }
@@ -32,21 +47,17 @@ export default function GenerationUsageBadge({ compact = false, className }) {
   const usage = useSelector(getGenerationUsageData)
 
   const hasUsage = usage?.planKey || usage?.isUnlimited
-
   if (!hasUsage) return null
 
-  const dailyLimit = Number(usage?.dailyLimit ?? 0)
-  const remainingDaily = Number(usage?.remainingDaily ?? 0)
+  const { remaining, limit } = getEffectiveValues(usage)
 
   const isLow =
-    !usage?.isUnlimited &&
-    dailyLimit > 0 &&
-    remainingDaily <= Math.ceil(dailyLimit * 0.25)
+    !usage?.isUnlimited && limit > 0 && remaining <= Math.ceil(limit * 0.25)
 
   return (
     <div
       className={clsx(
-        'inline-flex h-[40px] items-center gap-2 rounded-2xl border px-3 ',
+        'inline-flex h-[40px] items-center gap-2 rounded-2xl border px-3',
         'bg-white/[0.04] text-white shadow-[0_0_0_1px_rgba(124,92,255,0.08)] backdrop-blur-sm',
         isLow ? 'border-amber-300/30' : 'border-white/10',
         className,
@@ -54,7 +65,7 @@ export default function GenerationUsageBadge({ compact = false, className }) {
       title={
         usage?.isUnlimited
           ? 'Unlimited generations'
-          : `${usage.remainingDaily} daily and ${usage.remainingMonthly} monthly generations left`
+          : `${remaining} available now. Daily left: ${usage?.remainingDaily}, monthly left: ${usage?.remainingMonthly}`
       }
     >
       <span

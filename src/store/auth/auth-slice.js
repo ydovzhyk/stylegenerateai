@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {
+  sendRegisterCode,
   registration,
   login,
   logout,
@@ -68,6 +69,23 @@ const auth = createSlice({
 
   extraReducers: (builder) => {
     builder
+      // SEND REGISTER CODE
+      .addCase(sendRegisterCode.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(sendRegisterCode.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.error = null
+        state.message =
+          payload?.message || 'Verification code has been sent to your email.'
+      })
+      .addCase(sendRegisterCode.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+      
       // REGISTER
       .addCase(registration.pending, (state) => {
         state.loading = true

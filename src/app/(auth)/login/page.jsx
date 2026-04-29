@@ -1,18 +1,23 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useForm } from 'react-hook-form'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
-import { login, forgotPassword } from '@/store/auth/auth-operations'
-import { getVisitorId } from '@/store/visitor/visitor-selectors'
+import {
+  login,
+  forgotPassword,
+  resetPassword,
+} from '@/store/auth/auth-operations'
 
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
 import AuthCard from '@/components/auth/AuthCard'
-import ResetPasswordModal from '@/components/auth/ResetPasswordModal'
+import AuthModal from '@/components/auth/AuthModal'
+
+import { useTranslate } from '@/utils/translate/translate'
 
 function validateEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim())
@@ -23,13 +28,14 @@ export default function LoginPage() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const visitorId = useSelector(getVisitorId)
-  const safeVisitorId = encodeURIComponent(visitorId || '')
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL
 
   const resetToken = searchParams.get('resetToken') || ''
   const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+  const [resetSubmitting, setResetSubmitting] = useState(false)
+
+  const tLinkAction = useTranslate('Sign up')
 
   const {
     register,
@@ -48,6 +54,21 @@ export default function LoginPage() {
     },
   })
 
+  const {
+    register: registerReset,
+    handleSubmit: handleResetSubmit,
+    getValues: getResetValues,
+    reset: resetResetForm,
+    formState: { errors: resetErrors },
+  } = useForm({
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+    defaultValues: {
+      password: '',
+      confirmPassword: '',
+    },
+  })
+
   useEffect(() => {
     setIsResetModalOpen(Boolean(resetToken))
   }, [resetToken])
@@ -55,13 +76,35 @@ export default function LoginPage() {
   const cleanedLoginUrl = useMemo(() => pathname || '/login', [pathname])
 
   const closeResetModal = () => {
+    if (resetSubmitting) return
+
     setIsResetModalOpen(false)
+    resetResetForm()
     router.replace(cleanedLoginUrl)
   }
 
-  const handleResetSuccess = () => {
-    setIsResetModalOpen(false)
-    router.replace(cleanedLoginUrl)
+  const onResetPasswordSubmit = async (data) => {
+    if (!resetToken) return
+
+    setResetSubmitting(true)
+
+    try {
+      await dispatch(
+        resetPassword({
+          token: resetToken,
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+        }),
+      ).unwrap()
+
+      setIsResetModalOpen(false)
+      resetResetForm()
+      router.replace(cleanedLoginUrl)
+    } catch {
+      // handled by ToastListener
+    } finally {
+      setResetSubmitting(false)
+    }
   }
 
   const onSubmit = async (data) => {
@@ -70,14 +113,13 @@ export default function LoginPage() {
         login({
           email: data.email.trim(),
           password: data.password,
-          visitorId: visitorId || '',
         }),
       ).unwrap()
 
       reset()
       router.push('/')
-    } catch (error) {
-      // no-op, error is handled by the slice and toast notifications
+    } catch {
+      // handled by ToastListener
     }
   }
 
@@ -104,8 +146,8 @@ export default function LoginPage() {
 
     try {
       await dispatch(forgotPassword({ email })).unwrap()
-    } catch (error) {
-      // no-op, error is handled by the slice and toast notifications
+    } catch {
+      // handled by ToastListener
     }
   }
 
@@ -114,7 +156,7 @@ export default function LoginPage() {
     if (!API_URL) return
 
     const currentOrigin = encodeURIComponent(window.location.origin)
-    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}&visitorId=${safeVisitorId}`
+    window.location.href = `${API_URL}/api/google?origin=${currentOrigin}`
   }
 
   const form = (
@@ -195,19 +237,90 @@ export default function LoginPage() {
         form={form}
         footerText="Don’t have an account?"
         footerLinkHref="/register"
-        footerLinkText="Sign up"
+        footerLinkText={tLinkAction}
         googleEnabled={Boolean(API_URL)}
         onGoogleClick={onGoogleClick}
         googleText="Continue with Google"
         orText="or"
       />
 
-      <ResetPasswordModal
+      <AuthModal
         open={isResetModalOpen}
-        token={resetToken}
-        onClose={closeResetModal}
-        onSuccess={handleResetSuccess}
-      />
+        title="Reset password"
+        description="Create a new password for your account. After saving it, you can sign in with the new password."
+      >
+        <form
+          onSubmit={handleResetSubmit(onResetPasswordSubmit)}
+          noValidate
+          className="grid gap-4"
+        >
+          <Input
+            id="reset-password"
+            label="New password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Create new password"
+            hint="At least 6 characters."
+            required
+            caseMode="sentence"
+            {...registerReset('password', {
+              required: 'Password is required',
+              minLength: {
+                value: 6,
+                message: 'Password must be at least 6 characters',
+              },
+              maxLength: {
+                value: 64,
+                message: 'Password must be at most 64 characters',
+              },
+            })}
+            error={resetErrors.password?.message}
+            inputClassName="h-12"
+          />
+
+          <Input
+            id="reset-confirm-password"
+            label="Confirm password"
+            type="password"
+            autoComplete="new-password"
+            placeholder="Repeat new password"
+            hint="Repeat the same password."
+            required
+            caseMode="sentence"
+            {...registerReset('confirmPassword', {
+              required: 'Please confirm your password',
+              validate: (value) =>
+                value === getResetValues('password') ||
+                'Passwords do not match',
+            })}
+            error={resetErrors.confirmPassword?.message}
+            inputClassName="h-12"
+          />
+
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              disabled={resetSubmitting}
+              onClick={closeResetModal}
+              className="min-h-12 rounded-2xl"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="submit"
+              fullWidth
+              loading={resetSubmitting}
+              disabled={resetSubmitting}
+              className="min-h-12 rounded-2xl"
+            >
+              Save password
+            </Button>
+          </div>
+        </form>
+      </AuthModal>
     </>
   )
 }

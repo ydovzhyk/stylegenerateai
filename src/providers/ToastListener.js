@@ -9,7 +9,6 @@ import { translateMyText } from '@/utils/translate/translate'
 
 import { getAuthError, getAuthMessage } from '@/store/auth/auth-selectors'
 import { clearAuthError, clearAuthMessage } from '@/store/auth/auth-slice'
-
 import {
   getReadyTemplateError,
   getReadyTemplateMessage,
@@ -18,6 +17,15 @@ import {
   clearReadyTemplateError,
   clearReadyTemplateMessage,
 } from '@/store/ready-template/ready-template-slice'
+import {
+  getGenerationUsageError,
+  getGenerationUsageMessage,
+} from '@/store/generation-usage/generation-usage-selectors'
+
+import {
+  clearGenerationUsageError,
+  clearGenerationUsageMessage,
+} from '@/store/generation-usage/generation-usage-slice'
 
 const TOAST_DEDUPE_WINDOW_MS = 900
 
@@ -127,6 +135,9 @@ export default function ToastListener() {
   const readyTemplateError = useSelector(getReadyTemplateError)
   const readyTemplateMessage = useSelector(getReadyTemplateMessage)
 
+  const generationUsageError = useSelector(getGenerationUsageError)
+  const generationUsageMessage = useSelector(getGenerationUsageMessage)
+
   useToastPair({
     error: authError,
     message: authMessage,
@@ -139,6 +150,13 @@ export default function ToastListener() {
     message: readyTemplateMessage,
     clearError: clearReadyTemplateError,
     clearMessage: clearReadyTemplateMessage,
+  })
+
+  useToastPair({
+    error: generationUsageError,
+    message: generationUsageMessage,
+    clearError: clearGenerationUsageError,
+    clearMessage: clearGenerationUsageMessage,
   })
 
   return null

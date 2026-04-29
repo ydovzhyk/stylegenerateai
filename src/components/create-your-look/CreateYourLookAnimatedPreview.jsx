@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useTranslate } from '@/utils/translate/translate'
-import Text from '@/components/shared/text/Text'
 
 const PROTOTYPE_BY_KEY = {
   man_front_color: '/images/photo-prototype/men-color.png',
@@ -92,50 +91,10 @@ function useRotatingIndex(length, delay) {
   return index
 }
 
-function AnimatedSwapText({
-  text,
-  className = '',
-  type = 'default',
-  children,
-}) {
-  const reducedMotion = useReducedMotion()
-
-  return (
-    <div className={`relative overflow-hidden ${className}`}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={`${type}-${text}`}
-          initial={
-            reducedMotion
-              ? { opacity: 0 }
-              : { opacity: 0, y: 10, filter: 'blur(6px)' }
-          }
-          animate={
-            reducedMotion
-              ? { opacity: 1 }
-              : { opacity: 1, y: 0, filter: 'blur(0px)' }
-          }
-          exit={
-            reducedMotion
-              ? { opacity: 0 }
-              : { opacity: 0, y: -8, filter: 'blur(6px)' }
-          }
-          transition={{
-            duration: reducedMotion ? 0.15 : 0.7,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  )
-}
-
 function PreviewImageCard({
   src,
   alt,
-  title,
+  // title,
   category,
   label,
   labelType = 'default',
@@ -278,16 +237,16 @@ function PreviewGroupCard({ item, accent = 'primary', contentKey }) {
 
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-4 grid grid-cols-2 gap-3">
         <span
-          className={`inline-flex rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
+          className={`flex min-h-[42px] items-center justify-center rounded-full border px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
         >
           {item.gender === 'man' ? malePreviewText : femalePreviewText}
         </span>
 
         <ShinyBadge
           shineSeed={`ai-${contentKey}`}
-          className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/55"
+          className="flex min-h-[42px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-white/55"
         >
           {aiTransformationText}
         </ShinyBadge>
@@ -334,7 +293,7 @@ export default function CreateYourLookAnimatedPreview({
 
   return (
     <section>
-      <div className="md:hidden">
+      <div className="lg:hidden">
         <PreviewGroupCard
           item={activeMobile}
           accent={activeMobile?.gender === 'man' ? 'primary' : 'cyan'}
@@ -342,7 +301,7 @@ export default function CreateYourLookAnimatedPreview({
         />
       </div>
 
-      <div className="hidden gap-6 md:grid md:grid-cols-2">
+      <div className="hidden gap-6 lg:grid lg:grid-cols-2">
         <PreviewGroupCard
           item={activeMan}
           accent="primary"

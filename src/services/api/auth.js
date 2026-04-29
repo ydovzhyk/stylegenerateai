@@ -1,7 +1,11 @@
 import { instance } from './instance'
 
+export const axiosSendRegisterCode = async (userData) => {
+  const { data } = await instance.post('/auth/register/send-code', userData)
+  return data
+}
+
 export const axiosRegister = async (userData) => {
-  console.log('Registering user with data:', userData) // Debug log
   const { data } = await instance.post('/auth/register', userData)
   return data
 }

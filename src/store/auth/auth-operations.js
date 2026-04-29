@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import {
+  axiosSendRegisterCode,
   axiosRegister,
   axiosLogin,
   axiosLogout,
@@ -21,6 +22,18 @@ const toReject = (error, rejectWithValue) => {
   const data = error?.response?.data || { message: error?.message || 'Request failed' }
   return rejectWithValue({ status, data })
 }
+
+export const sendRegisterCode = createAsyncThunk(
+  'auth/register-send-code',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const data = await axiosSendRegisterCode(userData)
+      return data
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
 
 export const login = createAsyncThunk(
   'auth/login',

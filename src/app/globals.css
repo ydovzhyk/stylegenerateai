@@ -124,6 +124,7 @@
 
 html {
   scroll-behavior: smooth;
+  background: #06070a;
 }
 
 body {
@@ -185,9 +186,10 @@ a {
   outline-offset: 1px;
 }
 
+/* ===== Scrollbar (match dark theme) ===== */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(124, 92, 255, 0.75) rgba(255, 255, 255, 0.05);
+  scrollbar-color: rgba(124, 92, 255, 0.9) #06070a;
 }
 
 *::-webkit-scrollbar {
@@ -196,18 +198,17 @@ a {
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 999px;
+  background: #06070a;
 }
 
 *::-webkit-scrollbar-thumb {
   background: linear-gradient(
     180deg,
     rgba(124, 92, 255, 0.95),
-    rgba(0, 213, 255, 0.95)
+    rgba(0, 213, 255, 0.85)
   );
   border-radius: 999px;
-  border: 2px solid rgba(10, 11, 16, 0.92);
+  border: 2px solid #06070a;
 }
 
 *::-webkit-scrollbar-thumb:hover {

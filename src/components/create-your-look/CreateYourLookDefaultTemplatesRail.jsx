@@ -71,7 +71,7 @@ function RailTemplateCard({ item, onPause, onResume, onSelect }) {
       onMouseLeave={onResume}
       onFocus={onPause}
       onBlur={onResume}
-      className="group relative w-[240px] shrink-0 cursor-pointer overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition hover:border-primary/30 sm:w-[260px] lg:w-[280px]"
+      className="group relative w-[calc(100vw-64px)] max-w-[360px] shrink-0 cursor-pointer overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition hover:border-primary/30 sm:w-[300px] md:w-[320px] lg:w-[270px] xl:w-[280px]"
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-[-12%] h-28 w-28 rounded-full bg-primary/12 blur-3xl" />
@@ -82,7 +82,7 @@ function RailTemplateCard({ item, onPause, onResume, onSelect }) {
         <motion.img
           src={item.previewUrl}
           alt={item.title}
-          className="h-full w-full object-cover"
+          className="absolute inset-[-1px] h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover"
           whileHover={reducedMotion ? undefined : { scale: 1.045 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         />
@@ -160,7 +160,7 @@ export default function CreateYourLookDefaultTemplatesRail() {
   const [isPointerDown, setIsPointerDown] = useState(false)
   const [isScrollable, setIsScrollable] = useState(false)
 
-  const shouldLoop = isScrollable
+  const shouldLoop = isScrollable && !isSearchMode
 
   const renderedTemplates = useMemo(() => {
     if (!shouldLoop) return templates
@@ -580,8 +580,9 @@ export default function CreateYourLookDefaultTemplatesRail() {
 
             {loading ? (
               <>
-                <div className="h-[300px] w-[240px] shrink-0 animate-pulse rounded-[26px] border border-white/8 bg-white/[0.03] sm:w-[260px] lg:w-[280px]" />
-                <div className="hidden h-[300px] w-[240px] shrink-0 animate-pulse rounded-[26px] border border-white/8 bg-white/[0.03] sm:block sm:w-[260px] lg:w-[280px]" />
+                <div className="h-[300px] w-[calc(100vw-64px)] max-w-[360px] shrink-0 animate-pulse rounded-[26px] border border-white/8 bg-white/[0.03] sm:w-[300px] md:w-[320px] lg:w-[270px] xl:w-[280px]" />
+
+                <div className="hidden h-[300px] w-[calc(100vw-64px)] max-w-[360px] shrink-0 animate-pulse rounded-[26px] border border-white/8 bg-white/[0.03] sm:block sm:w-[300px] md:w-[320px] lg:w-[270px] xl:w-[280px]" />
               </>
             ) : null}
           </div>
