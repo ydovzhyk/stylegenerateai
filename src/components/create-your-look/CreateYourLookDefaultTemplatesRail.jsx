@@ -48,10 +48,8 @@ function clamp(value, min, max) {
 
 function getOriginalTrackWidth(trackNode, templatesCount) {
   if (!trackNode || !templatesCount) return 0
-
   const children = Array.from(trackNode.children).slice(0, templatesCount)
   if (!children.length) return 0
-
   const firstChild = children[0]
   const lastChild = children[children.length - 1]
 
@@ -60,7 +58,6 @@ function getOriginalTrackWidth(trackNode, templatesCount) {
 
 function getLoopWidth(trackNode, templatesCount) {
   if (!trackNode || !templatesCount) return 0
-
   const children = Array.from(trackNode.children)
   const secondCopyFirstChild = children[templatesCount]
 
