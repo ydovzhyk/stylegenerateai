@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, useReducedMotion } from 'motion/react'
 import { ChevronLeft, ChevronRight, Trash2, X } from 'lucide-react'
@@ -70,7 +70,7 @@ function getLoopWidth(trackNode, templatesCount) {
   return getOriginalTrackWidth(trackNode, templatesCount)
 }
 
-function RailTemplateCard({
+const RailTemplateCard = memo(function RailTemplateCard({
   item,
   onPause,
   onResume,
@@ -92,12 +92,6 @@ function RailTemplateCard({
           e.preventDefault()
           onSelect?.(item)
         }
-      }}
-      initial={reducedMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
-      animate={reducedMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-      transition={{
-        duration: reducedMotion ? 0 : 0.55,
-        ease: [0.22, 1, 0.36, 1],
       }}
       onMouseEnter={onPause}
       onMouseLeave={onResume}
@@ -157,7 +151,7 @@ function RailTemplateCard({
       </div>
     </motion.article>
   )
-}
+})
 
 export default function CreateYourLookDefaultTemplatesRail() {
   const dispatch = useDispatch()
@@ -832,7 +826,7 @@ export default function CreateYourLookDefaultTemplatesRail() {
           </div>
         </div>
       ) : null}
-      
+
     </section>
   )
 }
