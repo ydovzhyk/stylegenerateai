@@ -6,10 +6,9 @@ import Input from '@/components/shared/input/Input'
 
 function LockedHint({ text }) {
   return (
-    <span className="pointer-events-none absolute right-3 top-1/2 z-20 flex -translate-y-1/2 items-center">
-      <Lock size={14} className="text-white/80" />
-
-      <span className="absolute bottom-full right-0 mb-3 w-[240px] rounded-2xl border border-white/15 bg-[#090b14] px-3 py-2 text-center text-xs font-medium leading-5 text-white opacity-0 shadow-2xl shadow-black/40 transition group-hover/option:opacity-100">
+    <span className="pointer-events-none absolute right-3 top-1/2 z-20 flex -translate-y-1/2 text-muted">
+      <Lock size={14} className="text-muted" />
+      <span className="absolute bottom-full right-0 mb-3 w-[210px] rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-cyan-300 text-xs leading-relaxed opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/option:opacity-100">
         {text}
       </span>
     </span>
@@ -76,7 +75,11 @@ export default function GenerationOptionsPanel({
                     isActive
                       ? 'border-primary/50 bg-primary/20'
                       : 'border-white/10'
-                  } ${isLocked ? 'cursor-not-allowed opacity-50' : ''}`}
+                  } ${
+                    isLocked
+                      ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
+                      : 'text-white'
+                  }`}
                 >
                   <span>{format.label}</span>
                   {isLocked ? <LockedHint text={lockedText} /> : null}
@@ -106,7 +109,11 @@ export default function GenerationOptionsPanel({
                     isActive
                       ? 'border-primary/50 bg-primary/20'
                       : 'border-white/10'
-                  } ${isLocked ? 'cursor-not-allowed opacity-50' : ''}`}
+                  } ${
+                    isLocked
+                      ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
+                      : 'text-white'
+                  }`}
                 >
                   <span>{quality.label}</span>
                   {isLocked ? <LockedHint text={lockedText} /> : null}

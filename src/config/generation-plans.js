@@ -6,6 +6,7 @@ export const GENERATION_PLANS = {
     monthlyLimit: 3,
     allowedQualities: ['draft'],
     allowedFormats: ['portrait_2_3'],
+    allowedGeneratedImageFormats: ['png'],
   },
 
   free: {
@@ -14,7 +15,8 @@ export const GENERATION_PLANS = {
     dailyLimit: 5,
     monthlyLimit: 30,
     allowedQualities: ['draft', 'standard'],
-    allowedFormats: ['portrait_2_3'],
+    allowedFormats: ['portrait_2_3', 'square_1_1', 'landscape_3_2'],
+    allowedGeneratedImageFormats: ['png'],
   },
 
   basic: {
@@ -24,6 +26,7 @@ export const GENERATION_PLANS = {
     monthlyLimit: 300,
     allowedQualities: ['draft', 'standard'],
     allowedFormats: ['portrait_2_3', 'square_1_1', 'landscape_3_2'],
+    allowedGeneratedImageFormats: ['png', 'jpeg', 'webp'],
   },
 
   pro: {
@@ -33,6 +36,7 @@ export const GENERATION_PLANS = {
     monthlyLimit: 800,
     allowedQualities: ['draft', 'standard', 'premium'],
     allowedFormats: ['portrait_2_3', 'square_1_1', 'landscape_3_2'],
+    allowedGeneratedImageFormats: ['png', 'jpeg', 'webp'],
   },
 
   admin: {
@@ -42,6 +46,7 @@ export const GENERATION_PLANS = {
     monthlyLimit: null,
     allowedQualities: ['draft', 'standard', 'premium', 'print'],
     allowedFormats: ['portrait_2_3', 'square_1_1', 'landscape_3_2'],
+    allowedGeneratedImageFormats: ['png', 'jpeg', 'webp'],
   },
 }
 

@@ -4,8 +4,11 @@ import { useEffect, useRef, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { generateYourLookClientImage } from '@/store/ready-template/ready-template-operations'
 import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
-import { getVisitorId } from '../../store/visitor/visitor-selectors'
+import { createGeneratedImage } from '@/store/generated-image/generated-image-operations'
+import { axiosCreateGeneratedImageFile } from '@/services/api/generated-image'
+import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import Text from '@/components/shared/text/Text'
 import GenerationOptionsPanel from '@/components/shared/generation/GenerationOptionsPanel'
@@ -17,6 +20,10 @@ export default function CreateYourLookGenerateClientImage({ template }) {
   const inputRef = useRef(null)
   const dispatch = useDispatch()
   const visitorId = useSelector(getVisitorId)
+
+  const [saveToGallery, setSaveToGallery] = useState(false)
+  const [imageTitle, setImageTitle] = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
 
   const {
     isLogin,
@@ -30,6 +37,10 @@ export default function CreateYourLookGenerateClientImage({ template }) {
     planHint,
     isFormatAllowed,
     isQualityAllowed,
+    generatedImageFormat,
+    setGeneratedImageFormat,
+    generatedImageFormats,
+    isGeneratedImageFormatAllowed,
   } = useGenerationPlanAccess()
 
   const [clientFile, setClientFile] = useState(null)
@@ -39,6 +50,7 @@ export default function CreateYourLookGenerateClientImage({ template }) {
   const [loading, setLoading] = useState(false)
   const [generatedFile, setGeneratedFile] = useState(null)
   const resultRef = useRef(null)
+  const previousTemplateIdRef = useRef(null)
 
   const scrollToResult = () => {
     if (!resultRef.current) return
@@ -60,6 +72,21 @@ export default function CreateYourLookGenerateClientImage({ template }) {
       if (clientPreview) URL.revokeObjectURL(clientPreview)
     }
   }, [clientPreview])
+
+  useEffect(() => {
+    if (!template?.id) return
+
+    const previousTemplateId = previousTemplateIdRef.current
+    previousTemplateIdRef.current = template.id
+
+    if (!previousTemplateId || previousTemplateId === template.id) return
+
+    setGeneratedPreview('')
+    setGeneratedFile(null)
+    setSaveToGallery(false)
+    setImageTitle('')
+    setExtraPrompt('')
+  }, [template?.id])
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
@@ -105,6 +132,11 @@ export default function CreateYourLookGenerateClientImage({ template }) {
       if (previewUrl) {
         setGeneratedPreview(previewUrl)
 
+        setImageTitle(
+          template?.title ? `${template.title} result` : 'My generated look',
+        )
+        setSaveToGallery(false)
+
         requestAnimationFrame(() => {
           scrollToResult()
         })
@@ -127,6 +159,98 @@ export default function CreateYourLookGenerateClientImage({ template }) {
       setLoading(false)
     }
   }
+
+  const downloadGeneratedImage = (
+    downloadUrl = generatedPreview,
+    forcedFormat = generatedImageFormat,
+  ) => {
+    if (!downloadUrl) return
+
+    const fileFormat = getGeneratedImageFormat(forcedFormat)
+
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = `${imageTitle?.trim() || 'generated-image'}.${
+      fileFormat.extension
+    }`
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const buildGeneratedImageFormData = (shouldSaveToGallery) => {
+    const fallbackTitle = template?.title
+      ? `${template.title} result`
+      : 'My generated look'
+
+    const normalizedTitle = String(imageTitle || '').trim() || fallbackTitle
+
+    const formData = new FormData()
+
+    formData.append('title', normalizedTitle)
+    formData.append('sourceType', 'create_your_look')
+    formData.append('templateId', template.id)
+    formData.append('extraPrompt', extraPrompt || '')
+    formData.append('outputFormat', outputFormat || '')
+    formData.append('photoQuality', photoQuality || '')
+    formData.append('fileFormat', generatedImageFormat || 'png')
+    formData.append('saveToGallery', shouldSaveToGallery ? 'true' : 'false')
+
+    const file =
+      generatedFile || dataUrlToFile(generatedPreview, `${normalizedTitle}.png`)
+
+    formData.append('image', file)
+
+    return {
+      formData,
+      normalizedTitle,
+    }
+  }
+
+  const handleDownloadGeneratedImage = async () => {
+  if (!generatedPreview) return
+
+  if (!isLogin) {
+    downloadGeneratedImage()
+    return
+  }
+
+  setSaveLoading(true)
+
+  try {
+    if (saveToGallery) {
+      const { formData: saveFormData } = buildGeneratedImageFormData(true)
+
+      await dispatch(createGeneratedImage(saveFormData)).unwrap()
+    }
+
+    const { formData: downloadFormData, normalizedTitle } =
+      buildGeneratedImageFormData(false)
+
+    const convertedImage = await axiosCreateGeneratedImageFile(downloadFormData)
+
+    const fileFormat = getGeneratedImageFormat(
+      convertedImage?.fileFormat || generatedImageFormat,
+    )
+
+    const objectUrl = URL.createObjectURL(convertedImage.blob)
+
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `${normalizedTitle}.${fileFormat.extension}`
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl)
+    }, 1000)
+  } finally {
+    setSaveLoading(false)
+  }
+}
 
   if (!template) {
     return (
@@ -365,7 +489,19 @@ export default function CreateYourLookGenerateClientImage({ template }) {
           loading={loading}
           disabled={!clientFile}
           onGenerate={handleGenerate}
+          onDownload={handleDownloadGeneratedImage}
           planHint={planHint}
+          isLogin={isLogin}
+          saveToGallery={saveToGallery}
+          setSaveToGallery={setSaveToGallery}
+          imageTitle={imageTitle}
+          setImageTitle={setImageTitle}
+          saveLoading={saveLoading}
+          generatedImageFormat={generatedImageFormat}
+          setGeneratedImageFormat={setGeneratedImageFormat}
+          generatedImageFormats={generatedImageFormats}
+          isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
+          formatLockedText={lockedText}
         />
       </div>
     </section>

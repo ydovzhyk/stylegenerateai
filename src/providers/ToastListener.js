@@ -27,6 +27,16 @@ import {
   clearGenerationUsageMessage,
 } from '@/store/generation-usage/generation-usage-slice'
 
+import {
+  getGeneratedImageError,
+  getGeneratedImageMessage,
+} from '@/store/generated-image/generated-image-selectors'
+
+import {
+  clearGeneratedImageError,
+  clearGeneratedImageMessage,
+} from '@/store/generated-image/generated-image-slice'
+
 const TOAST_DEDUPE_WINDOW_MS = 900
 
 const toastBaseOptions = {
@@ -138,6 +148,9 @@ export default function ToastListener() {
   const generationUsageError = useSelector(getGenerationUsageError)
   const generationUsageMessage = useSelector(getGenerationUsageMessage)
 
+  const generatedImageError = useSelector(getGeneratedImageError)
+  const generatedImageMessage = useSelector(getGeneratedImageMessage)
+
   useToastPair({
     error: authError,
     message: authMessage,
@@ -157,6 +170,13 @@ export default function ToastListener() {
     message: generationUsageMessage,
     clearError: clearGenerationUsageError,
     clearMessage: clearGenerationUsageMessage,
+  })
+
+  useToastPair({
+    error: generatedImageError,
+    message: generatedImageMessage,
+    clearError: clearGeneratedImageError,
+    clearMessage: clearGeneratedImageMessage,
   })
 
   return null

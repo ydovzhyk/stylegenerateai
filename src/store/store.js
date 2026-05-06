@@ -15,6 +15,7 @@ import technicalReducer from './technical/technical-slice'
 import visitorReducer from './visitor/visitor-slice'
 import readyTemplateReducer from './ready-template/ready-template-slice'
 import generationUsageReducer from './generation-usage/generation-usage-slice'
+import generatedImageReducer from './generated-image/generated-image-slice'
 import { setupInterceptors } from '../services/api/instance'
 // import logger from 'redux-logger'
 
@@ -40,6 +41,7 @@ export const store = configureStore({
     visitor: visitorReducer,
     readyTemplate: readyTemplateReducer,
     generationUsage: generationUsageReducer,
+    generatedImage: generatedImageReducer,
   },
   middleware: (getDefaultMiddleware) => {
     const middlewares = getDefaultMiddleware({
