@@ -196,6 +196,31 @@ const readyTemplate = createSlice({
       .addCase(deleteReadyTemplate.fulfilled, (state, { payload }) => {
         state.loading = false
         state.message = okMsg(payload, 'Template deleted successfully')
+
+        const deletedId = payload?.id
+
+        if (deletedId) {
+          state.yourLookSearchTemplates = state.yourLookSearchTemplates.filter(
+            (item) => String(item?._id) !== String(deletedId),
+          )
+
+          state.yourLookPreviewTemplates.man =
+            state.yourLookPreviewTemplates.man.filter(
+              (item) => String(item?._id) !== String(deletedId),
+            )
+
+          state.yourLookPreviewTemplates.woman =
+            state.yourLookPreviewTemplates.woman.filter(
+              (item) => String(item?._id) !== String(deletedId),
+            )
+
+          if (
+            state.selectedYourLookTemplate &&
+            String(state.selectedYourLookTemplate.id) === String(deletedId)
+          ) {
+            state.selectedYourLookTemplate = null
+          }
+        }
       })
       .addCase(deleteReadyTemplate.rejected, (state, { payload }) => {
         state.loading = false
