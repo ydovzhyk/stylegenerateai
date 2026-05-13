@@ -3,8 +3,11 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { motion, useReducedMotion } from 'motion/react'
-import { ChevronLeft, ChevronRight, Trash2, X } from 'lucide-react'
-import { deleteReadyTemplate } from '@/store/ready-template/ready-template-operations'
+import { ChevronLeft, ChevronRight, Pencil, Trash2, X } from 'lucide-react'
+import {
+  deleteReadyTemplate,
+  editReadyTemplate,
+} from '@/store/ready-template/ready-template-operations'
 import { getUser } from '@/store/auth/auth-selectors'
 import {
   getCreateYourLookSearchParams,
@@ -36,6 +39,7 @@ function mapTemplateItem(item) {
     category: String(item?.category || '').trim(),
     previewUrl: String(item?.previewUrl || '').trim(),
     slug: String(item?.slug || '').trim(),
+    useInCreateYourLook: Boolean(item?.useInCreateYourLook),
   }
 }
 
@@ -77,6 +81,7 @@ const RailTemplateCard = memo(function RailTemplateCard({
   onSelect,
   isAdmin = false,
   onRequestDelete,
+  onToggleCreateYourLook,
 }) {
   const reducedMotion = useReducedMotion()
 
@@ -97,7 +102,13 @@ const RailTemplateCard = memo(function RailTemplateCard({
       onMouseLeave={onResume}
       onFocus={onPause}
       onBlur={onResume}
-      className="group relative w-[calc(100vw-64px)] max-w-[360px] shrink-0 cursor-pointer overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition hover:border-primary/30 sm:w-[300px] md:w-[320px] lg:w-[270px] xl:w-[280px]"
+      className={`group relative w-[calc(100vw-64px)] max-w-[360px] shrink-0 cursor-pointer overflow-hidden rounded-[26px] border shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition hover:border-primary/30 sm:w-[300px] md:w-[320px] lg:w-[270px] xl:w-[280px] ${
+        isAdmin
+          ? item.useInCreateYourLook
+            ? 'border-emerald-300/25 bg-emerald-500/[0.08]'
+            : 'border-amber-300/25 bg-amber-500/[0.08]'
+          : 'border-white/10 bg-white/[0.04]'
+      }`}
     >
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[-10%] top-[-12%] h-28 w-28 rounded-full bg-primary/12 blur-3xl" />
@@ -105,19 +116,48 @@ const RailTemplateCard = memo(function RailTemplateCard({
       </div>
 
       {isAdmin ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onPause?.()
-            onRequestDelete?.(item)
-          }}
-          className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-400/30 bg-red-500/15 text-red-100 backdrop-blur-md transition hover:border-red-300/60 hover:bg-red-500/25"
-          aria-label="Delete template"
-        >
-          <Trash2 size={16} />
-        </button>
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onPause?.()
+              onToggleCreateYourLook?.(item)
+            }}
+            className={`absolute left-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition ${
+              item.useInCreateYourLook
+                ? 'border-emerald-300/40 bg-emerald-500/20 text-emerald-100 hover:border-emerald-200/70 hover:bg-emerald-500/30'
+                : 'border-amber-300/40 bg-amber-500/20 text-amber-100 hover:border-amber-200/70 hover:bg-amber-500/30'
+            }`}
+            aria-label={
+              item.useInCreateYourLook
+                ? 'Remove from Create Your Look'
+                : 'Add to Create Your Look'
+            }
+            title={
+              item.useInCreateYourLook
+                ? 'Remove from Create Your Look'
+                : 'Add to Create Your Look'
+            }
+          >
+            <Pencil size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              onPause?.()
+              onRequestDelete?.(item)
+            }}
+            className="absolute right-3 top-3 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-400/30 bg-red-500/15 text-red-100 backdrop-blur-md transition hover:border-red-300/60 hover:bg-red-500/25"
+            aria-label="Delete template"
+          >
+            <Trash2 size={16} />
+          </button>
+        </>
       ) : null}
 
       <div className="relative aspect-[4/5] overflow-hidden">
@@ -620,6 +660,35 @@ export default function CreateYourLookDefaultTemplatesRail() {
     }
   }, [dispatch, pauseAutoScroll, searchParams, templateToDelete])
 
+  const handleToggleCreateYourLook = useCallback(
+    async (item) => {
+      if (!item?.id) return
+
+      pauseAutoScroll()
+
+      try {
+        await dispatch(
+          editReadyTemplate({
+            id: item.id,
+            useInCreateYourLook: !item.useInCreateYourLook,
+          }),
+        ).unwrap()
+
+        dispatch(
+          getYourLookSearchTemplatesOperation({
+            ...searchParams,
+            mode: 'replace',
+          }),
+        )
+      } catch (e) {
+        console.error(e)
+      } finally {
+        resumeAutoScrollWithDelay()
+      }
+    },
+    [dispatch, pauseAutoScroll, resumeAutoScrollWithDelay, searchParams],
+  )
+
   if (!templates.length && !loading) return null
 
   return (
@@ -708,6 +777,7 @@ export default function CreateYourLookDefaultTemplatesRail() {
                 onSelect={handleSelectTemplate}
                 isAdmin={isAdmin}
                 onRequestDelete={setTemplateToDelete}
+                onToggleCreateYourLook={handleToggleCreateYourLook}
               />
             ))}
 
@@ -826,7 +896,6 @@ export default function CreateYourLookDefaultTemplatesRail() {
           </div>
         </div>
       ) : null}
-
     </section>
   )
 }

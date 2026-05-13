@@ -33,7 +33,11 @@ const initialState = {
     man: [],
     woman: [],
   },
-  yourLookFeaturedTemplates: [],
+  yourLookPreviewLoading: false,
+  yourLookPreviewHasMore: {
+    man: true,
+    woman: true,
+  },
 
   // create-your-look search
   yourLookSearchTemplates: [],
@@ -42,11 +46,13 @@ const initialState = {
     selectedCategory: 'All',
     page: 1,
     limit: 10,
+    railMode: 'latest',
   },
   hasMoreSearchResults: false,
   yourLookSearchLoading: false,
   isEmptyResultsSearch: false,
   isManualSearch: false,
+  yourLookSearchInitialized: false,
 
   // selected template for create image from client image
   selectedYourLookTemplate: null,
@@ -92,11 +98,13 @@ const readyTemplate = createSlice({
       state.hasMoreSearchResults = false
       state.yourLookSearchLoading = false
       state.isEmptyResultsSearch = false
+      state.yourLookSearchInitialized = false
       state.createYourLookSearchParams = {
         query: '',
         selectedCategory: 'All',
         page: 1,
         limit: 10,
+        railMode: 'latest',
       }
     },
     setIsManualSearch: (state, action) => {
@@ -245,14 +253,55 @@ const readyTemplate = createSlice({
       // GET YOUR LOOK PREVIEW TEMPLATES
       .addCase(getYourLookPreviewTemplates.pending, (state) => {
         state.error = null
+        state.yourLookPreviewLoading = true
       })
-      .addCase(getYourLookPreviewTemplates.fulfilled, (state, { payload }) => {
-        state.yourLookPreviewTemplates = {
-          man: payload?.values?.man || [],
-          woman: payload?.values?.woman || [],
-        }
-      })
+      .addCase(
+        getYourLookPreviewTemplates.fulfilled,
+        (state, { payload, meta }) => {
+          const mode = meta.arg?.mode || 'replace'
+
+          const nextMan = payload?.values?.man || []
+          const nextWoman = payload?.values?.woman || []
+
+          state.yourLookPreviewLoading = false
+          state.yourLookPreviewHasMore = {
+            man: payload?.meta?.hasMoreMan ?? nextMan.length > 0,
+            woman: payload?.meta?.hasMoreWoman ?? nextWoman.length > 0,
+          }
+
+          if (mode === 'append') {
+            const existingIds = new Set([
+              ...state.yourLookPreviewTemplates.man.map((item) =>
+                String(item?._id),
+              ),
+              ...state.yourLookPreviewTemplates.woman.map((item) =>
+                String(item?._id),
+              ),
+            ])
+
+            state.yourLookPreviewTemplates.man = [
+              ...state.yourLookPreviewTemplates.man,
+              ...nextMan.filter((item) => !existingIds.has(String(item?._id))),
+            ]
+
+            state.yourLookPreviewTemplates.woman = [
+              ...state.yourLookPreviewTemplates.woman,
+              ...nextWoman.filter(
+                (item) => !existingIds.has(String(item?._id)),
+              ),
+            ]
+
+            return
+          }
+
+          state.yourLookPreviewTemplates = {
+            man: nextMan,
+            woman: nextWoman,
+          }
+        },
+      )
       .addCase(getYourLookPreviewTemplates.rejected, (state, { payload }) => {
+        state.yourLookPreviewLoading = false
         state.error = errMsg(payload)
       })
 
@@ -269,6 +318,7 @@ const readyTemplate = createSlice({
           const nextTemplates = payload?.templates || []
 
           state.yourLookSearchLoading = false
+          state.yourLookSearchInitialized = true
           state.hasMoreSearchResults = payload?.hasMore || false
 
           if (mode === 'append') {
@@ -290,6 +340,7 @@ const readyTemplate = createSlice({
       )
       .addCase(getYourLookSearchTemplates.rejected, (state, { payload }) => {
         state.yourLookSearchLoading = false
+        state.yourLookSearchInitialized = true
         state.isManualSearch = false
         state.error = errMsg(payload)
       })

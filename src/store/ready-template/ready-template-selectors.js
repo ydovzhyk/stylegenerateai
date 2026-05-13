@@ -21,11 +21,15 @@ export const getReadyTemplateResolveMetadataLoading = ({ readyTemplate }) =>
 export const getReadyTemplateAutoGenerationLoading = ({ readyTemplate }) =>
   readyTemplate.autoGenerationLoading
 
-// create-your-look
+// create-your-look (preview templates)
 export const getYourLookPreviewTemplates = ({ readyTemplate }) =>
   readyTemplate.yourLookPreviewTemplates
+export const getYourLookPreviewLoading = ({ readyTemplate }) =>
+  readyTemplate.yourLookPreviewLoading
+export const getYourLookPreviewHasMore = ({ readyTemplate }) =>
+  readyTemplate.yourLookPreviewHasMore
 
-// create-your-look search
+// create-your-look (search templates)
 export const getYourLookSearchTemplates = ({ readyTemplate }) =>
   readyTemplate.yourLookSearchTemplates
 
@@ -41,5 +45,7 @@ export const getIsEmptyResultsSearch = ({ readyTemplate }) =>
   readyTemplate.isEmptyResultsSearch
 export const getIsManualSearch = ({ readyTemplate }) =>
   readyTemplate.isManualSearch
+export const getYourLookSearchInitialized = ({ readyTemplate }) =>
+  readyTemplate.yourLookSearchInitialized
 export const getSelectedYourLookTemplate = ({ readyTemplate }) =>
   readyTemplate.selectedYourLookTemplate

@@ -1,21 +1,33 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useTranslate } from '@/utils/translate/translate'
-
-const PROTOTYPE_BY_KEY = {
-  man_front_color: '/images/photo-prototype/men-color.png',
-  man_front_black: '/images/photo-prototype/men-black.png',
-  man_profile_color: '/images/photo-prototype/men-color-profile.png',
-  man_profile_black: '/images/photo-prototype/men-black-profile.png',
-  woman_front_color: '/images/photo-prototype/women-color.png',
-  woman_front_black: '/images/photo-prototype/women-black.png',
-  woman_profile_color: '/images/photo-prototype/women-color-profile.png',
-  woman_profile_black: '/images/photo-prototype/women-black-profile.png',
-}
+import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
+import { getYourLookPreviewTemplates as getYourLookPreviewTemplatesOperation } from '@/store/ready-template/ready-template-operations'
+import {
+  getYourLookPreviewHasMore,
+  getYourLookPreviewLoading,
+  getYourLookPreviewTemplates as selectYourLookPreviewTemplates,
+} from '@/store/ready-template/ready-template-selectors'
 
 const CARD_ROTATE_MS = 8200
+const PREVIEW_LIMIT = 5
+
+function resolvePreviewGender(previewSourceKey = '') {
+  const key = String(previewSourceKey).trim().toLowerCase()
+
+  if (key.startsWith('woman_') || key.includes('_female_')) {
+    return 'woman'
+  }
+
+  if (key.startsWith('man_') || key.includes('_male_')) {
+    return 'man'
+  }
+
+  return 'woman'
+}
 
 function mapPreviewItem(item) {
   const previewSourceKey = String(item?.previewSourceKey || '').trim()
@@ -27,10 +39,10 @@ function mapPreviewItem(item) {
       `${previewSourceKey}-${String(item?.previewUrl || '')}-${String(item?.title || '')}`,
     title: String(item?.title || '').trim(),
     category: String(item?.category || '').trim(),
-    beforeSrc: PROTOTYPE_BY_KEY[previewSourceKey] || '',
+    beforeSrc: PROTOTYPE_MAP[previewSourceKey] || '',
     afterSrc: String(item?.previewUrl || '').trim(),
     previewSourceKey,
-    gender: previewSourceKey.startsWith('man_') ? 'man' : 'woman',
+    gender: resolvePreviewGender(previewSourceKey),
   }
 }
 
@@ -75,7 +87,15 @@ function useRotatingIndex(length, delay) {
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
-    setIndex(0)
+    if (length <= 0) {
+      setIndex(0)
+      return
+    }
+
+    setIndex((prev) => {
+      if (prev >= length) return 0
+      return prev
+    })
   }, [length])
 
   useEffect(() => {
@@ -94,7 +114,6 @@ function useRotatingIndex(length, delay) {
 function PreviewImageCard({
   src,
   alt,
-  // title,
   category,
   label,
   labelType = 'default',
@@ -199,7 +218,6 @@ function PreviewPair({ item, accent = 'primary', contentKey }) {
       <PreviewImageCard
         src={item.beforeSrc}
         alt={`${item.title} ${beforeAltText}`}
-        title={item.title}
         category={item.category}
         label={beforeText}
         labelType="before"
@@ -257,9 +275,64 @@ function PreviewGroupCard({ item, accent = 'primary', contentKey }) {
   )
 }
 
-export default function CreateYourLookAnimatedPreview({
-  previewGroups = { man: [], woman: [] },
-}) {
+export default function CreateYourLookAnimatedPreview() {
+  const dispatch = useDispatch()
+
+  const previewGroups = useSelector(selectYourLookPreviewTemplates)
+  const previewLoading = useSelector(getYourLookPreviewLoading)
+  const previewHasMore = useSelector(getYourLookPreviewHasMore)
+
+  const lastPreviewRequestKeyRef = useRef('')
+  const previewInitialLoadedRef = useRef(false)
+  const requestedPreviewLengthRef = useRef(0)
+
+  const allPreviewItems = useMemo(
+    () => [...(previewGroups?.man || []), ...(previewGroups?.woman || [])],
+    [previewGroups],
+  )
+
+  const hasPreviewItems = allPreviewItems.length > 0
+
+  useEffect(() => {
+    lastPreviewRequestKeyRef.current = ''
+  }, [previewGroups])
+
+  useEffect(() => {
+    if (previewInitialLoadedRef.current) return
+    if (hasPreviewItems) {
+      previewInitialLoadedRef.current = true
+      return
+    }
+
+    previewInitialLoadedRef.current = true
+
+    dispatch(
+      getYourLookPreviewTemplatesOperation({
+        limit: PREVIEW_LIMIT,
+        mode: 'replace',
+      }),
+    )
+  }, [dispatch, hasPreviewItems])
+
+  const handleNeedMorePreviewTemplates = useCallback(() => {
+    if (previewLoading) return
+    if (!previewHasMore?.man && !previewHasMore?.woman) return
+
+    const excludeIds = allPreviewItems.map((item) => item?._id).filter(Boolean)
+    const requestKey = excludeIds.join('|')
+
+    if (lastPreviewRequestKeyRef.current === requestKey) return
+    lastPreviewRequestKeyRef.current = requestKey
+
+    dispatch(
+      getYourLookPreviewTemplatesOperation({
+        limit: PREVIEW_LIMIT,
+        excludeIds,
+        mode: 'append',
+      }),
+    )
+  }, [dispatch, allPreviewItems, previewLoading, previewHasMore])
+
   const manItems = useMemo(
     () =>
       (previewGroups?.man || [])
@@ -281,13 +354,26 @@ export default function CreateYourLookAnimatedPreview({
     [manItems, womanItems],
   )
 
-  const manIndex = useRotatingIndex(manItems.length, CARD_ROTATE_MS)
-  const womanIndex = useRotatingIndex(womanItems.length, CARD_ROTATE_MS)
+  const desktopPairsLength = Math.min(manItems.length, womanItems.length)
+
+  const desktopIndex = useRotatingIndex(desktopPairsLength, CARD_ROTATE_MS)
   const mobileIndex = useRotatingIndex(mobileItems.length, CARD_ROTATE_MS)
 
-  const activeMan = manItems[manIndex] || null
-  const activeWoman = womanItems[womanIndex] || null
+  const activeMan = manItems[desktopIndex] || null
+  const activeWoman = womanItems[desktopIndex] || null
   const activeMobile = mobileItems[mobileIndex] || null
+
+  useEffect(() => {
+    if (desktopPairsLength <= 0) return
+
+    const remainingPairs = desktopPairsLength - desktopIndex - 1
+
+    if (remainingPairs > 2) return
+    if (requestedPreviewLengthRef.current === desktopPairsLength) return
+
+    requestedPreviewLengthRef.current = desktopPairsLength
+    handleNeedMorePreviewTemplates()
+  }, [desktopIndex, desktopPairsLength, handleNeedMorePreviewTemplates])
 
   if (!activeMobile && !activeMan && !activeWoman) return null
 
@@ -305,13 +391,13 @@ export default function CreateYourLookAnimatedPreview({
         <PreviewGroupCard
           item={activeMan}
           accent="primary"
-          contentKey={`${activeMan?.id}-${manIndex}`}
+          contentKey={`${activeMan?.id}-${desktopIndex}`}
         />
 
         <PreviewGroupCard
           item={activeWoman}
           accent="cyan"
-          contentKey={`${activeWoman?.id}-${womanIndex}`}
+          contentKey={`${activeWoman?.id}-${desktopIndex}`}
         />
       </div>
     </section>

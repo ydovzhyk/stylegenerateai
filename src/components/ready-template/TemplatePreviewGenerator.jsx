@@ -6,6 +6,7 @@ import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import {
   OUTPUT_FORMATS,
   getOutputFormat,
@@ -17,33 +18,38 @@ import {
   DEFAULT_PHOTO_QUALITY,
 } from '@/constants/photo-quality'
 
-const PROTOTYPE_MAP = {
-  man: {
-    front: {
-      color: '/images/photo-prototype/men-color.png',
-      black: '/images/photo-prototype/men-black.png',
-    },
-    profile: {
-      color: '/images/photo-prototype/men-color-profile.png',
-      black: '/images/photo-prototype/men-black-profile.png',
-    },
-  },
-  woman: {
-    front: {
-      color: '/images/photo-prototype/women-color.png',
-      black: '/images/photo-prototype/women-black.png',
-    },
-    profile: {
-      color: '/images/photo-prototype/women-color-profile.png',
-      black: '/images/photo-prototype/women-black-profile.png',
-    },
-  },
+const RACE_OPTIONS = [
+  { value: 'european', label: 'European' },
+  { value: 'afro', label: 'Afro' },
+  { value: 'arab', label: 'Arabic' },
+  { value: 'asian', label: 'Asian' },
+]
+
+const VIEW_OPTIONS = [
+  { value: 'front', label: 'Front' },
+  { value: 'profile', label: 'Profile' },
+  { value: '3q', label: '3/4 view' },
+]
+
+function getPrototypeGender({ race, gender }) {
+  if (race === 'european') return gender
+  return `${race}_${gender === 'man' ? 'male' : 'female'}`
 }
 
-function makePreviewSourceKey({ gender, view, tone, sourceUploadFile }) {
+function getPrototypeTone({ race, view, tone }) {
+  if (tone === 'color') return 'color'
+  if (race === 'european' && view !== '3q') return 'bw'
+  return 'bw'
+}
+
+function makePreviewSourceKey({ race, gender, view, tone, sourceUploadFile }) {
   if (sourceUploadFile) return ''
-  if (!gender || !view || !tone) return ''
-  return `${gender}_${view}_${tone}`
+  if (!race || !gender || !view || !tone) return ''
+
+  const prototypeGender = getPrototypeGender({ race, gender })
+  const prototypeTone = getPrototypeTone({ race, view, tone })
+
+  return `${prototypeGender}_${view}_${prototypeTone}`
 }
 
 async function srcToFile(src, filename = 'prototype-reference.png') {
@@ -59,6 +65,7 @@ export default function TemplatePreviewGenerator({
   onGenerate,
   resetSignal,
 }) {
+  const [race, setRace] = useState('european')
   const [gender, setGender] = useState('man')
   const [tone, setTone] = useState('color')
   const [view, setView] = useState('front')
@@ -73,11 +80,19 @@ export default function TemplatePreviewGenerator({
   const [generationError, setGenerationError] = useState('')
   const [isGeneratedPreviewOpen, setIsGeneratedPreviewOpen] = useState(false)
 
+  const previewSourceKey = useMemo(() => {
+    return makePreviewSourceKey({
+      race,
+      gender,
+      view,
+      tone,
+      sourceUploadFile,
+    })
+  }, [race, gender, view, tone, sourceUploadFile])
+
   const prototypeSrc = useMemo(() => {
-    return (
-      PROTOTYPE_MAP[gender]?.[view]?.[tone] || PROTOTYPE_MAP.man.front.color
-    )
-  }, [gender, view, tone])
+    return PROTOTYPE_MAP[previewSourceKey] || PROTOTYPE_MAP.man_front_color
+  }, [previewSourceKey])
 
   const activeSourcePreview = useMemo(() => {
     return sourceUploadPreview || prototypeSrc
@@ -110,6 +125,7 @@ export default function TemplatePreviewGenerator({
   }, [sourceUploadFile])
 
   useEffect(() => {
+    setRace('european')
     setGender('man')
     setTone('color')
     setView('front')
@@ -134,10 +150,7 @@ export default function TemplatePreviewGenerator({
       return sourceUploadFile
     }
 
-    return srcToFile(
-      prototypeSrc,
-      `${gender}-${view}-${tone === 'black' ? 'black-white' : 'color'}.png`,
-    )
+    return srcToFile(prototypeSrc, `${previewSourceKey || 'prototype'}.png`)
   }
 
   const handleGenerate = async () => {
@@ -154,6 +167,8 @@ export default function TemplatePreviewGenerator({
       setIsGenerating(true)
 
       const sourceFile = await resolveSourceFile()
+      const prototypeGender = getPrototypeGender({ race, gender })
+      const prototypeTone = getPrototypeTone({ race, view, tone })
 
       if (typeof onGenerate === 'function') {
         const result = await onGenerate({
@@ -161,10 +176,12 @@ export default function TemplatePreviewGenerator({
           sourceFile,
           sourceMode: sourceUploadFile ? 'upload' : 'prototype',
           prototype: {
-            gender,
+            race,
+            gender: prototypeGender,
             view,
-            tone,
+            tone: prototypeTone,
             src: prototypeSrc,
+            previewSourceKey,
           },
           output: selectedOutputFormat,
           photoQuality: selectedPhotoQuality,
@@ -191,7 +208,7 @@ export default function TemplatePreviewGenerator({
         } else {
           const prototypeFile = await srcToFile(
             prototypeSrc,
-            `${gender}-${tone === 'black' ? 'black-white' : 'color'}.png`,
+            `${previewSourceKey || 'prototype'}.png`,
           )
           setGeneratedFile(prototypeFile)
         }
@@ -205,13 +222,6 @@ export default function TemplatePreviewGenerator({
 
   const handleApply = async () => {
     if (!generatedPreview && !generatedFile) return
-
-    const previewSourceKey = makePreviewSourceKey({
-      gender,
-      view,
-      tone,
-      sourceUploadFile,
-    })
 
     if (generatedFile) {
       onApply?.({
@@ -267,6 +277,46 @@ export default function TemplatePreviewGenerator({
               </Text>
 
               <div className="flex flex-col gap-3">
+                <div>
+                  <Text
+                    as="p"
+                    variant="body-sm"
+                    color="soft"
+                    caseMode="sentence"
+                    className="mb-2"
+                  >
+                    Race
+                  </Text>
+
+                  <div className="flex flex-col gap-2">
+                    {RACE_OPTIONS.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-background-soft/70 px-3 py-3"
+                      >
+                        <input
+                          type="radio"
+                          name="race"
+                          value={option.value}
+                          checked={race === option.value}
+                          onChange={() => setRace(option.value)}
+                          disabled={disabled || isGenerating}
+                          className="h-4 w-4 accent-[var(--primary)]"
+                        />
+
+                        <Text
+                          as="span"
+                          variant="body-sm"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {option.label}
+                        </Text>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <Text
                     as="p"
@@ -333,45 +383,31 @@ export default function TemplatePreviewGenerator({
                   </Text>
 
                   <div className="flex flex-col gap-2">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-background-soft/70 px-3 py-3">
-                      <input
-                        type="radio"
-                        name="view"
-                        value="front"
-                        checked={view === 'front'}
-                        onChange={() => setView('front')}
-                        disabled={disabled || isGenerating}
-                        className="h-4 w-4 accent-[var(--primary)]"
-                      />
-                      <Text
-                        as="span"
-                        variant="body-sm"
-                        color="soft"
-                        caseMode="sentence"
+                    {VIEW_OPTIONS.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-background-soft/70 px-3 py-3"
                       >
-                        Front
-                      </Text>
-                    </label>
+                        <input
+                          type="radio"
+                          name="view"
+                          value={option.value}
+                          checked={view === option.value}
+                          onChange={() => setView(option.value)}
+                          disabled={disabled || isGenerating}
+                          className="h-4 w-4 accent-[var(--primary)]"
+                        />
 
-                    <label className="flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-background-soft/70 px-3 py-3">
-                      <input
-                        type="radio"
-                        name="view"
-                        value="profile"
-                        checked={view === 'profile'}
-                        onChange={() => setView('profile')}
-                        disabled={disabled || isGenerating}
-                        className="h-4 w-4 accent-[var(--primary)]"
-                      />
-                      <Text
-                        as="span"
-                        variant="body-sm"
-                        color="soft"
-                        caseMode="sentence"
-                      >
-                        Profile
-                      </Text>
-                    </label>
+                        <Text
+                          as="span"
+                          variant="body-sm"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {option.label}
+                        </Text>
+                      </label>
+                    ))}
                   </div>
                 </div>
 

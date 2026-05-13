@@ -18,9 +18,9 @@ const ClientLayout = ({ children }) => {
 
   const navItems = [
     { href: '/', label: 'Home' },
-    { href: '/templates', label: 'Templates' },
+    { href: '/create-your-look', label: 'Looks' },
+    { href: '/photo-lab', label: 'Photo Lab' },
     { href: '/pricing', label: 'Pricing' },
-    { href: '/about', label: 'About' },
   ]
 
   return (

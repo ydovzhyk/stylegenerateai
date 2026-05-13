@@ -2,8 +2,19 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import Text from '../shared/text/Text'
+
+function isActiveNavItem(pathname, href) {
+  if (!pathname || !href) return false
+
+  if (href === '/') {
+    return pathname === '/'
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
 
 function BurgerButton({ open, onClick }) {
   return (
@@ -38,22 +49,36 @@ function BurgerButton({ open, onClick }) {
   )
 }
 
-function DesktopNav({ items = [] }) {
+function DesktopNav({ items = [], pathname }) {
   if (!items.length) return null
 
   return (
     <nav className="hidden items-center gap-1 xl:flex">
-      {items.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className="rounded-full px-4 py-2 text-md font-medium text-foreground-muted transition hover:bg-white/5 hover:text-white"
-        >
-          <Text as="span" variant="body">
-            {item.label}
-          </Text>
-        </Link>
-      ))}
+      {items.map((item) => {
+        const isActive = isActiveNavItem(pathname, item.href)
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={isActive ? 'page' : undefined}
+            className={clsx(
+              'relative rounded-full px-4 py-1 text-md font-medium transition-all duration-300',
+              isActive
+                ? 'ring-1 ring-primary/25 bg-primary/10 text-primary shadow-[0_0_30px_rgba(124,92,255,0.22)] h-[40px]'
+                : 'text-foreground-muted hover:bg-white/5 hover:text-white h-[40px]',
+            )}
+          >
+            <Text as="span" variant="body">
+              {item.label}
+            </Text>
+
+            {isActive ? (
+              <span className="pointer-events-none absolute inset-x-3 -bottom-px h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-90" />
+            ) : null}
+          </Link>
+        )
+      })}
     </nav>
   )
 }
@@ -62,6 +87,7 @@ function MobileMenu({
   open,
   onClose,
   items = [],
+  pathname,
   languageSlot,
   authSlot,
   userSlot,
@@ -120,18 +146,28 @@ function MobileMenu({
         <div className="flex-1 overflow-y-auto px-4 py-5">
           {items.length > 0 ? (
             <nav className="mb-6 flex flex-col gap-2">
-              {items.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onClose}
-                  className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-base font-medium text-foreground-soft transition hover:border-primary/30 hover:bg-white/[0.05] hover:text-white"
-                >
-                  <Text as="span" variant="body" caseMode="sentence">
-                    {item.label}
-                  </Text>
-                </Link>
-              ))}
+              {items.map((item) => {
+                const isActive = isActiveNavItem(pathname, item.href)
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={clsx(
+                      'rounded-2xl border px-4 py-3 text-base font-medium transition-all duration-300',
+                      isActive
+                        ? 'border-primary/35 bg-primary/10 text-primary shadow-[0_0_30px_rgba(124,92,255,0.18)]'
+                        : 'border-white/8 bg-white/[0.03] text-foreground-soft hover:border-primary/30 hover:bg-white/[0.05] hover:text-white',
+                    )}
+                  >
+                    <Text as="span" variant="body" caseMode="sentence">
+                      {item.label}
+                    </Text>
+                  </Link>
+                )
+              })}
             </nav>
           ) : null}
 
@@ -196,6 +232,7 @@ export default function Header({
   className,
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname()
 
   const desktopAccountSlot = useMemo(() => {
     return isAuthenticated ? userSlot : authSlot
@@ -220,7 +257,7 @@ export default function Header({
           </div>
 
           <div className="hidden min-w-0 justify-self-center xl:flex">
-            <DesktopNav items={navItems} />
+            <DesktopNav items={navItems} pathname={pathname} />
           </div>
 
           <div className="hidden items-center gap-3 justify-self-end xl:flex">
@@ -244,6 +281,7 @@ export default function Header({
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         items={navItems}
+        pathname={pathname}
         languageSlot={languageSlot}
         authSlot={authSlot}
         userSlot={userSlot}

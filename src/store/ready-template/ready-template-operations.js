@@ -58,9 +58,9 @@ export const generateReadyTemplatePreview = createAsyncThunk(
 
 export const getYourLookPreviewTemplates = createAsyncThunk(
   'ready-templates/get-your-look-preview',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const data = await axiosGetYourLookPreviewTemplates()
+      const data = await axiosGetYourLookPreviewTemplates(params)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)
@@ -94,9 +94,16 @@ export const deleteReadyTemplate = createAsyncThunk(
 
 export const editReadyTemplate = createAsyncThunk(
   'ready-templates/editReadyTemplate',
-  async ({ id, ...userData }, { rejectWithValue }) => {
+  async ({ id, ...userData }, { rejectWithValue, dispatch }) => {
     try {
       const data = await axiosEditReadyTemplate(id, userData)
+      dispatch(
+        getYourLookPreviewTemplates({
+          limit: 5,
+          excludeIds: [],
+          mode: 'replace',
+        }),
+      )
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

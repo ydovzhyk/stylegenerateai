@@ -27,25 +27,35 @@ export const axiosCreateReadyTemplate = async (formData) => {
   return data
 }
 
-export const axiosGetYourLookPreviewTemplates = async () => {
+export const axiosGetYourLookPreviewTemplates = async (params = {}) => {
+  const { limit = 5, excludeIds = [] } = params
+
   const { data } = await instance.get(
-    '/ready-templates/get-your-look-preview?limit=10',
+    '/ready-templates/get-your-look-preview',
+    {
+      params: {
+        limit,
+        excludeIds: excludeIds.join(','),
+      },
+    },
   )
+
   return data
 }
 
-//axiosGetYourLookFeaturedTemplates
-//axiosGetYourLookSearchTemplates
 export const axiosGetYourLookSearchTemplates = async (params = {}) => {
-  const { query, selectedCategory, page, limit } = params
+  const { query, selectedCategory, page, limit, railMode } = params
+
   const { data } = await instance.get('/ready-templates/get-your-look-search', {
     params: {
       query,
       category: selectedCategory,
       limit,
       page,
+      railMode,
     },
   })
+
   return data
 }
 

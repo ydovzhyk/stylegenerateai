@@ -1,14 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import CreateYourLookAnimatedPreview from '@/components/create-your-look/CreateYourLookAnimatedPreview'
 import CreateYourLookSearch from '@/components/create-your-look/CreateYourLookSearch'
 import CreateYourLookDefaultTemplatesRail from '@/components/create-your-look/CreateYourLookDefaultTemplatesRail'
-import { getYourLookPreviewTemplates } from '@/store/ready-template/ready-template-operations'
 import {
   getIsEmptyResultsSearch,
-  getYourLookPreviewTemplates as selectYourLookPreviewTemplates,
   getYourLookSearchLoading,
   getIsManualSearch,
   getSelectedYourLookTemplate,
@@ -20,7 +18,6 @@ import Text from '@/components/shared/text/Text'
 export default function CreateYourLookPage() {
   const dispatch = useDispatch()
 
-  const previewGroups = useSelector(selectYourLookPreviewTemplates)
   const loading = useSelector(getYourLookSearchLoading)
   const isEmptyResultsSearch = useSelector(getIsEmptyResultsSearch)
   const isManualSearch = useSelector(getIsManualSearch)
@@ -31,10 +28,6 @@ export default function CreateYourLookPage() {
 
   const generateRef = useRef(null)
   const prevSelectedTemplateIdRef = useRef(null)
-
-  useEffect(() => {
-    dispatch(getYourLookPreviewTemplates())
-  }, [dispatch])
 
   useEffect(() => {
     const justFinishedSearch = prevLoadingRef.current && !loading
@@ -115,7 +108,7 @@ export default function CreateYourLookPage() {
         </Text>
       </div>
 
-      <CreateYourLookAnimatedPreview previewGroups={previewGroups} />
+      <CreateYourLookAnimatedPreview />
 
       <div ref={railRef}>
         <CreateYourLookDefaultTemplatesRail />

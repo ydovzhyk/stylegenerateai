@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-
 import {
   getCategories,
   getYourLookSearchTemplates,
@@ -12,20 +11,19 @@ import {
   getReadyTemplateCategories,
   getYourLookSearchLoading,
   getIsEmptyResultsSearch,
+  getYourLookSearchInitialized,
 } from '@/store/ready-template/ready-template-selectors'
 import {
   setCreateYourLookSearchParams,
   setIsManualSearch,
+  resetCreateYourLookSearchState,
 } from '@/store/ready-template/ready-template-slice'
-
 import { useTranslate, translateTextTo } from '@/utils/translate/translate'
 import { useLanguage } from '@/providers/languageContext'
 import languagesAndCodes from '@/utils/translate/languagesAndCodes'
-
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
-
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 function getPageSize(width) {
@@ -50,6 +48,11 @@ function TranslatedInlineText({ text, className, caseMode = 'auto' }) {
   return <span className={className}>{translated}</span>
 }
 
+const RAIL_MODES = ['latest', 'oldest', 'middle']
+function getRandomRailMode() {
+  return RAIL_MODES[Math.floor(Math.random() * RAIL_MODES.length)]
+}
+
 export default function CreateYourLookSearch() {
   const dispatch = useDispatch()
   const { languageIndex } = useLanguage()
@@ -58,6 +61,7 @@ export default function CreateYourLookSearch() {
   const appliedSearchParams = useSelector(getCreateYourLookSearchParams)
   const yourLookSearchLoading = useSelector(getYourLookSearchLoading)
   const isEmptyResultsSearch = useSelector(getIsEmptyResultsSearch)
+  const yourLookSearchInitialized = useSelector(getYourLookSearchInitialized)
 
   const [localQuery, setLocalQuery] = useState(appliedSearchParams?.query || '')
   const [localSelectedCategory, setLocalSelectedCategory] = useState(
@@ -74,14 +78,36 @@ export default function CreateYourLookSearch() {
   }, [dispatch])
 
   useEffect(() => {
+    if (yourLookSearchInitialized) return
+
+    const isDefaultRail =
+      !appliedSearchParams?.query &&
+      (!appliedSearchParams?.selectedCategory ||
+        appliedSearchParams.selectedCategory === 'All')
+
+    const railMode = isDefaultRail
+      ? getRandomRailMode()
+      : appliedSearchParams?.railMode || 'latest'
+
+    const nextParams = {
+      ...appliedSearchParams,
+      railMode,
+      page: appliedSearchParams?.page || 1,
+      limit: appliedSearchParams?.limit || 10,
+    }
+
+    if (isDefaultRail) {
+      dispatch(setCreateYourLookSearchParams({ railMode }))
+    }
+
     dispatch(
       getYourLookSearchTemplates({
-        ...appliedSearchParams,
+        ...nextParams,
         mode: 'replace',
       }),
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch])
+  }, [dispatch, yourLookSearchInitialized])
 
   useEffect(() => {
     const updatePageSize = () => {
@@ -197,7 +223,9 @@ export default function CreateYourLookSearch() {
     }
 
     dispatch(setIsManualSearch(true))
+    dispatch(resetCreateYourLookSearchState())
     dispatch(setCreateYourLookSearchParams(nextParams))
+
     dispatch(
       getYourLookSearchTemplates({
         ...nextParams,
