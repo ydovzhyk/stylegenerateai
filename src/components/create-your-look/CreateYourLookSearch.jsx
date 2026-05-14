@@ -16,7 +16,6 @@ import {
 import {
   setCreateYourLookSearchParams,
   setIsManualSearch,
-  resetCreateYourLookSearchState,
 } from '@/store/ready-template/ready-template-slice'
 import { useTranslate, translateTextTo } from '@/utils/translate/translate'
 import { useLanguage } from '@/providers/languageContext'
@@ -223,7 +222,6 @@ export default function CreateYourLookSearch() {
     }
 
     dispatch(setIsManualSearch(true))
-    dispatch(resetCreateYourLookSearchState())
     dispatch(setCreateYourLookSearchParams(nextParams))
 
     dispatch(

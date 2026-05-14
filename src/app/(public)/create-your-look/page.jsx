@@ -14,6 +14,7 @@ import {
 import { setIsManualSearch } from '@/store/ready-template/ready-template-slice'
 import CreateYourLookGenerateClientImage from '@/components/create-your-look/CreateYourLookGenerateClientImage'
 import Text from '@/components/shared/text/Text'
+import { Sparkles } from 'lucide-react'
 
 export default function CreateYourLookPage() {
   const dispatch = useDispatch()
@@ -33,7 +34,7 @@ export default function CreateYourLookPage() {
     const justFinishedSearch = prevLoadingRef.current && !loading
 
     if (justFinishedSearch && isManualSearch && !isEmptyResultsSearch) {
-      const headerOffset = 120
+      const headerOffset = 140
       const elementTop =
         (railRef.current?.getBoundingClientRect().top || 0) + window.scrollY
 
@@ -62,7 +63,7 @@ export default function CreateYourLookPage() {
     if (!isNewSelection) return
 
     requestAnimationFrame(() => {
-      const headerOffset = 120
+      const headerOffset = 140
       const elementTop =
         (generateRef.current?.getBoundingClientRect().top || 0) + window.scrollY
 
@@ -109,6 +110,29 @@ export default function CreateYourLookPage() {
       </div>
 
       <CreateYourLookAnimatedPreview />
+
+      <div className="gradient-border-card flex items-start gap-4 p-5 sm:items-center sm:p-6">
+        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
+          <Sparkles size={20} />
+        </span>
+
+        <div>
+          <Text as="h2" variant="h3" color="white" caseMode="sentence">
+            Pick a look. Upload your photo. Transform yourself.
+          </Text>
+
+          <Text
+            as="p"
+            variant="body"
+            color="muted"
+            caseMode="sentence"
+            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
+          >
+            Click a template you like, upload your photo, and generate a
+            personalized AI image in just a few clicks.
+          </Text>
+        </div>
+      </div>
 
       <div ref={railRef}>
         <CreateYourLookDefaultTemplatesRail />

@@ -9,9 +9,7 @@ import Text from '../shared/text/Text'
 function isActiveNavItem(pathname, href) {
   if (!pathname || !href) return false
 
-  if (href === '/') {
-    return pathname === '/'
-  }
+  if (href === '/') return pathname === '/'
 
   return pathname === href || pathname.startsWith(`${href}/`)
 }
@@ -23,7 +21,7 @@ function BurgerButton({ open, onClick }) {
       onClick={onClick}
       aria-label={open ? 'Close menu' : 'Open menu'}
       aria-expanded={open}
-      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:border-primary/40 hover:bg-white/8 xl:hidden"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:border-primary/40 hover:bg-white/8 lg:hidden"
     >
       <span className="relative block h-4 w-5">
         <span
@@ -53,7 +51,7 @@ function DesktopNav({ items = [], pathname }) {
   if (!items.length) return null
 
   return (
-    <nav className="hidden items-center gap-1 xl:flex">
+    <nav className="hidden items-center justify-center gap-3 lg:flex">
       {items.map((item) => {
         const isActive = isActiveNavItem(pathname, item.href)
 
@@ -63,13 +61,13 @@ function DesktopNav({ items = [], pathname }) {
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
             className={clsx(
-              'relative rounded-full px-4 py-1 text-md font-medium transition-all duration-300',
+              'relative inline-flex h-[35px] items-center rounded-full px-4 text-md font-medium transition-all duration-300',
               isActive
-                ? 'ring-1 ring-primary/25 bg-primary/10 text-primary shadow-[0_0_30px_rgba(124,92,255,0.22)] h-[40px]'
-                : 'text-foreground-muted hover:bg-white/5 hover:text-white h-[40px]',
+                ? 'bg-primary/10 text-primary shadow-[0_0_30px_rgba(124,92,255,0.22)] ring-1 ring-primary/25'
+                : 'text-foreground-muted hover:bg-white/5 hover:text-white',
             )}
           >
-            <Text as="span" variant="body">
+            <Text as="span" variant="label">
               {item.label}
             </Text>
 
@@ -251,16 +249,12 @@ export default function Header({
           <div className="hero-orb hero-orb--cyan absolute right-16 top-[-56px] h-32 w-32 opacity-50" />
         </div>
 
-        <div className="container-app relative grid min-h-[76px] grid-cols-[auto_1fr_auto] items-center gap-4 py-2">
-          <div className="min-w-0 justify-self-start">
+        <div className="container-app relative flex min-h-[76px] items-center justify-between gap-4 py-2">
+          <div className="min-w-0">
             <div className="shrink-0">{logo}</div>
           </div>
 
-          <div className="hidden min-w-0 justify-self-center xl:flex">
-            <DesktopNav items={navItems} pathname={pathname} />
-          </div>
-
-          <div className="hidden items-center gap-3 justify-self-end xl:flex">
+          <div className="hidden items-center gap-3 lg:flex">
             {usageSlot}
             {languageSlot ? (
               <div className="min-w-[132px]">{languageSlot}</div>
@@ -268,11 +262,17 @@ export default function Header({
             {desktopAccountSlot}
           </div>
 
-          <div className="flex items-center gap-2 justify-self-end xl:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <BurgerButton
               open={mobileOpen}
               onClick={() => setMobileOpen((prev) => !prev)}
             />
+          </div>
+        </div>
+
+        <div className="relative hidden border-t border-white/8 lg:block">
+          <div className="container-app flex items-center justify-center py-2">
+            <DesktopNav items={navItems} pathname={pathname} />
           </div>
         </div>
       </header>

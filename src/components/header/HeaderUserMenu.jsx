@@ -76,7 +76,6 @@ export default function HeaderUserMenu({ user }) {
 
     try {
       await dispatch(logout()).unwrap()
-      console.log('logout')
     } catch (error) {
       console.error('Logout failed:', error)
     }

@@ -13,6 +13,9 @@ import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import Text from '@/components/shared/text/Text'
 import GenerationOptionsPanel from '@/components/shared/generation/GenerationOptionsPanel'
 import GenerationActionCard from '@/components/shared/generation/GenerationActionCard'
+import { useLanguage } from '@/providers/languageContext'
+import { translateTextTo } from '@/utils/translate/translate'
+import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 
 import { ImagePlus, Sparkles } from 'lucide-react'
 
@@ -24,6 +27,8 @@ export default function CreateYourLookGenerateClientImage({ template }) {
   const [saveToGallery, setSaveToGallery] = useState(false)
   const [imageTitle, setImageTitle] = useState('')
   const [saveLoading, setSaveLoading] = useState(false)
+
+  const { languageIndex } = useLanguage()
 
   const {
     isLogin,
@@ -110,7 +115,21 @@ export default function CreateYourLookGenerateClientImage({ template }) {
 
       formData.append('templateId', template.id)
       formData.append('photo', clientFile)
-      formData.append('extraPrompt', String(extraPrompt || '').trim())
+
+      let normalizedExtraPrompt = String(extraPrompt || '').trim()
+
+      const currentLangCode =
+        languagesAndCodes?.languages?.[languageIndex]?.code || 'en'
+
+      if (normalizedExtraPrompt && currentLangCode !== 'en') {
+        normalizedExtraPrompt = await translateTextTo(
+          normalizedExtraPrompt,
+          'en',
+          currentLangCode,
+        )
+      }
+      formData.append('extraPrompt', normalizedExtraPrompt)
+
       formData.append('outputFormat', outputFormat)
       formData.append('photoQuality', photoQuality)
       formData.append('isRegeneration', generatedPreview ? 'true' : 'false')

@@ -20,14 +20,10 @@ export default function PaintingLabPage() {
     try {
       setLoading(true)
 
-      console.log('Намагаємося відправити')
-
       const res = await fetch('http://localhost:4000/api/generate-painting', {
         method: 'POST',
         body: formData,
       })
-
-      console.log('Отримали відповідь', res)
 
       const data = await res.json()
       setResult(data.image)
