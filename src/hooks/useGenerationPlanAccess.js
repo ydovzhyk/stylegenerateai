@@ -19,12 +19,10 @@ import {
 
 import {
   getGenerationPlan,
+  getGenerationCreditCost,
   resolveFrontendPlanKey,
 } from '@/config/generation-plans'
 
-/**
- * 🔒 stable fallback (важливо — не створюється на кожен рендер)
- */
 const FALLBACK_GENERATED_IMAGE_FORMATS = [DEFAULT_GENERATED_IMAGE_FORMAT]
 
 export function getLockedText({ planKey, isLogin }) {
@@ -35,26 +33,32 @@ export function getLockedText({ planKey, isLogin }) {
 
 export function getPlanHint({ planKey, activePlan }) {
   if (planKey === 'visitor') {
-    return `Visitor plan includes ${activePlan.dailyLimit} demo generations in draft quality.`
+    return `Visitor plan includes ${activePlan.totalCredits} credits. Draft generation costs ${getGenerationCreditCost(
+      'draft',
+    )} credit.`
   }
 
   if (planKey === 'free') {
-    return `Free plan includes ${activePlan.dailyLimit} daily generations and ${activePlan.monthlyLimit} monthly generations.`
+    return `Free plan includes ${activePlan.totalCredits} credits. Draft costs ${getGenerationCreditCost(
+      'draft',
+    )} credit, Standard costs ${getGenerationCreditCost('standard')} credits.`
   }
 
   if (planKey === 'basic') {
-    return `Basic plan includes more file formats and ${activePlan.monthlyLimit} monthly generations.`
+    return `Basic plan includes ${activePlan.totalCredits} credits for ${activePlan.durationDays} days. Draft costs ${getGenerationCreditCost(
+      'draft',
+    )}, Standard costs ${getGenerationCreditCost('standard')} credits.`
   }
 
   if (planKey === 'pro') {
-    return `Pro plan unlocks premium quality and ${activePlan.monthlyLimit} monthly generations.`
+    return `Pro plan includes ${activePlan.totalCredits} credits for ${activePlan.durationDays} days. Premium and Print modes are unlocked.`
   }
 
   if (planKey === 'admin') {
     return 'Admin mode has no generation limits.'
   }
 
-  return 'Your current plan controls available formats, quality, and generation limits.'
+  return 'Your current plan controls available formats, quality, and generation credits.'
 }
 
 function resolveAllowedValue(value, allowedValues = [], fallbackValue) {
@@ -67,9 +71,6 @@ export default function useGenerationPlanAccess() {
   const isLogin = useSelector(getLogin)
   const user = useSelector(getUser)
 
-  /**
-   * plan resolution
-   */
   const planKey = useMemo(
     () => resolveFrontendPlanKey(user, isLogin),
     [user, isLogin],
@@ -77,9 +78,6 @@ export default function useGenerationPlanAccess() {
 
   const activePlan = useMemo(() => getGenerationPlan(planKey), [planKey])
 
-  /**
-   * state
-   */
   const [selectedOutputFormat, setSelectedOutputFormat] = useState(
     DEFAULT_OUTPUT_FORMAT,
   )
@@ -98,9 +96,6 @@ export default function useGenerationPlanAccess() {
     )
   }, [activePlan.allowedGeneratedImageFormats])
 
-  /**
-   * resolved values
-   */
   const outputFormat = useMemo(() => {
     return resolveAllowedValue(
       selectedOutputFormat,
@@ -125,9 +120,6 @@ export default function useGenerationPlanAccess() {
     )
   }, [selectedGeneratedImageFormat, allowedGeneratedImageFormats])
 
-  /**
-   * checks
-   */
   const isFormatAllowed = useCallback(
     (id) => activePlan.allowedFormats.includes(id),
     [activePlan.allowedFormats],
@@ -143,9 +135,6 @@ export default function useGenerationPlanAccess() {
     [allowedGeneratedImageFormats],
   )
 
-  /**
-   * setters
-   */
   const setOutputFormat = useCallback(
     (id) => {
       if (!activePlan.allowedFormats.includes(id)) return

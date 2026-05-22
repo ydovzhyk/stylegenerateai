@@ -2,11 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import clsx from 'clsx'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
+import { useTranslate } from '@/utils/translate/translate'
 import { logout } from '@/store/auth/auth-operations'
+import { getGenerationUsageData } from '@/store/generation-usage/generation-usage-selectors'
+
+const GENERATION_TYPES = [
+  { id: 'draft', label: 'Draft' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'premium', label: 'Premium' },
+  { id: 'print', label: 'Print' },
+]
 
 function getInitials(name = '') {
   return String(name)
@@ -15,6 +24,17 @@ function getInitials(name = '') {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() || '')
     .join('')
+}
+
+function getMonthLabel() {
+  return new Date().toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+function safeNumber(value) {
+  return Number.isFinite(Number(value)) ? Number(value) : 0
 }
 
 function Chevron({ open }) {
@@ -31,8 +51,97 @@ function Chevron({ open }) {
   )
 }
 
+function GenerationDropdownSummary({ usage }) {
+  const tUnlimited = useTranslate('Unlimited')
+  const tCredits = useTranslate('credits')
+  const tUsed = useTranslate('Used')
+  const tImages = useTranslate('images')
+
+  if (!usage?.planKey && !usage?.isUnlimited) return null
+
+  const usageByType = usage?.usageByType || {}
+  const totalCredits = usage?.isUnlimited
+    ? null
+    : safeNumber(usage.totalCredits)
+  const remainingCredits = usage?.isUnlimited
+    ? null
+    : safeNumber(usage.remainingCredits)
+  const usedCredits = usage?.isUnlimited ? null : safeNumber(usage.usedCredits)
+
+  return (
+    <div className="mt-3 rounded-2xl border border-white/8 bg-white/[0.025] p-3">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <Text as="p" variant="caption" color="muted" caseMode="sentence">
+            Current period
+          </Text>
+
+          <p className="mt-0.5 text-sm font-semibold text-white">
+            {getMonthLabel()}
+          </p>
+        </div>
+
+        <div className="text-right">
+          <Text as="p" variant="caption" color="muted" caseMode="sentence">
+            Balance
+          </Text>
+
+          <p className="mt-0.5 text-sm font-semibold text-primary-soft">
+            {usage.isUnlimited
+              ? tUnlimited
+              : `${remainingCredits}/${totalCredits} ${tCredits}`}
+          </p>
+        </div>
+      </div>
+
+      {!usage.isUnlimited ? (
+        <div className="mb-3 rounded-xl border border-primary/15 bg-primary/10 px-3 py-2">
+          <p className="text-xs leading-relaxed text-foreground-soft">
+            {tUsed}:{' '}
+            <span className="font-semibold text-white">{usedCredits}</span>{' '}
+            {tCredits}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="space-y-1.5">
+        {GENERATION_TYPES.map((type) => {
+          const item = usageByType[type.id] || { count: 0, creditsUsed: 0 }
+
+          return (
+            <div
+              key={type.id}
+              className="flex items-center justify-between gap-3 text-xs"
+            >
+              <Text
+                as="span"
+                variant="caption"
+                color="muted"
+                caseMode="sentence"
+              >
+                {type.label}
+              </Text>
+
+              <span className="font-semibold text-white">
+                {item.count || 0} {tImages}
+                {!usage.isUnlimited ? (
+                  <span className="ml-1 text-foreground-faint">
+                    / {item.creditsUsed || 0} {tCredits}
+                  </span>
+                ) : null}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function HeaderUserMenu({ user }) {
   const dispatch = useDispatch()
+  const usage = useSelector(getGenerationUsageData)
+
   const rootRef = useRef(null)
   const [open, setOpen] = useState(false)
 
@@ -134,7 +243,7 @@ export default function HeaderUserMenu({ user }) {
 
       <div
         className={clsx(
-          'absolute right-0 top-[calc(100%+10px)] z-[70] w-[260px] origin-top-right rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(20,23,32,0.96),rgba(17,19,26,0.98))] p-3 shadow-[0_18px_40px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,92,255,0.08)] transition-all duration-200',
+          'absolute right-0 top-[calc(100%+10px)] z-[70] w-[340px] origin-top-right rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(20,23,32,0.96),rgba(17,19,26,0.98))] p-3 shadow-[0_18px_40px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,92,255,0.08)] transition-all duration-200',
           open
             ? 'pointer-events-auto translate-y-0 scale-100 opacity-100'
             : 'pointer-events-none -translate-y-1 scale-[0.98] opacity-0',
@@ -175,7 +284,13 @@ export default function HeaderUserMenu({ user }) {
               {safeName}
             </Text>
 
-            <Text as="p" variant="caption" color="muted" className="truncate">
+            <Text
+              as="p"
+              variant="caption"
+              color="muted"
+              className="truncate"
+              caseMode="sentence"
+            >
               {user?.email || 'Signed in'}
             </Text>
           </div>
@@ -223,6 +338,8 @@ export default function HeaderUserMenu({ user }) {
           )}
         </nav>
 
+        <GenerationDropdownSummary usage={usage} />
+
         <div className="mt-3 border-t border-white/10 pt-3">
           <Button
             type="button"
@@ -231,7 +348,9 @@ export default function HeaderUserMenu({ user }) {
             fullWidth
             onClick={handleLogout}
           >
-            Logout
+            <Text as="span" caseMode="sentence">
+              Logout
+            </Text>
           </Button>
         </div>
       </div>

@@ -6,16 +6,45 @@ const errMsg = (payload) =>
   payload?.message ||
   'Oops, something went wrong, try again'
 
+const emptyUsageByType = {
+  draft: { count: 0, creditsUsed: 0 },
+  standard: { count: 0, creditsUsed: 0 },
+  premium: { count: 0, creditsUsed: 0 },
+  print: { count: 0, creditsUsed: 0 },
+}
+
 const emptyUsage = {
   actorType: '',
   planKey: '',
   isUnlimited: false,
+
   dailyLimit: null,
   monthlyLimit: null,
   usedDaily: null,
   usedMonthly: null,
   remainingDaily: null,
   remainingMonthly: null,
+
+  usageByType: emptyUsageByType,
+  generationType: null,
+  creditCost: 0,
+  usedCreditsNow: 0,
+  usedCredits: 0,
+  totalCredits: null,
+  remainingCredits: null,
+}
+
+const normalizeUsage = (payload) => {
+  const usage = payload?.usage || payload || emptyUsage
+
+  return {
+    ...emptyUsage,
+    ...usage,
+    usageByType: {
+      ...emptyUsageByType,
+      ...(usage?.usageByType || {}),
+    },
+  }
 }
 
 const initialState = {
@@ -41,7 +70,7 @@ const generationUsage = createSlice({
       state.generationUsageData = emptyUsage
     },
     setGenerationUsage: (state, action) => {
-      state.generationUsageData = action.payload || emptyUsage
+      state.generationUsageData = normalizeUsage(action.payload)
     },
   },
 
@@ -52,7 +81,7 @@ const generationUsage = createSlice({
         state.error = null
       })
       .addCase(getGenerationUsage.fulfilled, (state, { payload }) => {
-        state.generationUsageData = payload?.usage || payload || emptyUsage
+        state.generationUsageData = normalizeUsage(payload)
       })
       .addCase(getGenerationUsage.rejected, (state, { payload }) => {
         state.error = errMsg(payload)
