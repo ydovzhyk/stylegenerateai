@@ -13,7 +13,7 @@ export default function NotFound() {
   const tBackHome = useTranslate('Go to homepage')
 
   return (
-    <section className="relative flex min-h-[calc(100dvh-76px)] items-center justify-center overflow-hidden px-4 py-6 sm:py-8">
+    <section className="relative flex flex-1 items-center justify-center overflow-hidden">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="hero-orb hero-orb--violet absolute left-[-80px] top-[-60px] h-56 w-56 opacity-60 sm:h-72 sm:w-72" />
         <div className="hero-orb hero-orb--cyan absolute bottom-[-80px] right-[-60px] h-64 w-64 opacity-50 sm:h-80 sm:w-80" />
