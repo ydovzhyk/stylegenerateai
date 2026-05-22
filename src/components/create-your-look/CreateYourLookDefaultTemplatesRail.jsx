@@ -32,6 +32,8 @@ const RESUME_DELAY_MS = 1400
 const PROGRESS_THUMB_WIDTH = 28
 const PROGRESS_APPEND_SMOOTH_MS = 900
 
+const YOUR_LOOK_RAIL_LIMIT = 30
+
 function mapTemplateItem(item) {
   return {
     id: item?._id || item?.slug || String(item?.previewUrl || Math.random()),
@@ -348,14 +350,16 @@ export default function CreateYourLookDefaultTemplatesRail() {
     [applyThumbOffset, shouldLoop],
   )
 
-  const maybeLoadMore = useCallback(() => {
-    const node = containerRef.current
-    if (!node || loading || !hasMore || isAppendingRef.current) return
+  const maybeLoadMore = useCallback(
+    ({ force = false } = {}) => {
+      const node = containerRef.current
+      if (!node || loading || !hasMore || isAppendingRef.current) return
 
-    const distanceToEnd =
-      node.scrollWidth - (node.scrollLeft + node.clientWidth)
+      const distanceToEnd =
+        node.scrollWidth - (node.scrollLeft + node.clientWidth)
 
-    if (distanceToEnd <= LOAD_MORE_OFFSET) {
+      if (!force && distanceToEnd > LOAD_MORE_OFFSET) return
+
       const nextPage = Number(searchParams?.page || 1) + 1
 
       isAppendingRef.current = true
@@ -363,9 +367,15 @@ export default function CreateYourLookDefaultTemplatesRail() {
       const nextParams = {
         ...searchParams,
         page: nextPage,
+        limit: YOUR_LOOK_RAIL_LIMIT,
       }
 
-      dispatch(setCreateYourLookSearchParams({ page: nextPage }))
+      dispatch(
+        setCreateYourLookSearchParams({
+          page: nextPage,
+          limit: nextParams.limit,
+        }),
+      )
 
       dispatch(
         getYourLookSearchTemplatesOperation({
@@ -373,8 +383,9 @@ export default function CreateYourLookDefaultTemplatesRail() {
           mode: 'append',
         }),
       )
-    }
-  }, [dispatch, hasMore, loading, searchParams])
+    },
+    [dispatch, hasMore, loading, searchParams],
+  )
 
   useEffect(() => {
     if (!loading) {
@@ -506,7 +517,7 @@ export default function CreateYourLookDefaultTemplatesRail() {
       left: getScrollStep(node),
       behavior: 'smooth',
     })
-    maybeLoadMore()
+    maybeLoadMore({ force: true })
     resumeAutoScrollWithDelay()
   }, [isScrollable, maybeLoadMore, pauseAutoScroll, resumeAutoScrollWithDelay])
 

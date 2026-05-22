@@ -25,6 +25,8 @@ import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+const YOUR_LOOK_RAIL_LIMIT = 30
+
 function getPageSize(width) {
   if (width < 640) return 5
   if (width < 1024) return 7
@@ -92,7 +94,7 @@ export default function CreateYourLookSearch() {
       ...appliedSearchParams,
       railMode,
       page: appliedSearchParams?.page || 1,
-      limit: appliedSearchParams?.limit || 10,
+      limit: YOUR_LOOK_RAIL_LIMIT,
     }
 
     if (isDefaultRail) {
@@ -218,7 +220,7 @@ export default function CreateYourLookSearch() {
       query: searchQuery,
       selectedCategory: normalizedCategory,
       page: 1,
-      limit: appliedSearchParams?.limit || 10,
+      limit: YOUR_LOOK_RAIL_LIMIT,
     }
 
     dispatch(setIsManualSearch(true))

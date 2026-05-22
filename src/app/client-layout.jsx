@@ -23,6 +23,11 @@ const ClientLayout = ({ children }) => {
     { href: '/pricing', label: 'Pricing' },
   ]
 
+  const adminNavItems = [
+    { href: '/ready-template', label: 'Ready Templates' },
+    { href: '/photo-lab-preview', label: 'Photo Lab Preview' },
+  ]
+
   return (
     <div className="flex min-h-screen flex-col">
       <ScrollToTopOnRouteChange />
@@ -30,6 +35,7 @@ const ClientLayout = ({ children }) => {
       <Header
         logo={<Logo size={60} />}
         navItems={navItems}
+        adminNavItems={adminNavItems}
         languageSlot={<TranslateMe />}
         authSlot={
           <div className="flex items-center gap-2">

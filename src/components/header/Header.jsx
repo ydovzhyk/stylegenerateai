@@ -14,6 +14,10 @@ function isActiveNavItem(pathname, href) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function isAdminNavPath(pathname, adminNavItems = []) {
+  return adminNavItems.some((item) => isActiveNavItem(pathname, item.href))
+}
+
 function BurgerButton({ open, onClick }) {
   return (
     <button
@@ -51,7 +55,7 @@ function DesktopNav({ items = [], pathname }) {
   if (!items.length) return null
 
   return (
-    <nav className="hidden items-center justify-center gap-3 lg:flex">
+    <nav className="hidden items-center justify-center gap-5 lg:flex">
       {items.map((item) => {
         const isActive = isActiveNavItem(pathname, item.href)
 
@@ -61,19 +65,46 @@ function DesktopNav({ items = [], pathname }) {
             href={item.href}
             aria-current={isActive ? 'page' : undefined}
             className={clsx(
-              'relative inline-flex h-[35px] items-center rounded-full px-4 text-md font-medium transition-all duration-300',
+              'relative inline-flex h-[35px] items-center rounded-full border px-5 text-sm font-semibold transition',
               isActive
-                ? 'bg-primary/10 text-primary shadow-[0_0_30px_rgba(124,92,255,0.22)] ring-1 ring-primary/25'
-                : 'text-foreground-muted hover:bg-white/5 hover:text-white',
+                ? 'border-primary/45 bg-primary/15 text-white shadow-[0_0_24px_rgba(124,92,255,0.18)]'
+                : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-primary/30 hover:text-white',
             )}
           >
-            <Text as="span" variant="label">
+            <Text as="span" variant="label" className="text-current">
               {item.label}
             </Text>
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
 
-            {isActive ? (
-              <span className="pointer-events-none absolute inset-x-3 -bottom-px h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-90" />
-            ) : null}
+function MobileNavLinks({ items = [], pathname, onClose }) {
+  if (!items.length) return null
+
+  return (
+    <nav className="flex flex-col gap-2">
+      {items.map((item) => {
+        const isActive = isActiveNavItem(pathname, item.href)
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onClose}
+            aria-current={isActive ? 'page' : undefined}
+            className={clsx(
+              'rounded-2xl border px-4 py-3 text-base font-medium transition-all duration-300',
+              isActive
+                ? 'border-primary/45 bg-primary/15 text-white shadow-[0_0_24px_rgba(124,92,255,0.18)]'
+                : 'border-white/10 bg-white/[0.03] text-white/70 hover:border-primary/30 hover:text-white',
+            )}
+          >
+            <Text as="span" variant="body" caseMode="sentence">
+              {item.label}
+            </Text>
           </Link>
         )
       })}
@@ -85,6 +116,7 @@ function MobileMenu({
   open,
   onClose,
   items = [],
+  adminItems = [],
   pathname,
   languageSlot,
   authSlot,
@@ -143,30 +175,33 @@ function MobileMenu({
 
         <div className="flex-1 overflow-y-auto px-4 py-5">
           {items.length > 0 ? (
-            <nav className="mb-6 flex flex-col gap-2">
-              {items.map((item) => {
-                const isActive = isActiveNavItem(pathname, item.href)
+            <div className="mb-6">
+              <MobileNavLinks
+                items={items}
+                pathname={pathname}
+                onClose={onClose}
+              />
+            </div>
+          ) : null}
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={clsx(
-                      'rounded-2xl border px-4 py-3 text-base font-medium transition-all duration-300',
-                      isActive
-                        ? 'border-primary/35 bg-primary/10 text-primary shadow-[0_0_30px_rgba(124,92,255,0.18)]'
-                        : 'border-white/8 bg-white/[0.03] text-foreground-soft hover:border-primary/30 hover:bg-white/[0.05] hover:text-white',
-                    )}
-                  >
-                    <Text as="span" variant="body" caseMode="sentence">
-                      {item.label}
-                    </Text>
-                  </Link>
-                )
-              })}
-            </nav>
+          {adminItems.length > 0 ? (
+            <div className="mb-6">
+              <Text
+                as="p"
+                variant="caption"
+                color="muted"
+                caseMode="title"
+                className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-foreground-faint"
+              >
+                Admin
+              </Text>
+
+              <MobileNavLinks
+                items={adminItems}
+                pathname={pathname}
+                onClose={onClose}
+              />
+            </div>
           ) : null}
 
           <div className="space-y-4">
@@ -222,6 +257,7 @@ function MobileMenu({
 export default function Header({
   logo,
   navItems = [],
+  adminNavItems = [],
   languageSlot = null,
   authSlot = null,
   userSlot = null,
@@ -231,6 +267,8 @@ export default function Header({
 }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
+
+  const showAdminNav = isAdminNavPath(pathname, adminNavItems)
 
   const desktopAccountSlot = useMemo(() => {
     return isAuthenticated ? userSlot : authSlot
@@ -275,12 +313,21 @@ export default function Header({
             <DesktopNav items={navItems} pathname={pathname} />
           </div>
         </div>
+
+        {showAdminNav ? (
+          <div className="relative hidden border-t border-white/8 lg:block">
+            <div className="container-app flex items-center justify-center py-2">
+              <DesktopNav items={adminNavItems} pathname={pathname} />
+            </div>
+          </div>
+        ) : null}
       </header>
 
       <MobileMenu
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
         items={navItems}
+        adminItems={showAdminNav ? adminNavItems : []}
         pathname={pathname}
         languageSlot={languageSlot}
         authSlot={authSlot}

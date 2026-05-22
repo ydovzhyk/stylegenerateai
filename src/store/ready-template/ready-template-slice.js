@@ -45,7 +45,7 @@ const initialState = {
     query: '',
     selectedCategory: 'All',
     page: 1,
-    limit: 10,
+    limit: 30,
     railMode: 'latest',
   },
   hasMoreSearchResults: false,
@@ -103,7 +103,7 @@ const readyTemplate = createSlice({
         query: '',
         selectedCategory: 'All',
         page: 1,
-        limit: 10,
+        limit: 30,
         railMode: 'latest',
       }
     },
