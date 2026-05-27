@@ -12,7 +12,7 @@ import {
   getSelectedYourLookTemplate,
 } from '@/store/ready-template/ready-template-selectors'
 import { setIsManualSearch } from '@/store/ready-template/ready-template-slice'
-import CreateYourLookGenerateClientImage from '@/components/create-your-look/CreateYourLookGenerateClientImage'
+import AiImageWorkspace from '@/components/shared/ai-image-workspace/AiImageWorkspace'
 import Text from '@/components/shared/text/Text'
 import { Sparkles } from 'lucide-react'
 
@@ -112,8 +112,8 @@ export default function CreateYourLookPage() {
       <CreateYourLookAnimatedPreview />
 
       <div className="gradient-border-card flex items-start gap-4 p-5 sm:items-center sm:p-6">
-        <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
-          <Sparkles size={20} />
+        <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
+          <Sparkles size={24} />
         </span>
 
         <div>
@@ -141,7 +141,7 @@ export default function CreateYourLookPage() {
       <CreateYourLookSearch />
 
       <div ref={generateRef}>
-        <CreateYourLookGenerateClientImage template={selectedTemplate} />
+        <AiImageWorkspace template={selectedTemplate} />
       </div>
     </div>
   )

@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
+import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
 import Text from '@/components/shared/text/Text'
-import GenerationOptionsPanel from '@/components/shared/generation/GenerationOptionsPanel'
-import GenerationActionCard from '@/components/shared/generation/GenerationActionCard'
-import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
-import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
+import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { ImagePlus, Sparkles } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
 export default function PhotoLabWorkspace({ selectedMode }) {
   const inputRef = useRef(null)

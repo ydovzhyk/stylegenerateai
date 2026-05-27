@@ -1,16 +1,16 @@
 'use client'
 
-import Link from 'next/link'
-import { useSelector } from 'react-redux'
 import Header from '@/components/header/Header'
 import HeaderUserMenu from '@/components/header/HeaderUserMenu'
-import GenerationUsageBadge from '@/components/shared/generation/GenerationUsageBadge'
-import TranslateMe from '@/utils/translate/translate'
+import GenerationUsageBadge from '@/components/shared/usage-badge/GenerationUsageBadge'
 import Button from '@/components/shared/button/Button'
-import Logo from '../components/shared/logo/Logo'
 import ScrollToTopButton from '@/components/shared/scroll-to-top-btn/ScrollToTopBtn'
 import ScrollToTopOnRouteChange from '@/components/shared/scroll-to-top-on-route-change/ScrollToTopOnRouteChange'
 import { getLogin, getUser } from '@/store/auth/auth-selectors'
+import TranslateMe from '@/utils/translate/translate'
+import Link from 'next/link'
+import { useSelector } from 'react-redux'
+import Logo from '../components/shared/logo/Logo'
 
 const ClientLayout = ({ children }) => {
   const isAuthenticated = useSelector(getLogin)
