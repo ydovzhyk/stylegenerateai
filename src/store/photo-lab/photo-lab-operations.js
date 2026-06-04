@@ -1,5 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
-import { axiosGeneratePhotoLabAdminPreview } from '@/services/api/photo-lab'
+import {
+  axiosGeneratePhotoLabAdminPreview,
+  axiosCreatePhotoLabTemplate,
+  axiosGetPhotoLabTemplates,
+} from '@/services/api/photo-lab'
 
 const toReject = (error, rejectWithValue) => {
   const status = error?.response?.status || 0
@@ -15,6 +19,28 @@ export const generatePhotoLabAdminPreview = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       return await axiosGeneratePhotoLabAdminPreview(formData)
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const createPhotoLabTemplate = createAsyncThunk(
+  'photo-lab/create-template',
+  async (formData, { rejectWithValue }) => {
+    try {
+      return await axiosCreatePhotoLabTemplate(formData)
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const getPhotoLabTemplates = createAsyncThunk(
+  'photo-lab/get-templates',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await axiosGetPhotoLabTemplates()
     } catch (e) {
       return toReject(e, rejectWithValue)
     }

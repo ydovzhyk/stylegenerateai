@@ -1,11 +1,26 @@
 import { createSlice } from '@reduxjs/toolkit'
-import { generatePhotoLabAdminPreview } from './photo-lab-operations'
+import {
+  generatePhotoLabAdminPreview,
+  createPhotoLabTemplate,
+  getPhotoLabTemplates,
+} from './photo-lab-operations'
 
 const initialState = {
   error: null,
   message: null,
   adminPreviewLoading: false,
   adminPreview: null,
+
+  templateCreateLoading: false,
+
+  templates: {
+    professional_portrait: [],
+    restore_colorize: [],
+    smart_edit: [],
+    remove_objects: [],
+    enhance_quality: [],
+  },
+  templatesLoading: false,
 }
 
 const errMsg = (payload) =>
@@ -43,6 +58,37 @@ const photoLabSlice = createSlice({
       })
       .addCase(generatePhotoLabAdminPreview.rejected, (state, { payload }) => {
         state.adminPreviewLoading = false
+        state.error = errMsg(payload)
+      })
+      .addCase(createPhotoLabTemplate.pending, (state) => {
+        state.templateCreateLoading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(createPhotoLabTemplate.fulfilled, (state, { payload }) => {
+        state.templateCreateLoading = false
+        state.message = payload?.message || 'Photo Lab template created'
+      })
+      .addCase(createPhotoLabTemplate.rejected, (state, { payload }) => {
+        state.templateCreateLoading = false
+        state.error = errMsg(payload)
+      })
+      .addCase(getPhotoLabTemplates.pending, (state) => {
+        state.templatesLoading = true
+        state.error = null
+      })
+      .addCase(getPhotoLabTemplates.fulfilled, (state, { payload }) => {
+        state.templatesLoading = false
+        state.templates = payload?.templates || {
+          professional_portrait: [],
+          restore_colorize: [],
+          smart_edit: [],
+          remove_objects: [],
+          enhance_quality: [],
+        }
+      })
+      .addCase(getPhotoLabTemplates.rejected, (state, { payload }) => {
+        state.templatesLoading = false
         state.error = errMsg(payload)
       })
   },

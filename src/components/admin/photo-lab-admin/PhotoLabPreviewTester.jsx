@@ -5,7 +5,10 @@ import { useDispatch } from 'react-redux'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
-import { generatePhotoLabAdminPreview } from '@/store/photo-lab/photo-lab-operations'
+import {
+  createPhotoLabTemplate,
+  generatePhotoLabAdminPreview,
+} from '@/store/photo-lab/photo-lab-operations'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import {
   DEFAULT_PHOTO_QUALITY,
@@ -22,6 +25,9 @@ import {
   Sparkles,
   WandSparkles,
 } from 'lucide-react'
+
+const PROFESSIONAL_PORTRAIT_MODE = 'professional_portrait'
+const IDENTITY_PRESET = 'identity'
 
 const PHOTO_LAB_TEST_MODES = [
   {
@@ -126,7 +132,7 @@ export default function PhotoLabPreviewTester() {
   const [selectedModeId, setSelectedModeId] = useState(
     PHOTO_LAB_TEST_MODES[0].id,
   )
-  const [modelPreset, setModelPreset] = useState(MODEL_PRESETS[0].id)
+  const [modelPreset, setModelPreset] = useState(IDENTITY_PRESET)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
 
   const [race, setRace] = useState('european')
@@ -141,6 +147,9 @@ export default function PhotoLabPreviewTester() {
   const [additionalPrompt, setAdditionalPrompt] = useState('')
   const [resultPreview, setResultPreview] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
+  const [templateTitle, setTemplateTitle] = useState('')
+  const [templateDescription, setTemplateDescription] = useState('')
   const [error, setError] = useState('')
 
   const selectedMode = useMemo(() => {
@@ -148,6 +157,14 @@ export default function PhotoLabPreviewTester() {
       PHOTO_LAB_TEST_MODES.find((mode) => mode.id === selectedModeId) ||
       PHOTO_LAB_TEST_MODES[0]
     )
+  }, [selectedModeId])
+
+  const availableModelPresets = useMemo(() => {
+    if (selectedModeId === PROFESSIONAL_PORTRAIT_MODE) {
+      return MODEL_PRESETS.filter((preset) => preset.id === IDENTITY_PRESET)
+    }
+
+    return MODEL_PRESETS
   }, [selectedModeId])
 
   const selectedPhotoQuality = useMemo(() => {
@@ -169,6 +186,12 @@ export default function PhotoLabPreviewTester() {
   const activeSourcePreview = activeSourcePreviewItem?.url || prototypeSrc
   const isUsingUploadedSource = Boolean(mainSourceFile)
   const hasMultipleSourcePhotos = sourceUploadPreviews.length > 1
+
+  useEffect(() => {
+    if (selectedModeId === PROFESSIONAL_PORTRAIT_MODE) {
+      setModelPreset(IDENTITY_PRESET)
+    }
+  }, [selectedModeId])
 
   useEffect(() => {
     setAdditionalPrompt('')
@@ -286,6 +309,54 @@ export default function PhotoLabPreviewTester() {
     }
   }
 
+  const handleSaveTemplate = async () => {
+    const normalizedTitle = String(templateTitle || '').trim()
+    const normalizedDescription = String(templateDescription || '').trim()
+    const normalizedAdditionalPrompt = String(additionalPrompt || '').trim()
+
+    if (!resultPreview) {
+      setError('Generate preview before saving template')
+      return
+    }
+
+    if (!normalizedTitle) {
+      setError('Template title is required')
+      return
+    }
+
+    setError('')
+    setIsSavingTemplate(true)
+
+    try {
+      const resolvedSourceFiles = await resolveSourceFiles()
+
+      const formData = new FormData()
+
+      formData.append('mode', selectedMode.id)
+      formData.append('title', normalizedTitle)
+      formData.append('description', normalizedDescription)
+      formData.append('modelPreset', modelPreset)
+      formData.append('photoQuality', selectedPhotoQuality.id)
+      formData.append('additionalPrompt', normalizedAdditionalPrompt)
+      formData.append('generatedImageUrl', resultPreview)
+
+      resolvedSourceFiles.forEach((file) => {
+        formData.append('photos', file)
+      })
+
+      await dispatch(createPhotoLabTemplate(formData)).unwrap()
+
+      setTemplateTitle('')
+      setTemplateDescription('')
+    } catch (e) {
+      setError(
+        e?.data?.message || e?.message || 'Failed to save Photo Lab template',
+      )
+    } finally {
+      setIsSavingTemplate(false)
+    }
+  }
+
   return (
     <div className="rounded-[24px] border border-white/10 bg-background-soft/70 p-4 sm:p-5 md:p-6">
       <div className="mb-5">
@@ -329,7 +400,7 @@ export default function PhotoLabPreviewTester() {
                     key={mode.id}
                     type="button"
                     onClick={() => setSelectedModeId(mode.id)}
-                    disabled={isGenerating}
+                    disabled={isGenerating || isSavingTemplate}
                     className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
                       active
                         ? 'border-primary/45 bg-primary/15'
@@ -378,7 +449,7 @@ export default function PhotoLabPreviewTester() {
             </Text>
 
             <div className="flex flex-col gap-3">
-              {MODEL_PRESETS.map((preset) => {
+              {availableModelPresets.map((preset) => {
                 const active = modelPreset === preset.id
 
                 return (
@@ -397,7 +468,7 @@ export default function PhotoLabPreviewTester() {
                         value={preset.id}
                         checked={active}
                         onChange={() => setModelPreset(preset.id)}
-                        disabled={isGenerating}
+                        disabled={isGenerating || isSavingTemplate}
                         className="mt-1 h-4 w-4 accent-[var(--primary)]"
                       />
 
@@ -451,7 +522,7 @@ export default function PhotoLabPreviewTester() {
                     value={quality.id}
                     checked={photoQuality === quality.id}
                     onChange={() => setPhotoQuality(quality.id)}
-                    disabled={isGenerating}
+                    disabled={isGenerating || isSavingTemplate}
                     className="h-4 w-4 accent-[var(--primary)]"
                   />
 
@@ -498,7 +569,7 @@ export default function PhotoLabPreviewTester() {
                   type="button"
                   variant="secondary"
                   onClick={() => mainInputRef.current?.click()}
-                  disabled={isGenerating}
+                  disabled={isGenerating || isSavingTemplate}
                   className="w-full"
                 >
                   Upload main photo
@@ -508,7 +579,7 @@ export default function PhotoLabPreviewTester() {
                   type="button"
                   variant="secondary"
                   onClick={() => referenceInputRef.current?.click()}
-                  disabled={isGenerating || !mainSourceFile}
+                  disabled={isGenerating || isSavingTemplate || !mainSourceFile}
                   className="w-full"
                 >
                   Upload references
@@ -555,7 +626,7 @@ export default function PhotoLabPreviewTester() {
                                 setResultPreview('')
                                 setError('')
                               }}
-                              disabled={isGenerating}
+                              disabled={isGenerating || isSavingTemplate}
                               className="h-4 w-4 accent-[var(--primary)]"
                             />
 
@@ -599,7 +670,7 @@ export default function PhotoLabPreviewTester() {
                                 setResultPreview('')
                                 setError('')
                               }}
-                              disabled={isGenerating}
+                              disabled={isGenerating || isSavingTemplate}
                               className="h-4 w-4 accent-[var(--primary)]"
                             />
 
@@ -643,7 +714,7 @@ export default function PhotoLabPreviewTester() {
                                 setResultPreview('')
                                 setError('')
                               }}
-                              disabled={isGenerating}
+                              disabled={isGenerating || isSavingTemplate}
                               className="h-4 w-4 accent-[var(--primary)]"
                             />
 
@@ -699,7 +770,7 @@ export default function PhotoLabPreviewTester() {
                     type="button"
                     variant="secondary"
                     onClick={clearUploadedSources}
-                    disabled={isGenerating}
+                    disabled={isGenerating || isSavingTemplate}
                     className="mt-3 w-auto"
                   >
                     Use prototype instead
@@ -727,7 +798,7 @@ export default function PhotoLabPreviewTester() {
                         <button
                           type="button"
                           onClick={goToPreviousSourcePhoto}
-                          disabled={isGenerating}
+                          disabled={isGenerating || isSavingTemplate}
                           className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Previous source photo"
                         >
@@ -737,7 +808,7 @@ export default function PhotoLabPreviewTester() {
                         <button
                           type="button"
                           onClick={goToNextSourcePhoto}
-                          disabled={isGenerating}
+                          disabled={isGenerating || isSavingTemplate}
                           className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Next source photo"
                         >
@@ -884,8 +955,30 @@ export default function PhotoLabPreviewTester() {
               caseMode="sentence"
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}
-              disabled={isGenerating}
+              disabled={isGenerating || isSavingTemplate}
             />
+
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <Input
+                id="photo-lab-template-title"
+                label="Template title"
+                placeholder="Professional LinkedIn portrait"
+                caseMode="sentence"
+                value={templateTitle}
+                onChange={(e) => setTemplateTitle(e.target.value)}
+                disabled={isGenerating || isSavingTemplate}
+              />
+
+              <Input
+                id="photo-lab-template-description"
+                label="Template description"
+                placeholder="Before and after preview for this Photo Lab mode"
+                caseMode="sentence"
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+                disabled={isGenerating || isSavingTemplate}
+              />
+            </div>
 
             <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-background-soft/70 p-4 sm:grid-cols-3">
               <div>
@@ -924,7 +1017,8 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="mt-1"
                 >
-                  {MODEL_PRESETS.find((item) => item.id === modelPreset)?.label}
+                  {MODEL_PRESETS.find((item) => item.id === modelPreset)
+                    ?.label || 'Identity critical'}
                 </Text>
               </div>
 
@@ -954,7 +1048,7 @@ export default function PhotoLabPreviewTester() {
                 type="button"
                 onClick={handleGenerate}
                 loading={isGenerating}
-                disabled={isGenerating}
+                disabled={isGenerating || isSavingTemplate}
                 fullWidth
                 className="w-auto"
               >
@@ -966,11 +1060,23 @@ export default function PhotoLabPreviewTester() {
               <Button
                 type="button"
                 variant="secondary"
+                onClick={handleSaveTemplate}
+                loading={isSavingTemplate}
+                disabled={isGenerating || isSavingTemplate || !resultPreview}
+                fullWidth
+                className="w-auto"
+              >
+                Save as template
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={() => {
                   setResultPreview('')
                   setError('')
                 }}
-                disabled={isGenerating || !resultPreview}
+                disabled={isGenerating || isSavingTemplate || !resultPreview}
                 fullWidth
                 className="w-auto"
               >
