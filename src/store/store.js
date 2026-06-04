@@ -17,6 +17,7 @@ import readyTemplateReducer from './ready-template/ready-template-slice'
 import generationUsageReducer from './generation-usage/generation-usage-slice'
 import generatedImageReducer from './generated-image/generated-image-slice'
 import { setupInterceptors } from '../services/api/instance'
+import photoLabReducer from './photo-lab/photo-lab-slice'
 // import logger from 'redux-logger'
 
 const isServer = typeof window === 'undefined'
@@ -42,6 +43,7 @@ export const store = configureStore({
     readyTemplate: readyTemplateReducer,
     generationUsage: generationUsageReducer,
     generatedImage: generatedImageReducer,
+    photoLab: photoLabReducer,
   },
   middleware: (getDefaultMiddleware) => {
     const middlewares = getDefaultMiddleware({

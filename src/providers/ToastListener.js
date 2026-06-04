@@ -37,6 +37,16 @@ import {
   clearGeneratedImageMessage,
 } from '@/store/generated-image/generated-image-slice'
 
+import {
+  getPhotoLabError,
+  getPhotoLabMessage,
+} from '@/store/photo-lab/photo-lab-selectors'
+
+import {
+  clearPhotoLabError,
+  clearPhotoLabMessage,
+} from '@/store/photo-lab/photo-lab-slice'
+
 const TOAST_DEDUPE_WINDOW_MS = 900
 
 const toastBaseOptions = {
@@ -151,6 +161,9 @@ export default function ToastListener() {
   const generatedImageError = useSelector(getGeneratedImageError)
   const generatedImageMessage = useSelector(getGeneratedImageMessage)
 
+  const photoLabError = useSelector(getPhotoLabError)
+  const photoLabMessage = useSelector(getPhotoLabMessage)
+
   useToastPair({
     error: authError,
     message: authMessage,
@@ -177,6 +190,13 @@ export default function ToastListener() {
     message: generatedImageMessage,
     clearError: clearGeneratedImageError,
     clearMessage: clearGeneratedImageMessage,
+  })
+
+  useToastPair({
+    error: photoLabError,
+    message: photoLabMessage,
+    clearError: clearPhotoLabError,
+    clearMessage: clearPhotoLabMessage,
   })
 
   return null

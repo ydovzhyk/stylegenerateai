@@ -1,9 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useDispatch } from 'react-redux'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
+import { generatePhotoLabAdminPreview } from '@/store/photo-lab/photo-lab-operations'
+import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import {
   DEFAULT_PHOTO_QUALITY,
   PHOTO_QUALITIES,
@@ -11,6 +14,8 @@ import {
 } from '@/constants/photo-quality'
 import {
   BriefcaseBusiness,
+  ChevronLeft,
+  ChevronRight,
   Eraser,
   ImagePlus,
   Loader2,
@@ -24,40 +29,30 @@ const PHOTO_LAB_TEST_MODES = [
     title: 'Professional Portrait',
     label: 'LinkedIn / CV',
     icon: BriefcaseBusiness,
-    defaultPrompt:
-      'Create a realistic professional LinkedIn portrait. Keep the same identity and face structure. Improve lighting, outfit, background, and overall studio quality. Natural skin texture, realistic result.',
   },
   {
     id: 'restore_colorize',
     title: 'Restore & Colorize',
     label: 'Old photo',
     icon: Sparkles,
-    defaultPrompt:
-      'Restore this old photo naturally. Improve details, remove damage and scratches, enhance face clarity, and colorize the image in a realistic way while preserving the original person.',
   },
   {
     id: 'smart_edit',
     title: 'Smart Edit',
     label: 'Prompt edit',
     icon: WandSparkles,
-    defaultPrompt:
-      'Edit the uploaded photo according to the instruction. Keep the person realistic and recognizable. Make changes natural, clean, and photo-realistic.',
   },
   {
     id: 'remove_objects',
     title: 'Remove Objects',
     label: 'Cleanup',
     icon: Eraser,
-    defaultPrompt:
-      'Remove unwanted objects and distractions from the photo. Reconstruct the background naturally and keep the image realistic.',
   },
   {
     id: 'enhance_quality',
     title: 'Enhance Quality',
     label: 'Upscale / sharpen',
     icon: ImagePlus,
-    defaultPrompt:
-      'Improve the photo quality. Enhance sharpness, lighting, contrast, texture, and details naturally without changing the identity.',
   },
 ]
 
@@ -79,17 +74,71 @@ const MODEL_PRESETS = [
   },
 ]
 
+const RACE_OPTIONS = [
+  { value: 'european', label: 'European' },
+  { value: 'afro', label: 'Afro' },
+  { value: 'arab', label: 'Arabic' },
+  { value: 'asian', label: 'Asian' },
+]
+
+const PERSON_OPTIONS = [
+  { value: 'man', label: 'Man' },
+  { value: 'woman', label: 'Woman' },
+]
+
+const VIEW_OPTIONS = [
+  { value: 'front', label: 'Front' },
+  { value: '3q', label: '3/4 view' },
+]
+
+function getPrototypeGender({ race, gender }) {
+  if (race === 'european') return gender
+  return `${race}_${gender === 'man' ? 'male' : 'female'}`
+}
+
+function makePreviewSourceKey({ race, gender, view }) {
+  if (!race || !gender || !view) return ''
+
+  const prototypeGender = getPrototypeGender({ race, gender })
+
+  return `${prototypeGender}_${view}_color`
+}
+
+async function srcToFile(src, filename = 'photo-lab-prototype.png') {
+  const response = await fetch(src)
+
+  if (!response.ok) {
+    throw new Error('Failed to load prototype image')
+  }
+
+  const blob = await response.blob()
+
+  return new File([blob], filename, {
+    type: blob.type || 'image/png',
+  })
+}
+
 export default function PhotoLabPreviewTester() {
-  const inputRef = useRef(null)
+  const dispatch = useDispatch()
+  const mainInputRef = useRef(null)
+  const referenceInputRef = useRef(null)
 
   const [selectedModeId, setSelectedModeId] = useState(
     PHOTO_LAB_TEST_MODES[0].id,
   )
   const [modelPreset, setModelPreset] = useState(MODEL_PRESETS[0].id)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
-  const [sourceFile, setSourceFile] = useState(null)
-  const [sourcePreview, setSourcePreview] = useState('')
-  const [prompt, setPrompt] = useState(PHOTO_LAB_TEST_MODES[0].defaultPrompt)
+
+  const [race, setRace] = useState('european')
+  const [gender, setGender] = useState('man')
+  const [view, setView] = useState('front')
+
+  const [mainSourceFile, setMainSourceFile] = useState(null)
+  const [referenceSourceFiles, setReferenceSourceFiles] = useState([])
+  const [sourceUploadPreviews, setSourceUploadPreviews] = useState([])
+  const [activeSourceIndex, setActiveSourceIndex] = useState(0)
+
+  const [additionalPrompt, setAdditionalPrompt] = useState('')
   const [resultPreview, setResultPreview] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
@@ -105,56 +154,133 @@ export default function PhotoLabPreviewTester() {
     return getPhotoQuality(photoQuality)
   }, [photoQuality])
 
+  const previewSourceKey = useMemo(() => {
+    return makePreviewSourceKey({ race, gender, view })
+  }, [race, gender, view])
+
+  const prototypeSrc = useMemo(() => {
+    return PROTOTYPE_MAP[previewSourceKey] || PROTOTYPE_MAP.man_front_color
+  }, [previewSourceKey])
+
+  const activeSourcePreviewItem = useMemo(() => {
+    return sourceUploadPreviews[activeSourceIndex] || null
+  }, [activeSourceIndex, sourceUploadPreviews])
+
+  const activeSourcePreview = activeSourcePreviewItem?.url || prototypeSrc
+  const isUsingUploadedSource = Boolean(mainSourceFile)
+  const hasMultipleSourcePhotos = sourceUploadPreviews.length > 1
+
   useEffect(() => {
-    setPrompt(selectedMode.defaultPrompt)
+    setAdditionalPrompt('')
     setResultPreview('')
     setError('')
   }, [selectedMode])
 
   useEffect(() => {
-    if (!sourceFile) {
-      setSourcePreview('')
+    if (!mainSourceFile) {
+      setSourceUploadPreviews([])
+      setActiveSourceIndex(0)
       return
     }
 
-    const objectUrl = URL.createObjectURL(sourceFile)
-    setSourcePreview(objectUrl)
+    const previewItems = [
+      {
+        type: 'main',
+        label: 'Main photo',
+        url: URL.createObjectURL(mainSourceFile),
+      },
+      ...referenceSourceFiles.map((file, index) => ({
+        type: 'reference',
+        label: `Reference ${index + 1}`,
+        url: URL.createObjectURL(file),
+      })),
+    ]
 
-    return () => URL.revokeObjectURL(objectUrl)
-  }, [sourceFile])
+    setSourceUploadPreviews(previewItems)
+    setActiveSourceIndex(0)
+
+    return () => {
+      previewItems.forEach((item) => URL.revokeObjectURL(item.url))
+    }
+  }, [mainSourceFile, referenceSourceFiles])
+
+  const resolveSourceFiles = async () => {
+    if (mainSourceFile) {
+      return [mainSourceFile, ...referenceSourceFiles].slice(0, 3)
+    }
+
+    const prototypeFile = await srcToFile(
+      prototypeSrc,
+      `${previewSourceKey || 'prototype'}.png`,
+    )
+
+    return [prototypeFile]
+  }
+
+  const goToPreviousSourcePhoto = () => {
+    setActiveSourceIndex((currentIndex) => {
+      if (!sourceUploadPreviews.length) return 0
+      return currentIndex === 0
+        ? sourceUploadPreviews.length - 1
+        : currentIndex - 1
+    })
+  }
+
+  const goToNextSourcePhoto = () => {
+    setActiveSourceIndex((currentIndex) => {
+      if (!sourceUploadPreviews.length) return 0
+      return currentIndex === sourceUploadPreviews.length - 1
+        ? 0
+        : currentIndex + 1
+    })
+  }
+
+  const clearUploadedSources = () => {
+    setMainSourceFile(null)
+    setReferenceSourceFiles([])
+    setResultPreview('')
+    setError('')
+
+    if (mainInputRef.current) {
+      mainInputRef.current.value = ''
+    }
+
+    if (referenceInputRef.current) {
+      referenceInputRef.current.value = ''
+    }
+  }
 
   const handleGenerate = async () => {
-    const normalizedPrompt = String(prompt || '').trim()
-
-    if (!sourceFile) {
-      setError('Source image is required')
-      return
-    }
-
-    if (!normalizedPrompt) {
-      setError('Prompt is required')
-      return
-    }
+    const normalizedAdditionalPrompt = String(additionalPrompt || '').trim()
 
     setError('')
     setIsGenerating(true)
 
     try {
-      // TODO next step:
-      // const formData = new FormData()
-      // formData.append('mode', selectedMode.id)
-      // formData.append('modelPreset', modelPreset)
-      // formData.append('photoQuality', selectedPhotoQuality.id)
-      // formData.append('prompt', normalizedPrompt)
-      // formData.append('photo', sourceFile)
-      // dispatch(generatePhotoLabAdminPreview(formData))
+      const resolvedSourceFiles = await resolveSourceFiles()
 
-      await new Promise((resolve) => setTimeout(resolve, 900))
+      const formData = new FormData()
 
-      // Temporary UI fallback until backend endpoint is connected.
-      setResultPreview(sourcePreview)
+      formData.append('mode', selectedMode.id)
+      formData.append('modelPreset', modelPreset)
+      formData.append('photoQuality', selectedPhotoQuality.id)
+      formData.append('additionalPrompt', normalizedAdditionalPrompt)
+
+      resolvedSourceFiles.forEach((file) => {
+        formData.append('photos', file)
+      })
+
+      const data = await dispatch(
+        generatePhotoLabAdminPreview(formData),
+      ).unwrap()
+
+      setResultPreview(data?.previewUrl || data?.imageUrl || data?.url || '')
     } catch (e) {
-      setError(e?.message || 'Failed to generate Photo Lab preview')
+      setError(
+        e?.data?.message ||
+          e?.message ||
+          'Failed to generate Photo Lab preview',
+      )
     } finally {
       setIsGenerating(false)
     }
@@ -175,8 +301,8 @@ export default function PhotoLabPreviewTester() {
           className="mt-2 max-w-3xl"
         >
           This admin workspace is for testing Photo Lab modes before connecting
-          them to the public page. Later it will call a dedicated admin test
-          endpoint.
+          them to the public page. The first uploaded image is always sent as
+          the primary identity source.
         </Text>
       </div>
 
@@ -363,27 +489,268 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="text-foreground-soft"
                 >
-                  Source image
+                  Source images
                 </Text>
+              </div>
+
+              <div className="mb-4 grid gap-3 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => mainInputRef.current?.click()}
+                  disabled={isGenerating}
+                  className="w-full"
+                >
+                  Upload main photo
+                </Button>
 
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => inputRef.current?.click()}
-                  disabled={isGenerating}
-                  className="w-auto"
+                  onClick={() => referenceInputRef.current?.click()}
+                  disabled={isGenerating || !mainSourceFile}
+                  className="w-full"
                 >
-                  Upload
+                  Upload references
                 </Button>
               </div>
 
-              <div className="flex min-h-[420px] items-center justify-center overflow-hidden rounded-[22px] border border-dashed border-white/15 bg-background-soft/70 p-2 text-center">
-                {sourcePreview ? (
-                  <img
-                    src={sourcePreview}
-                    alt="Source preview"
-                    className="max-h-[520px] w-full rounded-[18px] object-contain"
-                  />
+              {!isUsingUploadedSource ? (
+                <div className="mb-4 rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="faint"
+                    caseMode="sentence"
+                    className="mb-3 uppercase tracking-[0.18em]"
+                  >
+                    Prototype source
+                  </Text>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <Text
+                        as="p"
+                        variant="caption"
+                        color="muted"
+                        caseMode="sentence"
+                        className="mb-2"
+                      >
+                        Race
+                      </Text>
+
+                      <div className="flex flex-col gap-2">
+                        {RACE_OPTIONS.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                          >
+                            <input
+                              type="radio"
+                              name="photo-lab-race"
+                              value={option.value}
+                              checked={race === option.value}
+                              onChange={() => {
+                                setRace(option.value)
+                                setResultPreview('')
+                                setError('')
+                              }}
+                              disabled={isGenerating}
+                              className="h-4 w-4 accent-[var(--primary)]"
+                            />
+
+                            <Text
+                              as="span"
+                              variant="caption"
+                              color="soft"
+                              caseMode="sentence"
+                            >
+                              {option.label}
+                            </Text>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Text
+                        as="p"
+                        variant="caption"
+                        color="muted"
+                        caseMode="sentence"
+                        className="mb-2"
+                      >
+                        Person
+                      </Text>
+
+                      <div className="flex flex-col gap-2">
+                        {PERSON_OPTIONS.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                          >
+                            <input
+                              type="radio"
+                              name="photo-lab-person"
+                              value={option.value}
+                              checked={gender === option.value}
+                              onChange={() => {
+                                setGender(option.value)
+                                setResultPreview('')
+                                setError('')
+                              }}
+                              disabled={isGenerating}
+                              className="h-4 w-4 accent-[var(--primary)]"
+                            />
+
+                            <Text
+                              as="span"
+                              variant="caption"
+                              color="soft"
+                              caseMode="sentence"
+                            >
+                              {option.label}
+                            </Text>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Text
+                        as="p"
+                        variant="caption"
+                        color="muted"
+                        caseMode="sentence"
+                        className="mb-2"
+                      >
+                        View
+                      </Text>
+
+                      <div className="flex flex-col gap-2">
+                        {VIEW_OPTIONS.map((option) => (
+                          <label
+                            key={option.value}
+                            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                          >
+                            <input
+                              type="radio"
+                              name="photo-lab-view"
+                              value={option.value}
+                              checked={view === option.value}
+                              onChange={() => {
+                                setView(option.value)
+                                setResultPreview('')
+                                setError('')
+                              }}
+                              disabled={isGenerating}
+                              className="h-4 w-4 accent-[var(--primary)]"
+                            />
+
+                            <Text
+                              as="span"
+                              variant="caption"
+                              color="soft"
+                              caseMode="sentence"
+                            >
+                              {option.label}
+                            </Text>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="muted"
+                    caseMode="sentence"
+                    className="mt-3"
+                  >
+                    Active prototype: {previewSourceKey}
+                  </Text>
+                </div>
+              ) : (
+                <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/5 p-4">
+                  <Text
+                    as="p"
+                    variant="body-sm"
+                    color="soft"
+                    caseMode="sentence"
+                  >
+                    Main photo is sent first and used as the primary identity
+                    source. Reference photos are sent after it as supporting
+                    identity sources.
+                  </Text>
+
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="muted"
+                    caseMode="sentence"
+                    className="mt-2"
+                  >
+                    Main: {mainSourceFile?.name || 'Not selected'} · References:{' '}
+                    {referenceSourceFiles.length} / 2
+                  </Text>
+
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={clearUploadedSources}
+                    disabled={isGenerating}
+                    className="mt-3 w-auto"
+                  >
+                    Use prototype instead
+                  </Button>
+                </div>
+              )}
+
+              <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-[22px] border border-dashed border-white/15 bg-background-soft/70 p-2 text-center">
+                {activeSourcePreview ? (
+                  <>
+                    <img
+                      src={activeSourcePreview}
+                      alt="Source preview"
+                      className="max-h-[520px] w-full rounded-[18px] object-contain"
+                    />
+
+                    {activeSourcePreviewItem ? (
+                      <span className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
+                        {activeSourcePreviewItem.label}
+                      </span>
+                    ) : null}
+
+                    {hasMultipleSourcePhotos ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={goToPreviousSourcePhoto}
+                          disabled={isGenerating}
+                          className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="Previous source photo"
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={goToNextSourcePhoto}
+                          disabled={isGenerating}
+                          className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="Next source photo"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+
+                        <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
+                          {activeSourceIndex + 1} /{' '}
+                          {sourceUploadPreviews.length}
+                        </span>
+                      </>
+                    ) : null}
+                  </>
                 ) : (
                   <div className="max-w-sm px-4">
                     <Text
@@ -392,7 +759,7 @@ export default function PhotoLabPreviewTester() {
                       color="white"
                       caseMode="sentence"
                     >
-                      Upload source photo
+                      Upload main source photo
                     </Text>
 
                     <Text
@@ -402,21 +769,40 @@ export default function PhotoLabPreviewTester() {
                       caseMode="sentence"
                       className="mt-2"
                     >
-                      Use any portrait, old photo, low-quality image, or edit
-                      sample for model testing.
+                      The main photo will always be sent first. You can add up
+                      to two supporting reference photos after it.
                     </Text>
                   </div>
                 )}
               </div>
 
               <input
-                ref={inputRef}
+                ref={mainInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
                 onChange={(e) => {
-                  const file = e.target.files?.[0] || null
-                  setSourceFile(file)
+                  const file = Array.from(e.target.files || [])[0] || null
+                  setMainSourceFile(file)
+                  setReferenceSourceFiles([])
+                  setResultPreview('')
+                  setError('')
+
+                  if (referenceInputRef.current) {
+                    referenceInputRef.current.value = ''
+                  }
+                }}
+              />
+
+              <input
+                ref={referenceInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []).slice(0, 2)
+                  setReferenceSourceFiles(files)
                   setResultPreview('')
                   setError('')
                 }}
@@ -478,8 +864,8 @@ export default function PhotoLabPreviewTester() {
                       caseMode="sentence"
                       className="mt-2"
                     >
-                      Upload a source image, adjust prompt settings, and run a
-                      test generation.
+                      Upload a source image, adjust settings, and run a test
+                      generation.
                     </Text>
                   </div>
                 )}
@@ -489,15 +875,16 @@ export default function PhotoLabPreviewTester() {
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <Input
-              id="photo-lab-test-prompt"
+              id="photo-lab-additional-prompt"
               as="textarea"
-              rows={9}
-              label="Test prompt"
-              placeholder="Describe what the model should do..."
-              hint="This prompt will be sent to the Photo Lab test endpoint later."
+              rows={5}
+              label="Additional prompt"
+              placeholder="Optional details for this test: outfit, background, mood, lighting, objects to add/remove..."
+              hint="Optional. This will be combined with the server-side Photo Lab prompt."
               caseMode="sentence"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              value={additionalPrompt}
+              onChange={(e) => setAdditionalPrompt(e.target.value)}
+              disabled={isGenerating}
             />
 
             <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-background-soft/70 p-4 sm:grid-cols-3">
