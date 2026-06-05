@@ -6,7 +6,6 @@ import {
   axiosLogout,
   axiosGetCurrentUser,
   axiosEditUser,
-  axiosUpdateUser,
   axiosDeleteUser,
   axiosForgotPassword,
   axiosResetPassword,
@@ -103,18 +102,6 @@ export const editUser = createAsyncThunk(
   async (userData, { rejectWithValue }) => {
     try {
       const data = await axiosEditUser(userData)
-      return data
-    } catch (e) {
-      return toReject(e, rejectWithValue)
-    }
-  }
-);
-
-export const updateUser = createAsyncThunk(
-  'auth/update',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const data = await axiosUpdateUser(userData)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

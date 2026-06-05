@@ -30,11 +30,6 @@ export const axiosEditUser = async (formData) => {
   return data
 }
 
-export const axiosUpdateUser = async (userData) => {
-  const { data } = await instance.post('/auth/update', userData)
-  return data
-}
-
 export const axiosDeleteUser = async (id) => {
   const { data } = await instance.delete(`/auth/delete/${id}`)
   return { ok: true, status: data.status }

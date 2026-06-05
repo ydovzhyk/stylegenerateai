@@ -6,7 +6,6 @@ import {
   logout,
   getCurrentUser,
   editUser,
-  updateUser,
   deleteUser,
   forgotPassword,
   resetPassword,
@@ -153,18 +152,6 @@ const auth = createSlice({
         state.isAuthChecked = true
         state.user = null
         state.error = null
-      })
-
-      // UPDATE USER (лайки/збереження)
-      .addCase(updateUser.pending, (state) => {
-        state.error = null
-        state.message = null
-      })
-      .addCase(updateUser.fulfilled, (state, { payload }) => {
-        state.user = { ...state.user, ...payload?.user }
-      })
-      .addCase(updateUser.rejected, (state, { payload }) => {
-        state.error = errMsg(payload)
       })
 
       // EDIT USER (профіль)

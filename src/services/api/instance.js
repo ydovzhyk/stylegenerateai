@@ -74,6 +74,24 @@ function dumpReq(label, req, extra = {}) {
 }
 
 // =====================
+// REFRESH MUTEX
+// =====================
+
+let refreshPromise = null
+
+function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = instance
+      .post('/auth/refresh')
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+
+  return refreshPromise
+}
+
+// =====================
 // INTERCEPTORS
 // =====================
 
@@ -140,7 +158,7 @@ export function setupInterceptors(store) {
             console.log(
               '[AXIOS] /auth/current needs refresh -> calling /auth/refresh',
             )
-          await instance.post('/auth/refresh') // refreshToken cookie
+          await refreshAccessToken()
           if (AXIOS_DEBUG)
             console.log('[AXIOS] refresh OK -> retrying /auth/current')
           dumpReq('RETRY_OUT_CURRENT', originalRequest)
@@ -190,7 +208,7 @@ export function setupInterceptors(store) {
 
         try {
           if (AXIOS_DEBUG) console.log('[AXIOS] calling /auth/refresh...')
-          await instance.post('/auth/refresh')
+          await refreshAccessToken()
 
           // ВАЖЛИВО:
           // Якщо originalRequest.data === FormData, інколи retry може не відправитись як очікується.
