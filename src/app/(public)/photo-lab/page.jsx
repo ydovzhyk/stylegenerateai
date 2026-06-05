@@ -38,7 +38,7 @@ export default function PhotoLabPage() {
     <div className="flex flex-col gap-12">
       <PhotoLabHero onStart={scrollToWorkspace} />
 
-      <PhotoLabShowcasePreview selectedMode={selectedMode} />
+      <PhotoLabShowcasePreview />
 
       <PhotoLabModes
         modes={PHOTO_LAB_MODES}

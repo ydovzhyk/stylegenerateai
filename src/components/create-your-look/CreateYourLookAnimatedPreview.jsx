@@ -119,7 +119,6 @@ function PreviewImageCard({
   labelType = 'default',
   accent = 'primary',
   imageKey,
-  animated = false,
   shineSeed,
   showMeta = false,
 }) {
@@ -137,40 +136,30 @@ function PreviewImageCard({
       className={`group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition ${hoverBorder}`}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-background-soft/60">
-        {animated ? (
-          <AnimatePresence initial={false}>
-            <motion.img
-              key={imageKey}
-              src={src}
-              alt={alt}
-              className="absolute inset-0 h-full w-full object-cover object-[50%_5%]"
-              initial={
-                reducedMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, scale: 1.03, filter: 'blur(2px)' }
-              }
-              animate={
-                reducedMotion
-                  ? { opacity: 1 }
-                  : { opacity: 1, scale: 1, filter: 'blur(0px)' }
-              }
-              exit={{ opacity: 0 }}
-              whileHover={reducedMotion ? undefined : { scale: 1.045 }}
-              transition={{
-                duration: reducedMotion ? 0.1 : 0.95,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            />
-          </AnimatePresence>
-        ) : (
+        <AnimatePresence initial={false}>
           <motion.img
+            key={imageKey || src}
             src={src}
             alt={alt}
-            className="h-full w-full object-cover object-[50%_5%]"
+            className="absolute inset-0 h-full w-full object-cover object-[50%_5%]"
+            initial={
+              reducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 1.03, filter: 'blur(2px)' }
+            }
+            animate={
+              reducedMotion
+                ? { opacity: 1 }
+                : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+            }
+            exit={{ opacity: 0 }}
             whileHover={reducedMotion ? undefined : { scale: 1.045 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              duration: reducedMotion ? 0.1 : 0.95,
+              ease: [0.22, 1, 0.36, 1],
+            }}
           />
-        )}
+        </AnimatePresence>
 
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(3,6,18,0.82)_0%,rgba(3,6,18,0.18)_34%,rgba(3,6,18,0.03)_62%,rgba(3,6,18,0.16)_100%)]" />
 
@@ -222,6 +211,7 @@ function PreviewPair({ item, accent = 'primary', contentKey }) {
         label={beforeText}
         labelType="before"
         accent={accent}
+        imageKey={`before-${contentKey}-${item.beforeSrc}`}
         shineSeed={`before-${contentKey}`}
         showMeta
       />
@@ -233,7 +223,6 @@ function PreviewPair({ item, accent = 'primary', contentKey }) {
         labelType="after"
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
-        animated
         shineSeed={`after-${contentKey}`}
       />
     </div>
