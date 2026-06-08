@@ -1,4 +1,3 @@
-// src/app/(public)/photo-lab/page.jsx
 'use client'
 
 import { useRef, useState } from 'react'

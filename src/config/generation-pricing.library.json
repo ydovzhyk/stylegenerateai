@@ -1,0 +1,1988 @@
+{
+  "version": "1.0.0",
+  "plans": {
+    "visitor": {
+      "title": "Visitor",
+      "wallet": {
+        "totalCredits": 3,
+        "dailyGenerations": 3,
+        "monthlyGenerations": 3,
+        "durationDays": null
+      }
+    },
+    "free": {
+      "title": "Free",
+      "wallet": {
+        "totalCredits": 30,
+        "dailyGenerations": 5,
+        "monthlyGenerations": 30,
+        "durationDays": null
+      }
+    },
+    "basic": {
+      "title": "Basic",
+      "wallet": {
+        "totalCredits": 120,
+        "dailyGenerations": null,
+        "monthlyGenerations": null,
+        "durationDays": 30,
+        "priceUsd": 10,
+        "priceUah": 399
+      }
+    },
+    "pro": {
+      "title": "Pro",
+      "wallet": {
+        "totalCredits": 500,
+        "dailyGenerations": null,
+        "monthlyGenerations": null,
+        "durationDays": 30,
+        "priceUsd": 20,
+        "priceUah": 899
+      }
+    },
+    "admin": {
+      "title": "Admin",
+      "wallet": {
+        "totalCredits": null,
+        "dailyGenerations": null,
+        "monthlyGenerations": null,
+        "durationDays": null,
+        "unlimited": true
+      }
+    }
+  },
+  "products": {
+    "ready_template": {
+      "title": "Create Your Look",
+      "productKey": "ready_template",
+      "plans": {
+        "visitor": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [
+              "photoQuality",
+              "outputFormat"
+            ],
+            "baseCredits": 0
+          },
+          "options": {
+            "photoQuality": {
+              "draft": {
+                "available": true,
+                "credits": 1,
+                "label": "Draft",
+                "description": "Fast and lightweight preview."
+              },
+              "standard": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "sign_in_required",
+                "label": "Standard"
+              },
+              "premium": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "sign_in_required",
+                "label": "Premium"
+              },
+              "print": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "sign_in_required",
+                "label": "Print"
+              }
+            },
+            "outputFormat": {
+              "portrait_2_3": {
+                "available": true,
+                "credits": 0,
+                "label": "Portrait 2:3"
+              },
+              "square_1_1": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "sign_in_required",
+                "label": "Square 1:1"
+              },
+              "landscape_3_2": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "sign_in_required",
+                "label": "Landscape 3:2"
+              }
+            },
+            "generatedImageFormat": {
+              "png": {
+                "available": true,
+                "credits": 0,
+                "label": "PNG"
+              },
+              "jpeg": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_basic_required",
+                "label": "JPEG"
+              },
+              "webp": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_basic_required",
+                "label": "WebP"
+              }
+            }
+          }
+        },
+        "free": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [
+              "photoQuality",
+              "outputFormat"
+            ],
+            "baseCredits": 0
+          },
+          "options": {
+            "photoQuality": {
+              "draft": {
+                "available": true,
+                "credits": 1,
+                "label": "Draft",
+                "description": "Fast and lightweight preview."
+              },
+              "standard": {
+                "available": true,
+                "credits": 3,
+                "label": "Standard",
+                "description": "Balanced quality for everyday use."
+              },
+              "premium": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_pro_required",
+                "label": "Premium"
+              },
+              "print": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_pro_required",
+                "label": "Print"
+              }
+            },
+            "outputFormat": {
+              "portrait_2_3": {
+                "available": true,
+                "credits": 0,
+                "label": "Portrait 2:3"
+              },
+              "square_1_1": {
+                "available": true,
+                "credits": 0,
+                "label": "Square 1:1"
+              },
+              "landscape_3_2": {
+                "available": true,
+                "credits": 1,
+                "label": "Landscape 3:2"
+              }
+            },
+            "generatedImageFormat": {
+              "png": {
+                "available": true,
+                "credits": 0,
+                "label": "PNG"
+              },
+              "jpeg": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_basic_required",
+                "label": "JPEG"
+              },
+              "webp": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_basic_required",
+                "label": "WebP"
+              }
+            }
+          }
+        },
+        "basic": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [
+              "photoQuality",
+              "outputFormat"
+            ],
+            "baseCredits": 0
+          },
+          "options": {
+            "photoQuality": {
+              "draft": {
+                "available": true,
+                "credits": 1,
+                "label": "Draft",
+                "description": "Fast and lightweight preview."
+              },
+              "standard": {
+                "available": true,
+                "credits": 3,
+                "label": "Standard",
+                "description": "Balanced quality for everyday use."
+              },
+              "premium": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_pro_required",
+                "label": "Premium"
+              },
+              "print": {
+                "available": false,
+                "credits": null,
+                "lockedReason": "plan_pro_required",
+                "label": "Print"
+              }
+            },
+            "outputFormat": {
+              "portrait_2_3": {
+                "available": true,
+                "credits": 0,
+                "label": "Portrait 2:3"
+              },
+              "square_1_1": {
+                "available": true,
+                "credits": 0,
+                "label": "Square 1:1"
+              },
+              "landscape_3_2": {
+                "available": true,
+                "credits": 1,
+                "label": "Landscape 3:2"
+              }
+            },
+            "generatedImageFormat": {
+              "png": {
+                "available": true,
+                "credits": 0,
+                "label": "PNG"
+              },
+              "jpeg": {
+                "available": true,
+                "credits": 0,
+                "label": "JPEG"
+              },
+              "webp": {
+                "available": true,
+                "credits": 0,
+                "label": "WebP"
+              }
+            }
+          }
+        },
+        "pro": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [
+              "photoQuality",
+              "outputFormat"
+            ],
+            "baseCredits": 0
+          },
+          "options": {
+            "photoQuality": {
+              "draft": {
+                "available": true,
+                "credits": 1,
+                "label": "Draft",
+                "description": "Fast and lightweight preview."
+              },
+              "standard": {
+                "available": true,
+                "credits": 3,
+                "label": "Standard",
+                "description": "Balanced quality for everyday use."
+              },
+              "premium": {
+                "available": true,
+                "credits": 8,
+                "label": "Premium",
+                "description": "Higher quality with richer detail."
+              },
+              "print": {
+                "available": true,
+                "credits": 20,
+                "label": "Print",
+                "description": "Best export quality for print use."
+              }
+            },
+            "outputFormat": {
+              "portrait_2_3": {
+                "available": true,
+                "credits": 0,
+                "label": "Portrait 2:3"
+              },
+              "square_1_1": {
+                "available": true,
+                "credits": 0,
+                "label": "Square 1:1"
+              },
+              "landscape_3_2": {
+                "available": true,
+                "credits": 1,
+                "label": "Landscape 3:2"
+              }
+            },
+            "generatedImageFormat": {
+              "png": {
+                "available": true,
+                "credits": 0,
+                "label": "PNG"
+              },
+              "jpeg": {
+                "available": true,
+                "credits": 0,
+                "label": "JPEG"
+              },
+              "webp": {
+                "available": true,
+                "credits": 0,
+                "label": "WebP"
+              }
+            }
+          }
+        }
+      }
+    },
+    "photo_lab": {
+      "title": "Photo Lab",
+      "productKey": "photo_lab",
+      "modes": {
+        "enhance_quality": {
+          "title": "Enhance Quality",
+          "modeKey": "enhance_quality",
+          "usesSourceDimensions": true,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "modelPreset"
+                ],
+                "fixedSelections": {
+                  "photoQuality": "draft"
+                }
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview.",
+                    "includedInPresetPrice": true
+                  },
+                  "standard": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Standard"
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ]
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 5,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ]
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 5,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ]
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 20,
+                    "label": "Print",
+                    "description": "Best export quality for print use."
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "professional_portrait": {
+          "title": "Professional Portrait",
+          "modeKey": "professional_portrait",
+          "usesSourceDimensions": false,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": false,
+                "lockedReason": "sign_in_required"
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Standard"
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print"
+                  }
+                },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Landscape 3:2"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "outputFormat",
+                  "modelPreset"
+                ],
+                "baseCredits": 2,
+                "forcedSelections": {
+                  "modelPreset": "identity"
+                }
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Draft"
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Landscape 3:2"
+                  }
+                },
+                "modelPreset": {
+                  "identity": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part.",
+                    "forced": true
+                  },
+                  "balanced": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "outputFormat",
+                  "modelPreset"
+                ],
+                "baseCredits": 2,
+                "forcedSelections": {
+                  "modelPreset": "identity"
+                }
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Draft"
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Landscape 3:2"
+                  }
+                },
+                "modelPreset": {
+                  "identity": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part.",
+                    "forced": true
+                  },
+                  "balanced": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "outputFormat",
+                  "modelPreset"
+                ],
+                "baseCredits": 2,
+                "forcedSelections": {
+                  "modelPreset": "identity"
+                }
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Draft"
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 20,
+                    "label": "Print",
+                    "description": "Best export quality for print use."
+                  }
+                },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Landscape 3:2"
+                  }
+                },
+                "modelPreset": {
+                  "identity": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part.",
+                    "forced": true
+                  },
+                  "balanced": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "mode_minimum_standard",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "restore_colorize": {
+          "title": "Restore & Colorize",
+          "modeKey": "restore_colorize",
+          "usesSourceDimensions": true,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "modelPreset"
+                ],
+                "fixedSelections": {
+                  "photoQuality": "draft"
+                }
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview.",
+                    "includedInPresetPrice": true
+                  },
+                  "standard": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Standard"
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 6,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 6,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 20,
+                    "label": "Print",
+                    "description": "Best export quality for print use."
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 6,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "smart_edit": {
+          "title": "Smart Edit",
+          "modeKey": "smart_edit",
+          "usesSourceDimensions": false,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": false,
+                "lockedReason": "sign_in_required"
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Standard"
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 6,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 6,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 20,
+                    "label": "Print",
+                    "description": "Best export quality for print use."
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 6,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "remove_objects": {
+          "title": "Remove Objects",
+          "modeKey": "remove_objects",
+          "usesSourceDimensions": false,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": false,
+                "lockedReason": "sign_in_required"
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Standard"
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 5,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 5,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Standard",
+                    "description": "Balanced quality for everyday use."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 8,
+                    "label": "Premium",
+                    "description": "Higher quality with richer detail."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 20,
+                    "label": "Print",
+                    "description": "Best export quality for print use."
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Balanced",
+                    "description": "Default preset for normal quality and cost."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Identity critical",
+                    "description": "Use when face likeness is the most important part."
+                  },
+                  "creative": {
+                    "available": true,
+                    "credits": 5,
+                    "label": "Creative edit",
+                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -32,6 +32,7 @@ export default function GenerationActionCard({
   buttonGenerate = 'Generate',
   buttonRegenerate = 'Regenerate',
   buttonDownload = 'Download',
+  creditCost = null,
 }) {
   const canDownload = Boolean(generatedPreview)
   const isActionLoading = loading || saveLoading
@@ -87,6 +88,12 @@ export default function GenerationActionCard({
         <span className="inline-flex items-center gap-2">
           {generatedPreview ? <RotateCcw size={16} /> : <Sparkles size={16} />}
           {generatedPreview ? buttonRegenerate : buttonGenerate}
+          {creditCost != null && !generatedPreview ? (
+            <span className="text-white/75">· {creditCost} credits</span>
+          ) : null}
+          {creditCost != null && generatedPreview ? (
+            <span className="text-white/75">· {creditCost} credits</span>
+          ) : null}
         </span>
       </Button>
 

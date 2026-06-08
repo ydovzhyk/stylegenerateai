@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import { useTranslate } from '@/utils/translate/translate'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import { getYourLookPreviewTemplates as getYourLookPreviewTemplatesOperation } from '@/store/ready-template/ready-template-operations'
@@ -121,9 +122,12 @@ function PreviewImageCard({
   imageKey,
   shineSeed,
   showMeta = false,
+  onOpenPreview,
 }) {
   const reducedMotion = useReducedMotion()
   const { accentBorder, accentText, hoverBorder } = getAccentClasses(accent)
+  const hasImage = Boolean(src)
+  const isPreviewable = hasImage && typeof onOpenPreview === 'function'
 
   return (
     <motion.article
@@ -133,9 +137,18 @@ function PreviewImageCard({
         duration: reducedMotion ? 0 : 0.55,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className={`group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition ${hoverBorder}`}
+      className={`group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition ${hoverBorder} ${isPreviewable ? 'cursor-zoom-in' : ''}`}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-background-soft/60">
+        {isPreviewable ? (
+          <button
+            type="button"
+            onClick={onOpenPreview}
+            aria-label={`Open ${label} preview`}
+            className="absolute inset-0 z-[1] cursor-zoom-in"
+          />
+        ) : null}
+
         <AnimatePresence initial={false}>
           <motion.img
             key={imageKey || src}
@@ -194,7 +207,7 @@ function PreviewImageCard({
   )
 }
 
-function PreviewPair({ item, accent = 'primary', contentKey }) {
+function PreviewPair({ item, accent = 'primary', contentKey, onOpenPreview }) {
   const beforeText = useTranslate('Before', { caseMode: 'title' })
   const afterText = useTranslate('After', { caseMode: 'title' })
   const beforeAltText = useTranslate('before', { caseMode: 'lower' })
@@ -214,6 +227,16 @@ function PreviewPair({ item, accent = 'primary', contentKey }) {
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
         shineSeed={`before-${contentKey}`}
         showMeta
+        onOpenPreview={
+          onOpenPreview
+            ? () =>
+                onOpenPreview({
+                  src: item.beforeSrc,
+                  alt: `${item.title} ${beforeAltText}`,
+                  title: `${item.title} — ${beforeText}`,
+                })
+            : undefined
+        }
       />
 
       <PreviewImageCard
@@ -224,12 +247,22 @@ function PreviewPair({ item, accent = 'primary', contentKey }) {
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
         shineSeed={`after-${contentKey}`}
+        onOpenPreview={
+          onOpenPreview
+            ? () =>
+                onOpenPreview({
+                  src: item.afterSrc,
+                  alt: `${item.title} ${afterAltText}`,
+                  title: `${item.title} — ${afterText}`,
+                })
+            : undefined
+        }
       />
     </div>
   )
 }
 
-function PreviewGroupCard({ item, accent = 'primary', contentKey }) {
+function PreviewGroupCard({ item, accent = 'primary', contentKey, onOpenPreview }) {
   const { accentBorder, accentText } = getAccentClasses(accent)
 
   const malePreviewText = useTranslate('male preview', { caseMode: 'lower' })
@@ -259,13 +292,24 @@ function PreviewGroupCard({ item, accent = 'primary', contentKey }) {
         </ShinyBadge>
       </div>
 
-      <PreviewPair item={item} accent={accent} contentKey={contentKey} />
+      <PreviewPair
+        item={item}
+        accent={accent}
+        contentKey={contentKey}
+        onOpenPreview={onOpenPreview}
+      />
     </div>
   )
 }
 
 export default function CreateYourLookAnimatedPreview() {
   const dispatch = useDispatch()
+  const [previewModal, setPreviewModal] = useState({
+    open: false,
+    src: '',
+    alt: '',
+    title: '',
+  })
 
   const previewGroups = useSelector(selectYourLookPreviewTemplates)
   const previewLoading = useSelector(getYourLookPreviewLoading)
@@ -364,6 +408,26 @@ export default function CreateYourLookAnimatedPreview() {
     handleNeedMorePreviewTemplates()
   }, [desktopIndex, desktopPairsLength, handleNeedMorePreviewTemplates])
 
+  const openImagePreview = useCallback(({ src, alt, title }) => {
+    if (!src) return
+
+    setPreviewModal({
+      open: true,
+      src,
+      alt,
+      title,
+    })
+  }, [])
+
+  const closeImagePreview = useCallback(() => {
+    setPreviewModal({
+      open: false,
+      src: '',
+      alt: '',
+      title: '',
+    })
+  }, [])
+
   if (!activeMobile && !activeMan && !activeWoman) return null
 
   return (
@@ -373,6 +437,7 @@ export default function CreateYourLookAnimatedPreview() {
           item={activeMobile}
           accent={activeMobile?.gender === 'man' ? 'primary' : 'cyan'}
           contentKey={`${activeMobile?.id}-${mobileIndex}`}
+          onOpenPreview={openImagePreview}
         />
       </div>
 
@@ -381,14 +446,24 @@ export default function CreateYourLookAnimatedPreview() {
           item={activeMan}
           accent="primary"
           contentKey={`${activeMan?.id}-${desktopIndex}`}
+          onOpenPreview={openImagePreview}
         />
 
         <PreviewGroupCard
           item={activeWoman}
           accent="cyan"
           contentKey={`${activeWoman?.id}-${desktopIndex}`}
+          onOpenPreview={openImagePreview}
         />
       </div>
+
+      <ImagePreviewModal
+        open={previewModal.open}
+        onClose={closeImagePreview}
+        src={previewModal.src}
+        alt={previewModal.alt}
+        title={previewModal.title}
+      />
     </section>
   )
 }

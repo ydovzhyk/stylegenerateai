@@ -61,6 +61,7 @@ export default function AiImageWorkspace({ template }) {
     planHint,
     isFormatAllowed,
     isQualityAllowed,
+    creditCost,
     generatedImageFormat,
     setGeneratedImageFormat,
     generatedImageFormats,
@@ -601,6 +602,7 @@ export default function AiImageWorkspace({ template }) {
           generatedImageFormats={generatedImageFormats}
           isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
           formatLockedText={lockedText}
+          creditCost={creditCost}
         />
       </div>
 

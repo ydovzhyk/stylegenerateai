@@ -5,9 +5,7 @@ export const PHOTO_QUALITIES = {
     apiQuality: 'low',
     outputFormat: 'webp',
     outputCompression: 70,
-    promptSuffix:
-      'Clean composition, good overall quality, simple detail level.',
-    description: 'Fast and lightweight preview.',
+    description: 'Fast preview export with lighter compression.',
   },
 
   standard: {
@@ -16,9 +14,7 @@ export const PHOTO_QUALITIES = {
     apiQuality: 'medium',
     outputFormat: 'webp',
     outputCompression: 82,
-    promptSuffix:
-      'High-quality image, clean details, balanced textures, visually appealing result.',
-    description: 'Balanced quality for admin preview.',
+    description: 'Balanced export density for everyday use.',
   },
 
   premium: {
@@ -27,9 +23,7 @@ export const PHOTO_QUALITIES = {
     apiQuality: 'high',
     outputFormat: 'jpeg',
     outputCompression: 92,
-    promptSuffix:
-      'High-end polished image, refined details, premium presentation quality.',
-    description: 'Higher quality with larger file size.',
+    description: 'Higher export density with refined JPEG output.',
   },
 
   print: {
@@ -38,9 +32,7 @@ export const PHOTO_QUALITIES = {
     apiQuality: 'high',
     outputFormat: 'png',
     outputCompression: null,
-    promptSuffix:
-      'Maximum clarity, polished final image, suitable for high-quality export and print use.',
-    description: 'Best export quality, largest file size.',
+    description: 'Lossless PNG export for print and archive.',
   },
 }
 

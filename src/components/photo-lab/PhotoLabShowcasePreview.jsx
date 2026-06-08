@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import clsx from 'clsx'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Text from '@/components/shared/text/Text'
+import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
 import { getPhotoLabTemplates } from '@/store/photo-lab/photo-lab-operations'
 import {
@@ -177,10 +178,12 @@ function PreviewImageCard({
   imageKey,
   shineSeed,
   showMeta = false,
+  onOpenPreview,
 }) {
   const reducedMotion = useReducedMotion()
   const { accentBorder, accentText, hoverBorder } = getAccentClasses(accent)
   const hasImage = Boolean(src)
+  const isPreviewable = hasImage && typeof onOpenPreview === 'function'
 
   return (
     <motion.article
@@ -190,9 +193,17 @@ function PreviewImageCard({
         duration: reducedMotion ? 0 : 0.55,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className={`group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition ${hoverBorder}`}
+      className={`group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm transition ${hoverBorder} ${isPreviewable ? 'cursor-zoom-in' : ''}`}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-background-soft/60">
+        {isPreviewable ? (
+          <button
+            type="button"
+            onClick={onOpenPreview}
+            aria-label={`Open ${label} preview`}
+            className="absolute inset-0 z-[1] cursor-zoom-in"
+          />
+        ) : null}
         {hasImage ? (
           <AnimatePresence initial={false}>
             <motion.img
@@ -253,7 +264,7 @@ function PreviewImageCard({
   )
 }
 
-function PreviewPair({ item, accent = 'cyan', contentKey }) {
+function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
   if (!item) return null
 
   return (
@@ -268,6 +279,16 @@ function PreviewPair({ item, accent = 'cyan', contentKey }) {
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
         shineSeed={`before-${contentKey}`}
         showMeta
+        onOpenPreview={
+          onOpenPreview
+            ? () =>
+                onOpenPreview({
+                  src: item.beforeSrc,
+                  alt: `${item.title} before`,
+                  title: `${item.title} — ${item.beforeLabel}`,
+                })
+            : undefined
+        }
       />
 
       <PreviewImageCard
@@ -278,6 +299,16 @@ function PreviewPair({ item, accent = 'cyan', contentKey }) {
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
         shineSeed={`after-${contentKey}`}
+        onOpenPreview={
+          onOpenPreview
+            ? () =>
+                onOpenPreview({
+                  src: item.afterSrc,
+                  alt: `${item.title} after`,
+                  title: `${item.title} — ${item.afterLabel}`,
+                })
+            : undefined
+        }
       />
     </div>
   )
@@ -287,6 +318,12 @@ export default function PhotoLabShowcasePreview() {
   const dispatch = useDispatch()
 
   const [pinnedModeId, setPinnedModeId] = useState(null)
+  const [previewModal, setPreviewModal] = useState({
+    open: false,
+    src: '',
+    alt: '',
+    title: '',
+  })
 
   const templatesByMode = useSelector(getPhotoLabTemplatesState)
   const templatesLoading = useSelector(getPhotoLabTemplatesLoading)
@@ -344,6 +381,26 @@ export default function PhotoLabShowcasePreview() {
     },
     [setActiveIndex],
   )
+
+  const openImagePreview = useCallback(({ src, alt, title }) => {
+    if (!src) return
+
+    setPreviewModal({
+      open: true,
+      src,
+      alt,
+      title,
+    })
+  }, [])
+
+  const closeImagePreview = useCallback(() => {
+    setPreviewModal({
+      open: false,
+      src: '',
+      alt: '',
+      title: '',
+    })
+  }, [])
 
   return (
     <section className="gradient-border-card overflow-hidden p-4 sm:p-5 lg:p-6">
@@ -412,6 +469,7 @@ export default function PhotoLabShowcasePreview() {
               item={activeItem}
               accent="cyan"
               contentKey={`${activeItem.id}-${activeIndex}`}
+              onOpenPreview={openImagePreview}
             />
           ) : (
             <PreviewPair
@@ -433,6 +491,14 @@ export default function PhotoLabShowcasePreview() {
           )}
         </div>
       </div>
+
+      <ImagePreviewModal
+        open={previewModal.open}
+        onClose={closeImagePreview}
+        src={previewModal.src}
+        alt={previewModal.alt}
+        title={previewModal.title}
+      />
     </section>
   )
 }

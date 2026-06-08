@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
+import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import {
   createPhotoLabTemplate,
   generatePhotoLabAdminPreview,
@@ -27,6 +28,7 @@ import {
 } from 'lucide-react'
 
 const PROFESSIONAL_PORTRAIT_MODE = 'professional_portrait'
+const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const IDENTITY_PRESET = 'identity'
 
 const PHOTO_LAB_TEST_MODES = [
@@ -151,6 +153,12 @@ export default function PhotoLabPreviewTester() {
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
   const [error, setError] = useState('')
+  const [previewModal, setPreviewModal] = useState({
+    open: false,
+    src: '',
+    alt: '',
+    title: '',
+  })
 
   const selectedMode = useMemo(() => {
     return (
@@ -171,6 +179,10 @@ export default function PhotoLabPreviewTester() {
     return getPhotoQuality(photoQuality)
   }, [photoQuality])
 
+  const isEnhanceQualityMode = selectedModeId === ENHANCE_QUALITY_MODE
+  const canUsePrototypeSource = !isEnhanceQualityMode
+  const requiresUploadedSource = isEnhanceQualityMode
+
   const previewSourceKey = useMemo(() => {
     return makePreviewSourceKey({ race, gender, view })
   }, [race, gender, view])
@@ -183,13 +195,23 @@ export default function PhotoLabPreviewTester() {
     return sourceUploadPreviews[activeSourceIndex] || null
   }, [activeSourceIndex, sourceUploadPreviews])
 
-  const activeSourcePreview = activeSourcePreviewItem?.url || prototypeSrc
+  const activeSourcePreview =
+    activeSourcePreviewItem?.url || (canUsePrototypeSource ? prototypeSrc : '')
   const isUsingUploadedSource = Boolean(mainSourceFile)
-  const hasMultipleSourcePhotos = sourceUploadPreviews.length > 1
+  const hasMultipleSourcePhotos =
+    !isEnhanceQualityMode && sourceUploadPreviews.length > 1
 
   useEffect(() => {
     if (selectedModeId === PROFESSIONAL_PORTRAIT_MODE) {
       setModelPreset(IDENTITY_PRESET)
+    }
+
+    if (selectedModeId === ENHANCE_QUALITY_MODE) {
+      setReferenceSourceFiles([])
+
+      if (referenceInputRef.current) {
+        referenceInputRef.current.value = ''
+      }
     }
   }, [selectedModeId])
 
@@ -206,18 +228,26 @@ export default function PhotoLabPreviewTester() {
       return
     }
 
-    const previewItems = [
-      {
-        type: 'main',
-        label: 'Main photo',
-        url: URL.createObjectURL(mainSourceFile),
-      },
-      ...referenceSourceFiles.map((file, index) => ({
-        type: 'reference',
-        label: `Reference ${index + 1}`,
-        url: URL.createObjectURL(file),
-      })),
-    ]
+    const previewItems = isEnhanceQualityMode
+      ? [
+          {
+            type: 'main',
+            label: 'Source photo',
+            url: URL.createObjectURL(mainSourceFile),
+          },
+        ]
+      : [
+          {
+            type: 'main',
+            label: 'Main photo',
+            url: URL.createObjectURL(mainSourceFile),
+          },
+          ...referenceSourceFiles.map((file, index) => ({
+            type: 'reference',
+            label: `Reference ${index + 1}`,
+            url: URL.createObjectURL(file),
+          })),
+        ]
 
     setSourceUploadPreviews(previewItems)
     setActiveSourceIndex(0)
@@ -225,9 +255,17 @@ export default function PhotoLabPreviewTester() {
     return () => {
       previewItems.forEach((item) => URL.revokeObjectURL(item.url))
     }
-  }, [mainSourceFile, referenceSourceFiles])
+  }, [isEnhanceQualityMode, mainSourceFile, referenceSourceFiles])
 
   const resolveSourceFiles = async () => {
+    if (isEnhanceQualityMode) {
+      if (!mainSourceFile) {
+        throw new Error('Upload a source photo before generating')
+      }
+
+      return [mainSourceFile]
+    }
+
     if (mainSourceFile) {
       return [mainSourceFile, ...referenceSourceFiles].slice(0, 3)
     }
@@ -273,8 +311,60 @@ export default function PhotoLabPreviewTester() {
     }
   }
 
+  const openImagePreview = useCallback(({ src, alt, title }) => {
+    if (!src) return
+
+    setPreviewModal({
+      open: true,
+      src,
+      alt,
+      title,
+    })
+  }, [])
+
+  const closeImagePreview = useCallback(() => {
+    setPreviewModal({
+      open: false,
+      src: '',
+      alt: '',
+      title: '',
+    })
+  }, [])
+
+  const openSourceImagePreview = useCallback(() => {
+    if (!activeSourcePreview) return
+
+    const sourceLabel = activeSourcePreviewItem?.label || 'Prototype source'
+
+    openImagePreview({
+      src: activeSourcePreview,
+      alt: 'Source preview',
+      title: `${selectedMode.title} — ${sourceLabel}`,
+    })
+  }, [
+    activeSourcePreview,
+    activeSourcePreviewItem?.label,
+    openImagePreview,
+    selectedMode.title,
+  ])
+
+  const openResultImagePreview = useCallback(() => {
+    if (!resultPreview) return
+
+    openImagePreview({
+      src: resultPreview,
+      alt: 'Generated Photo Lab preview',
+      title: `${selectedMode.title} — Generated preview`,
+    })
+  }, [openImagePreview, resultPreview, selectedMode.title])
+
   const handleGenerate = async () => {
     const normalizedAdditionalPrompt = String(additionalPrompt || '').trim()
+
+    if (requiresUploadedSource && !mainSourceFile) {
+      setError('Upload a source photo before generating')
+      return
+    }
 
     setError('')
     setIsGenerating(true)
@@ -321,6 +411,11 @@ export default function PhotoLabPreviewTester() {
 
     if (!normalizedTitle) {
       setError('Template title is required')
+      return
+    }
+
+    if (requiresUploadedSource && !mainSourceFile) {
+      setError('Upload a source photo before saving template')
       return
     }
 
@@ -371,9 +466,9 @@ export default function PhotoLabPreviewTester() {
           caseMode="sentence"
           className="mt-2 max-w-3xl"
         >
-          This admin workspace is for testing Photo Lab modes before connecting
-          them to the public page. The first uploaded image is always sent as
-          the primary identity source.
+          {isEnhanceQualityMode
+            ? 'Enhance Quality uses one uploaded source photo. Test model preset and output quality before saving showcase templates.'
+            : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
       </div>
 
@@ -560,11 +655,13 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="text-foreground-soft"
                 >
-                  Source images
+                  {isEnhanceQualityMode ? 'Source photo' : 'Source images'}
                 </Text>
               </div>
 
-              <div className="mb-4 grid gap-3 sm:grid-cols-2">
+              <div
+                className={`mb-4 grid gap-3 ${isEnhanceQualityMode ? '' : 'sm:grid-cols-2'}`}
+              >
                 <Button
                   type="button"
                   variant="secondary"
@@ -572,21 +669,25 @@ export default function PhotoLabPreviewTester() {
                   disabled={isGenerating || isSavingTemplate}
                   className="w-full"
                 >
-                  Upload main photo
+                  {isEnhanceQualityMode ? 'Upload photo' : 'Upload main photo'}
                 </Button>
 
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => referenceInputRef.current?.click()}
-                  disabled={isGenerating || isSavingTemplate || !mainSourceFile}
-                  className="w-full"
-                >
-                  Upload references
-                </Button>
+                {!isEnhanceQualityMode ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => referenceInputRef.current?.click()}
+                    disabled={
+                      isGenerating || isSavingTemplate || !mainSourceFile
+                    }
+                    className="w-full"
+                  >
+                    Upload references
+                  </Button>
+                ) : null}
               </div>
 
-              {!isUsingUploadedSource ? (
+              {!isUsingUploadedSource && canUsePrototypeSource ? (
                 <div className="mb-4 rounded-2xl border border-white/10 bg-background-soft/70 p-4">
                   <Text
                     as="p"
@@ -742,7 +843,7 @@ export default function PhotoLabPreviewTester() {
                     Active prototype: {previewSourceKey}
                   </Text>
                 </div>
-              ) : (
+              ) : isUsingUploadedSource ? (
                 <div className="mb-4 rounded-2xl border border-primary/15 bg-primary/5 p-4">
                   <Text
                     as="p"
@@ -750,9 +851,9 @@ export default function PhotoLabPreviewTester() {
                     color="soft"
                     caseMode="sentence"
                   >
-                    Main photo is sent first and used as the primary identity
-                    source. Reference photos are sent after it as supporting
-                    identity sources.
+                    {isEnhanceQualityMode
+                      ? 'This photo will be enhanced and used as the before image when saving a showcase template.'
+                      : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
                   </Text>
 
                   <Text
@@ -762,8 +863,9 @@ export default function PhotoLabPreviewTester() {
                     caseMode="sentence"
                     className="mt-2"
                   >
-                    Main: {mainSourceFile?.name || 'Not selected'} · References:{' '}
-                    {referenceSourceFiles.length} / 2
+                    {isEnhanceQualityMode
+                      ? `Selected: ${mainSourceFile?.name || 'Not selected'}`
+                      : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / 2`}
                   </Text>
 
                   <Button
@@ -773,22 +875,29 @@ export default function PhotoLabPreviewTester() {
                     disabled={isGenerating || isSavingTemplate}
                     className="mt-3 w-auto"
                   >
-                    Use prototype instead
+                    {isEnhanceQualityMode ? 'Remove photo' : 'Use prototype instead'}
                   </Button>
                 </div>
-              )}
+              ) : null}
 
-              <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-[22px] border border-dashed border-white/15 bg-background-soft/70 p-2 text-center">
+              <div className="relative flex min-h-[420px] cursor-zoom-in items-center justify-center overflow-hidden rounded-[22px] border border-dashed border-white/15 bg-background-soft/70 p-2 text-center">
                 {activeSourcePreview ? (
                   <>
+                    <button
+                      type="button"
+                      onClick={openSourceImagePreview}
+                      aria-label="Open source preview"
+                      className="absolute inset-0 z-[1] cursor-zoom-in"
+                    />
+
                     <img
                       src={activeSourcePreview}
                       alt="Source preview"
-                      className="max-h-[520px] w-full rounded-[18px] object-contain"
+                      className="relative z-0 max-h-[520px] w-full rounded-[18px] object-contain"
                     />
 
                     {activeSourcePreviewItem ? (
-                      <span className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
+                      <span className="pointer-events-none absolute left-4 top-4 z-[2] rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
                         {activeSourcePreviewItem.label}
                       </span>
                     ) : null}
@@ -799,7 +908,7 @@ export default function PhotoLabPreviewTester() {
                           type="button"
                           onClick={goToPreviousSourcePhoto}
                           disabled={isGenerating || isSavingTemplate}
-                          className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="absolute left-4 top-1/2 z-[2] flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Previous source photo"
                         >
                           <ChevronLeft size={18} />
@@ -809,13 +918,13 @@ export default function PhotoLabPreviewTester() {
                           type="button"
                           onClick={goToNextSourcePhoto}
                           disabled={isGenerating || isSavingTemplate}
-                          className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="absolute right-4 top-1/2 z-[2] flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur transition hover:border-primary/40 hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Next source photo"
                         >
                           <ChevronRight size={18} />
                         </button>
 
-                        <span className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
+                        <span className="pointer-events-none absolute bottom-4 left-1/2 z-[2] -translate-x-1/2 rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
                           {activeSourceIndex + 1} /{' '}
                           {sourceUploadPreviews.length}
                         </span>
@@ -830,7 +939,9 @@ export default function PhotoLabPreviewTester() {
                       color="white"
                       caseMode="sentence"
                     >
-                      Upload main source photo
+                      {isEnhanceQualityMode
+                        ? 'Upload a source photo'
+                        : 'Upload main source photo'}
                     </Text>
 
                     <Text
@@ -840,8 +951,9 @@ export default function PhotoLabPreviewTester() {
                       caseMode="sentence"
                       className="mt-2"
                     >
-                      The main photo will always be sent first. You can add up
-                      to two supporting reference photos after it.
+                      {isEnhanceQualityMode
+                        ? 'Upload one low-quality, blurry, compressed, or dark photo to test enhancement.'
+                        : 'The main photo will always be sent first. You can add up to two supporting reference photos after it.'}
                     </Text>
                   </div>
                 )}
@@ -912,11 +1024,20 @@ export default function PhotoLabPreviewTester() {
                     </Text>
                   </div>
                 ) : resultPreview ? (
-                  <img
-                    src={resultPreview}
-                    alt="Generated Photo Lab preview"
-                    className="max-h-[520px] w-full rounded-[18px] object-contain"
-                  />
+                  <div className="relative flex w-full cursor-zoom-in items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={openResultImagePreview}
+                      aria-label="Open generated preview"
+                      className="absolute inset-0 z-[1] cursor-zoom-in"
+                    />
+
+                    <img
+                      src={resultPreview}
+                      alt="Generated Photo Lab preview"
+                      className="relative z-0 max-h-[520px] w-full rounded-[18px] object-contain"
+                    />
+                  </div>
                 ) : (
                   <div className="max-w-sm px-4">
                     <Text
@@ -950,7 +1071,11 @@ export default function PhotoLabPreviewTester() {
               as="textarea"
               rows={5}
               label="Additional prompt"
-              placeholder="Optional details for this test: outfit, background, mood, lighting, objects to add/remove..."
+              placeholder={
+                isEnhanceQualityMode
+                  ? 'Optional: sharpen details, improve lighting, reduce noise, preserve face identity...'
+                  : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
+              }
               hint="Optional. This will be combined with the server-side Photo Lab prompt."
               caseMode="sentence"
               value={additionalPrompt}
@@ -1048,7 +1173,11 @@ export default function PhotoLabPreviewTester() {
                 type="button"
                 onClick={handleGenerate}
                 loading={isGenerating}
-                disabled={isGenerating || isSavingTemplate}
+                disabled={
+                  isGenerating ||
+                  isSavingTemplate ||
+                  (requiresUploadedSource && !mainSourceFile)
+                }
                 fullWidth
                 className="w-auto"
               >
@@ -1092,6 +1221,14 @@ export default function PhotoLabPreviewTester() {
           </div>
         </div>
       </div>
+
+      <ImagePreviewModal
+        open={previewModal.open}
+        onClose={closeImagePreview}
+        src={previewModal.src}
+        alt={previewModal.alt}
+        title={previewModal.title}
+      />
     </div>
   )
 }

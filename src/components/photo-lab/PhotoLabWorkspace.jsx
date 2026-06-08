@@ -21,11 +21,15 @@ export default function PhotoLabWorkspace({ selectedMode }) {
     lockedText,
     planHint,
     isQualityAllowed,
+    creditCost,
     generatedImageFormat,
     setGeneratedImageFormat,
     generatedImageFormats,
     isGeneratedImageFormatAllowed,
-  } = useGenerationPlanAccess()
+  } = useGenerationPlanAccess({
+    productKey: 'photo_lab',
+    modeKey: selectedMode?.id,
+  })
 
   const [clientFile, setClientFile] = useState(null)
   const [clientPreview, setClientPreview] = useState('')
@@ -405,6 +409,7 @@ export default function PhotoLabWorkspace({ selectedMode }) {
           generatedImageFormats={generatedImageFormats}
           isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
           formatLockedText={lockedText}
+          creditCost={creditCost}
           titleReady="Ready to edit"
           descriptionReady="Start AI editing with your uploaded photo."
           descriptionDisabled="Upload your photo first to continue."
