@@ -65,7 +65,8 @@
             "formula": "sum",
             "components": [
               "photoQuality",
-              "outputFormat"
+              "outputFormat",
+              "modelPreset"
             ],
             "baseCredits": 0
           },
@@ -115,6 +116,20 @@
                 "label": "Landscape 3:2"
               }
             },
+            "modelPreset": {
+              "balanced": {
+                "available": true,
+                "credits": 0,
+                "label": "Default",
+                "description": "Balanced improvement for most photos."
+              },
+              "identity": {
+                "available": true,
+                "credits": 3,
+                "label": "Closer to original",
+                "description": "Stronger likeness to your uploaded photo."
+              }
+            },
             "generatedImageFormat": {
               "png": {
                 "available": true,
@@ -144,7 +159,8 @@
             "formula": "sum",
             "components": [
               "photoQuality",
-              "outputFormat"
+              "outputFormat",
+              "modelPreset"
             ],
             "baseCredits": 0
           },
@@ -190,6 +206,20 @@
                 "available": true,
                 "credits": 1,
                 "label": "Landscape 3:2"
+              }
+            },
+            "modelPreset": {
+              "balanced": {
+                "available": true,
+                "credits": 0,
+                "label": "Default",
+                "description": "Balanced improvement for most photos."
+              },
+              "identity": {
+                "available": true,
+                "credits": 3,
+                "label": "Closer to original",
+                "description": "Stronger likeness to your uploaded photo."
               }
             },
             "generatedImageFormat": {
@@ -221,7 +251,8 @@
             "formula": "sum",
             "components": [
               "photoQuality",
-              "outputFormat"
+              "outputFormat",
+              "modelPreset"
             ],
             "baseCredits": 0
           },
@@ -269,6 +300,20 @@
                 "label": "Landscape 3:2"
               }
             },
+            "modelPreset": {
+              "balanced": {
+                "available": true,
+                "credits": 0,
+                "label": "Default",
+                "description": "Balanced improvement for most photos."
+              },
+              "identity": {
+                "available": true,
+                "credits": 3,
+                "label": "Closer to original",
+                "description": "Stronger likeness to your uploaded photo."
+              }
+            },
             "generatedImageFormat": {
               "png": {
                 "available": true,
@@ -296,7 +341,8 @@
             "formula": "sum",
             "components": [
               "photoQuality",
-              "outputFormat"
+              "outputFormat",
+              "modelPreset"
             ],
             "baseCredits": 0
           },
@@ -342,6 +388,20 @@
                 "available": true,
                 "credits": 1,
                 "label": "Landscape 3:2"
+              }
+            },
+            "modelPreset": {
+              "balanced": {
+                "available": true,
+                "credits": 0,
+                "label": "Default",
+                "description": "Balanced improvement for most photos."
+              },
+              "identity": {
+                "available": true,
+                "credits": 3,
+                "label": "Closer to original",
+                "description": "Stronger likeness to your uploaded photo."
               }
             },
             "generatedImageFormat": {
@@ -418,22 +478,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 }
               }
@@ -479,21 +532,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 5,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -558,21 +605,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 5,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -635,21 +676,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 4,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -737,22 +772,15 @@
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 }
               }
@@ -768,18 +796,15 @@
                   "outputFormat",
                   "modelPreset"
                 ],
-                "baseCredits": 2,
-                "forcedSelections": {
-                  "modelPreset": "identity"
-                }
+                "baseCredits": 2
               },
               "options": {
                 "photoQuality": {
                   "draft": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Draft"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
                   },
                   "standard": {
                     "available": true,
@@ -788,10 +813,10 @@
                     "description": "Balanced quality for everyday use."
                   },
                   "premium": {
-                    "available": true,
-                    "credits": 8,
-                    "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
                   },
                   "print": {
                     "available": false,
@@ -818,26 +843,17 @@
                   }
                 },
                 "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
+                  },
                   "identity": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part.",
-                    "forced": true
-                  },
-                  "balanced": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -872,18 +888,15 @@
                   "outputFormat",
                   "modelPreset"
                 ],
-                "baseCredits": 2,
-                "forcedSelections": {
-                  "modelPreset": "identity"
-                }
+                "baseCredits": 2
               },
               "options": {
                 "photoQuality": {
                   "draft": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Draft"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
                   },
                   "standard": {
                     "available": true,
@@ -892,10 +905,10 @@
                     "description": "Balanced quality for everyday use."
                   },
                   "premium": {
-                    "available": true,
-                    "credits": 8,
-                    "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
                   },
                   "print": {
                     "available": false,
@@ -922,26 +935,17 @@
                   }
                 },
                 "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
+                  },
                   "identity": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part.",
-                    "forced": true
-                  },
-                  "balanced": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -974,18 +978,15 @@
                   "outputFormat",
                   "modelPreset"
                 ],
-                "baseCredits": 2,
-                "forcedSelections": {
-                  "modelPreset": "identity"
-                }
+                "baseCredits": 2
               },
               "options": {
                 "photoQuality": {
                   "draft": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Draft"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Fast and lightweight preview."
                   },
                   "standard": {
                     "available": true,
@@ -1024,26 +1025,17 @@
                   }
                 },
                 "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
+                  },
                   "identity": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part.",
-                    "forced": true
-                  },
-                  "balanced": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "mode_minimum_standard",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1116,22 +1108,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 }
               }
@@ -1178,21 +1163,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 6,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1258,21 +1237,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 6,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1336,21 +1309,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 6,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1420,22 +1387,15 @@
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 }
               }
@@ -1482,21 +1442,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 6,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1562,21 +1516,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 6,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1640,21 +1588,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 2,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
-                    "credits": 4,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 6,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1724,22 +1666,15 @@
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 }
               }
@@ -1786,21 +1721,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 5,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1866,21 +1795,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 5,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1944,21 +1867,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 1,
-                    "label": "Balanced",
-                    "description": "Default preset for normal quality and cost."
+                    "credits": 0,
+                    "label": "Default",
+                    "description": "Balanced improvement for most photos."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
-                    "label": "Identity critical",
-                    "description": "Use when face likeness is the most important part."
-                  },
-                  "creative": {
-                    "available": true,
-                    "credits": 5,
-                    "label": "Creative edit",
-                    "description": "Use for stronger style, scene, outfit, or mood changes."
+                    "label": "Closer to original",
+                    "description": "Stronger likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {

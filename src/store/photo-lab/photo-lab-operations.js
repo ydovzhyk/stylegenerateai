@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
   axiosGeneratePhotoLabAdminPreview,
+  axiosGeneratePhotoLabClientImage,
   axiosCreatePhotoLabTemplate,
   axiosGetPhotoLabTemplates,
 } from '@/services/api/photo-lab'
@@ -19,6 +20,17 @@ export const generatePhotoLabAdminPreview = createAsyncThunk(
   async (formData, { rejectWithValue }) => {
     try {
       return await axiosGeneratePhotoLabAdminPreview(formData)
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const generatePhotoLabClientImage = createAsyncThunk(
+  'photo-lab/generate-client-image',
+  async (formData, { rejectWithValue }) => {
+    try {
+      return await axiosGeneratePhotoLabClientImage(formData)
     } catch (e) {
       return toReject(e, rejectWithValue)
     }

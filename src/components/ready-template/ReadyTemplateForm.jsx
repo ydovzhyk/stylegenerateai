@@ -351,6 +351,7 @@ export default function ReadyTemplateForm() {
     prototype,
     output,
     photoQuality,
+    modelPreset,
   }) => {
     const safePrompt = String(prompt || '').trim()
 
@@ -386,6 +387,10 @@ export default function ReadyTemplateForm() {
 
     if (photoQuality?.id) {
       formData.append('photoQualityId', photoQuality.id)
+    }
+
+    if (modelPreset) {
+      formData.append('modelPreset', modelPreset)
     }
 
     const data = await dispatch(generateReadyTemplatePreview(formData)).unwrap()

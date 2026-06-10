@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import { useTranslate } from '@/utils/translate/translate'
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
 import { getPhotoLabTemplates } from '@/store/photo-lab/photo-lab-operations'
 import {
@@ -16,12 +17,29 @@ import {
 const CARD_ROTATE_MS = 8200
 
 const MODE_PREVIEW_LABELS = {
-  professional_portrait: { before: 'Before', after: 'Professional' },
+  professional_portrait: { before: 'Before', after: 'After' },
   restore_colorize: { before: 'Old photo', after: 'Restored' },
   smart_edit: { before: 'Original', after: 'Edited' },
   remove_objects: { before: 'Distracting', after: 'Clean' },
   enhance_quality: { before: 'Low quality', after: 'Enhanced' },
   creative_retouch: { before: 'Flat', after: 'Cinematic' },
+}
+
+const MODE_SOURCE_BADGE_LABELS = {
+  professional_portrait: 'LinkedIn / CV photo',
+  restore_colorize: 'Old photo',
+  smart_edit: 'Original',
+  remove_objects: 'Distracting',
+  enhance_quality: 'Low quality',
+  creative_retouch: 'Flat',
+}
+
+function getSourceBadgeLabel(modeId = '') {
+  return (
+    MODE_SOURCE_BADGE_LABELS[modeId] ||
+    MODE_PREVIEW_LABELS[modeId]?.before ||
+    'Before'
+  )
 }
 
 const SHOWCASE_MODE_ITEMS = [
@@ -87,6 +105,7 @@ function mapTemplateToShowcaseItem(template) {
     id: template?.slug || template?._id || `${modeId}-${template?.title}`,
     modeId,
     title: String(template?.title || modeMeta?.title || '').trim(),
+    subjectGender: String(template?.subjectGender || '').trim(),
     beforeSrc: String(template?.sourceImageUrl || '').trim(),
     afterSrc: String(template?.resultImageUrl || '').trim(),
     beforeLabel: labels.before,
@@ -179,6 +198,7 @@ function PreviewImageCard({
   shineSeed,
   showMeta = false,
   onOpenPreview,
+  openPreviewAriaLabel,
 }) {
   const reducedMotion = useReducedMotion()
   const { accentBorder, accentText, hoverBorder } = getAccentClasses(accent)
@@ -200,7 +220,7 @@ function PreviewImageCard({
           <button
             type="button"
             onClick={onOpenPreview}
-            aria-label={`Open ${label} preview`}
+            aria-label={openPreviewAriaLabel || `Open ${label} preview`}
             className="absolute inset-0 z-[1] cursor-zoom-in"
           />
         ) : null}
@@ -265,27 +285,38 @@ function PreviewImageCard({
 }
 
 function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
+  const beforeLabel = useTranslate(item?.beforeLabel || 'Before', {
+    caseMode: 'title',
+  })
+  const afterLabel = useTranslate(item?.afterLabel || 'After', {
+    caseMode: 'title',
+  })
+  const beforeAltText = useTranslate('before', { caseMode: 'lower' })
+  const afterAltText = useTranslate('after', { caseMode: 'lower' })
+  const openPreviewText = useTranslate('Open image preview', {
+    caseMode: 'sentence',
+  })
+
   if (!item) return null
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
       <PreviewImageCard
         src={item.beforeSrc}
-        alt={`${item.title} before`}
-        category={item.category}
-        label={item.beforeLabel}
+        alt={`${item.title} ${beforeAltText}`}
+        label={beforeLabel}
         labelType="before"
         accent={accent}
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
         shineSeed={`before-${contentKey}`}
-        showMeta
+        openPreviewAriaLabel={`${openPreviewText}: ${beforeLabel}`}
         onOpenPreview={
           onOpenPreview
             ? () =>
                 onOpenPreview({
                   src: item.beforeSrc,
-                  alt: `${item.title} before`,
-                  title: `${item.title} — ${item.beforeLabel}`,
+                  alt: `${item.title} ${beforeAltText}`,
+                  title: `${item.title} — ${beforeLabel}`,
                 })
             : undefined
         }
@@ -293,24 +324,84 @@ function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
 
       <PreviewImageCard
         src={item.afterSrc}
-        alt={`${item.title} after`}
-        label={item.afterLabel}
+        alt={`${item.title} ${afterAltText}`}
+        label={afterLabel}
         labelType="after"
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
         shineSeed={`after-${contentKey}`}
+        openPreviewAriaLabel={`${openPreviewText}: ${afterLabel}`}
         onOpenPreview={
           onOpenPreview
             ? () =>
                 onOpenPreview({
                   src: item.afterSrc,
-                  alt: `${item.title} after`,
-                  title: `${item.title} — ${item.afterLabel}`,
+                  alt: `${item.title} ${afterAltText}`,
+                  title: `${item.title} — ${afterLabel}`,
                 })
             : undefined
         }
       />
     </div>
+  )
+}
+
+function PreviewGroupCard({ item, accent = 'cyan', contentKey, onOpenPreview }) {
+  const { accentBorder, accentText } = getAccentClasses(accent)
+  const aiTransformationText = useTranslate('AI transformation', {
+    caseMode: 'none',
+  })
+
+  if (!item) return null
+
+  const sourceBadgeLabel = useTranslate(getSourceBadgeLabel(item.modeId), {
+    caseMode: 'title',
+  })
+
+  return (
+    <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-5">
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-5">
+        <span
+          className={`flex min-h-[42px] items-center justify-center rounded-full border px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
+        >
+          {sourceBadgeLabel}
+        </span>
+
+        <ShinyBadge
+          shineSeed={`ai-${contentKey}`}
+          className="flex min-h-[42px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-white/55"
+        >
+          {aiTransformationText}
+        </ShinyBadge>
+      </div>
+
+      <PreviewPair
+        item={item}
+        accent={accent}
+        contentKey={contentKey}
+        onOpenPreview={onOpenPreview}
+      />
+    </div>
+  )
+}
+
+function ShowcaseModeChip({ modeItem, active, pinned, onClick }) {
+  const label = useTranslate(modeItem.afterLabel, { caseMode: 'title' })
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={clsx(
+        'rounded-full border px-3 py-1.5 text-xs transition',
+        active
+          ? 'border-primary/50 bg-primary/15 text-white'
+          : 'border-white/10 bg-white/[0.03] text-white/55 hover:border-cyan-400/30 hover:text-white',
+        pinned && 'ring-1 ring-primary/30',
+      )}
+    >
+      {label}
+    </button>
   )
 }
 
@@ -439,44 +530,32 @@ export default function PhotoLabShowcasePreview() {
           )}
 
           <div className="mt-5 flex flex-wrap gap-2">
-            {SHOWCASE_MODE_ITEMS.map((modeItem) => {
-              const active = highlightedModeId === modeItem.id
-              const pinned = pinnedModeId === modeItem.id
-
-              return (
-                <button
-                  key={modeItem.id}
-                  type="button"
-                  onClick={() => handleModeChipClick(modeItem.id)}
-                  className={clsx(
-                    'rounded-full border px-3 py-1.5 text-xs transition',
-                    active
-                      ? 'border-primary/50 bg-primary/15 text-white'
-                      : 'border-white/10 bg-white/[0.03] text-white/55 hover:border-cyan-400/30 hover:text-white',
-                    pinned && 'ring-1 ring-primary/30',
-                  )}
-                >
-                  {modeItem.afterLabel}
-                </button>
-              )
-            })}
+            {SHOWCASE_MODE_ITEMS.map((modeItem) => (
+              <ShowcaseModeChip
+                key={modeItem.id}
+                modeItem={modeItem}
+                active={highlightedModeId === modeItem.id}
+                pinned={pinnedModeId === modeItem.id}
+                onClick={() => handleModeChipClick(modeItem.id)}
+              />
+            ))}
           </div>
         </div>
 
         <div className="relative">
           {activeItem ? (
-            <PreviewPair
+            <PreviewGroupCard
               item={activeItem}
               accent="cyan"
               contentKey={`${activeItem.id}-${activeIndex}`}
               onOpenPreview={openImagePreview}
             />
           ) : (
-            <PreviewPair
+            <PreviewGroupCard
               item={{
                 id: 'placeholder',
+                modeId: activeShowcaseMode.id,
                 title: activeShowcaseMode.title,
-                category: getModeMeta(activeShowcaseMode.id)?.label || '',
                 beforeSrc: '',
                 afterSrc: '',
                 beforeLabel:

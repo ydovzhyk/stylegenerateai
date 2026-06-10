@@ -39,6 +39,16 @@ function getPlanLabel(planKey = '') {
   return 'Plan'
 }
 
+function getPlanLabelTextClass(planKey = '', isUnlimited = false) {
+  if (isUnlimited) return ''
+
+  if (planKey === 'pro') return 'plan-badge-text-gold'
+  if (planKey === 'basic') return 'plan-badge-text-gold-premium'
+  if (planKey === 'free' || planKey === 'visitor') return 'plan-badge-text-silver'
+
+  return ''
+}
+
 export default function GenerationUsageBadge({ compact = false, className }) {
   const usage = useSelector(getGenerationUsageData)
 
@@ -49,6 +59,11 @@ export default function GenerationUsageBadge({ compact = false, className }) {
 
   const isLow =
     !usage?.isUnlimited && total > 0 && remaining <= Math.ceil(total * 0.25)
+
+  const planLabelTextClass = getPlanLabelTextClass(
+    usage.planKey,
+    usage?.isUnlimited,
+  )
 
   return (
     <div
@@ -79,8 +94,8 @@ export default function GenerationUsageBadge({ compact = false, className }) {
         <Text
           as="span"
           variant="caption"
-          color="muted"
-          className="block leading-none"
+          color={planLabelTextClass ? undefined : 'muted'}
+          className={clsx('block leading-none', planLabelTextClass)}
         >
           {getPlanLabel(usage.planKey)}
         </Text>

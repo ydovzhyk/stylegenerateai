@@ -60,6 +60,10 @@ function GenerationDropdownSummary({ usage }) {
   if (!usage?.planKey && !usage?.isUnlimited) return null
 
   const usageByType = usage?.usageByType || {}
+  const totalImages = GENERATION_TYPES.reduce(
+    (sum, type) => sum + safeNumber(usageByType[type.id]?.count),
+    0,
+  )
   const totalCredits = usage?.isUnlimited
     ? null
     : safeNumber(usage.totalCredits)
@@ -94,7 +98,15 @@ function GenerationDropdownSummary({ usage }) {
         </div>
       </div>
 
-      {!usage.isUnlimited ? (
+      {usage.isUnlimited ? (
+        <div className="mb-3 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+          <p className="text-xs leading-relaxed text-foreground-soft">
+            {tUsed}:{' '}
+            <span className="font-semibold text-white">{totalImages}</span>{' '}
+            {tImages}
+          </p>
+        </div>
+      ) : (
         <div className="mb-3 rounded-xl border border-primary/15 bg-primary/10 px-3 py-2">
           <p className="text-xs leading-relaxed text-foreground-soft">
             {tUsed}:{' '}
@@ -102,7 +114,7 @@ function GenerationDropdownSummary({ usage }) {
             {tCredits}
           </p>
         </div>
-      ) : null}
+      )}
 
       <div className="space-y-1.5">
         {GENERATION_TYPES.map((type) => {

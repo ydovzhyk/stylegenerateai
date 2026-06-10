@@ -17,7 +17,9 @@ export const PHOTO_LAB_MODES = [
     icon: BriefcaseBusiness,
     accent: 'from-primary/30 to-cyan-400/20',
     promptPlaceholder:
-      'Example: make it look like a clean LinkedIn studio portrait with a modern office background.',
+      'Example: straight hair, light sun tan, soft smile.',
+    promptHint:
+      'Optional. This mode already applies a professional portrait look — add only small tweaks here.',
     uploadHint: 'Upload a clear face or upper-body photo.',
   },
   {
@@ -29,7 +31,9 @@ export const PHOTO_LAB_MODES = [
     icon: Sparkles,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
-      'Example: restore details, colorize naturally, clean scratches, and keep the original person recognizable.',
+      'Example: warmer skin tones, cleaner scratches, softer faded edges.',
+    promptHint:
+      'Optional. Restore and colorize behavior is already built in — add only small refinements here.',
     uploadHint: 'Upload an old, blurry, damaged, or black-and-white photo.',
   },
   {
@@ -41,7 +45,9 @@ export const PHOTO_LAB_MODES = [
     icon: WandSparkles,
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: change the outfit to a black suit and place the person in a modern office.',
+      'Example: navy blazer instead of gray, warmer office lighting.',
+    promptHint:
+      'Optional. Describe only the change you want on top of the uploaded photo.',
     uploadHint:
       'Upload 1 image for simple edits. Multiple images can come later.',
   },
@@ -54,7 +60,9 @@ export const PHOTO_LAB_MODES = [
     icon: Eraser,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: remove the person in the background and clean the table.',
+      'Example: remove the person in the background, clean the table clutter.',
+    promptHint:
+      'Optional. Tell us what to remove or clean — the mode handles the rest.',
     uploadHint: 'Upload a photo with the object you want removed.',
   },
   {
@@ -66,7 +74,9 @@ export const PHOTO_LAB_MODES = [
     icon: ImagePlus,
     accent: 'from-emerald-300/20 to-cyan-400/20',
     promptPlaceholder:
-      'Example: improve sharpness, lighting, details, and overall photo quality.',
+      'Example: slightly brighter face, reduce noise in shadows.',
+    promptHint:
+      'Optional. Enhancement is already applied by the mode — add only small tweaks here.',
     uploadHint: 'Upload a low-quality or blurry image.',
   },
   {
@@ -78,7 +88,9 @@ export const PHOTO_LAB_MODES = [
     icon: Paintbrush,
     accent: 'from-fuchsia-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: make the photo look cinematic, premium, clean, and natural.',
+      'Example: warmer cinematic tones, softer skin, light film grain.',
+    promptHint:
+      'Optional. The retouch style is already built in — add only small refinements here.',
     uploadHint: 'Upload a portrait, lifestyle, or social media photo.',
   },
 ]

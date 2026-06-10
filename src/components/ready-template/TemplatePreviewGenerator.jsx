@@ -8,6 +8,11 @@ import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePrev
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import {
+  CLIENT_MODEL_PRESET_IDS,
+  CLIENT_MODEL_PRESET_META,
+  DEFAULT_MODEL_PRESET,
+} from '@/constants/model-presets'
+import {
   OUTPUT_FORMATS,
   getOutputFormat,
   DEFAULT_OUTPUT_FORMAT,
@@ -17,6 +22,12 @@ import {
   getPhotoQuality,
   DEFAULT_PHOTO_QUALITY,
 } from '@/constants/photo-quality'
+
+const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
+  id,
+  label: CLIENT_MODEL_PRESET_META[id].label,
+  description: CLIENT_MODEL_PRESET_META[id].description,
+}))
 
 const RACE_OPTIONS = [
   { value: 'european', label: 'European' },
@@ -74,6 +85,7 @@ export default function TemplatePreviewGenerator({
   const [generationPrompt, setGenerationPrompt] = useState('')
   const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
+  const [modelPreset, setModelPreset] = useState(DEFAULT_MODEL_PRESET)
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [generatedFile, setGeneratedFile] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -134,6 +146,7 @@ export default function TemplatePreviewGenerator({
     setGenerationPrompt('')
     setOutputFormat(DEFAULT_OUTPUT_FORMAT)
     setPhotoQuality(DEFAULT_PHOTO_QUALITY)
+    setModelPreset(DEFAULT_MODEL_PRESET)
     setGeneratedPreview('')
     setGeneratedFile(null)
     setIsGenerating(false)
@@ -185,6 +198,7 @@ export default function TemplatePreviewGenerator({
           },
           output: selectedOutputFormat,
           photoQuality: selectedPhotoQuality,
+          modelPreset,
         })
 
         if (result?.previewUrl) {
@@ -611,6 +625,57 @@ export default function TemplatePreviewGenerator({
                       >
                         {quality.description}
                       </Text> */}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <Text
+                as="p"
+                variant="caption"
+                caseMode="sentence"
+                className="text-foreground-soft mb-2"
+              >
+                Photo likeness
+              </Text>
+
+              <div className="flex flex-col gap-3">
+                {MODEL_PRESETS.map((preset) => (
+                  <label
+                    key={preset.id}
+                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-background-soft/70 px-4 py-3"
+                  >
+                    <input
+                      type="radio"
+                      name="model-preset"
+                      value={preset.id}
+                      checked={modelPreset === preset.id}
+                      onChange={() => setModelPreset(preset.id)}
+                      disabled={disabled || isGenerating}
+                      className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                    />
+
+                    <div className="flex flex-col">
+                      <Text
+                        as="span"
+                        variant="caption"
+                        color="soft"
+                        caseMode="sentence"
+                      >
+                        {preset.label}
+                      </Text>
+
+                      <Text
+                        as="span"
+                        variant="caption"
+                        color="muted"
+                        caseMode="sentence"
+                        className="mt-1"
+                      >
+                        {preset.description}
+                      </Text>
                     </div>
                   </label>
                 ))}

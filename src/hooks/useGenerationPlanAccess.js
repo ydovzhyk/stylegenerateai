@@ -26,8 +26,11 @@ import {
   resolveFrontendPlanKey,
 } from '@/config/generation-pricing'
 
-const FALLBACK_GENERATED_IMAGE_FORMATS = [DEFAULT_GENERATED_IMAGE_FORMAT]
-const DEFAULT_MODEL_PRESET = 'balanced'
+import {
+  CLIENT_MODEL_PRESET_IDS,
+  DEFAULT_MODEL_PRESET,
+  getClientPresetMeta,
+} from '@/constants/model-presets'
 
 export function getLockedText({ planKey, isLogin, lockedReason }) {
   if (lockedReason === 'sign_in_required' || (!isLogin && planKey === 'visitor')) {
@@ -70,27 +73,34 @@ export function getPlanHint({ planKey, activePlan, creditCost }) {
 }
 
 function resolveAllowedValue(value, allowedValues = [], fallbackValue) {
+  if (!allowedValues.length) return fallbackValue
   if (allowedValues.includes(value)) return value
   if (allowedValues.includes(fallbackValue)) return fallbackValue
-  return allowedValues[0] || ''
+  return allowedValues[0] || fallbackValue
 }
 
 function buildPresetOptions(planOptions = {}) {
   const presets = planOptions.modelPreset || {}
 
-  return Object.entries(presets).map(([id, option]) => ({
-    id,
-    label: option.label || id,
-    description: option.description || '',
-    credits: option.available ? Number(option.credits || 0) : null,
-    available: Boolean(option.available),
-    lockedReason: option.lockedReason || null,
-  }))
+  return CLIENT_MODEL_PRESET_IDS.filter((id) => presets[id]).map((id) => {
+    const option = presets[id] || {}
+    const clientMeta = getClientPresetMeta(id)
+
+    return {
+      id,
+      label: clientMeta.label,
+      description: clientMeta.description,
+      credits: option.available ? Number(option.credits || 0) : null,
+      available: Boolean(option.available),
+      lockedReason: option.lockedReason || null,
+    }
+  })
 }
 
 export default function useGenerationPlanAccess({
   productKey = 'ready_template',
   modeKey = null,
+  resetKey = null,
 } = {}) {
   const isLogin = useSelector(getLogin)
   const user = useSelector(getUser)
@@ -137,12 +147,14 @@ export default function useGenerationPlanAccess({
 
     return fromLibrary.length
       ? fromLibrary
-      : FALLBACK_GENERATED_IMAGE_FORMATS
+      : Object.keys(GENERATED_IMAGE_FORMATS)
   }, [planOptions.options])
 
-  const defaultPhotoQuality = allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
-    ? DEFAULT_PHOTO_QUALITY
-    : allowedQualities[0] || DEFAULT_PHOTO_QUALITY
+  const defaultPhotoQuality = allowedQualities.includes('draft')
+    ? 'draft'
+    : allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
+      ? DEFAULT_PHOTO_QUALITY
+      : allowedQualities[0] || DEFAULT_PHOTO_QUALITY
 
   const defaultOutputFormat = allowedFormats.includes(DEFAULT_OUTPUT_FORMAT)
     ? DEFAULT_OUTPUT_FORMAT
@@ -165,32 +177,24 @@ export default function useGenerationPlanAccess({
     useState(DEFAULT_GENERATED_IMAGE_FORMAT)
 
   useEffect(() => {
-    setSelectedPhotoQuality((current) =>
-      resolveAllowedValue(current, allowedQualities, defaultPhotoQuality),
+    setSelectedPhotoQuality(defaultPhotoQuality)
+    setSelectedOutputFormat(defaultOutputFormat)
+    setSelectedModelPreset(defaultModelPreset)
+    setSelectedGeneratedImageFormat(
+      allowedGeneratedImageFormats.includes(DEFAULT_GENERATED_IMAGE_FORMAT)
+        ? DEFAULT_GENERATED_IMAGE_FORMAT
+        : allowedGeneratedImageFormats[0] || DEFAULT_GENERATED_IMAGE_FORMAT,
     )
-  }, [allowedQualities, defaultPhotoQuality, productKey, modeKey, planKey])
-
-  useEffect(() => {
-    setSelectedOutputFormat((current) =>
-      resolveAllowedValue(current, allowedFormats, defaultOutputFormat),
-    )
-  }, [allowedFormats, defaultOutputFormat, productKey, modeKey, planKey])
-
-  useEffect(() => {
-    setSelectedModelPreset((current) =>
-      resolveAllowedValue(current, allowedModelPresets, defaultModelPreset),
-    )
-  }, [allowedModelPresets, defaultModelPreset, productKey, modeKey, planKey])
-
-  useEffect(() => {
-    setSelectedGeneratedImageFormat((current) =>
-      resolveAllowedValue(
-        current,
-        allowedGeneratedImageFormats,
-        DEFAULT_GENERATED_IMAGE_FORMAT,
-      ),
-    )
-  }, [allowedGeneratedImageFormats, planKey])
+  }, [
+    resetKey,
+    productKey,
+    modeKey,
+    planKey,
+    defaultPhotoQuality,
+    defaultOutputFormat,
+    defaultModelPreset,
+    allowedGeneratedImageFormats,
+  ])
 
   const outputFormat = useMemo(() => {
     return resolveAllowedValue(
@@ -256,6 +260,53 @@ export default function useGenerationPlanAccess({
     photoQuality,
     outputFormat,
     modelPreset,
+  ])
+
+  const closerPresetCreditDelta = useMemo(() => {
+    if (
+      !allowedModelPresets.includes('balanced') ||
+      !allowedModelPresets.includes('identity')
+    ) {
+      return 0
+    }
+
+    const baseSelections = {
+      photoQuality,
+      outputFormat,
+      modelPreset: 'balanced',
+    }
+
+    const closerSelections = {
+      photoQuality,
+      outputFormat,
+      modelPreset: 'identity',
+    }
+
+    const defaultQuote = quoteGeneration({
+      planKey,
+      productKey,
+      modeKey,
+      selections: baseSelections,
+    })
+
+    const closerQuote = quoteGeneration({
+      planKey,
+      productKey,
+      modeKey,
+      selections: closerSelections,
+    })
+
+    return Math.max(
+      (closerQuote.totalCredits || 0) - (defaultQuote.totalCredits || 0),
+      0,
+    )
+  }, [
+    allowedModelPresets,
+    planKey,
+    productKey,
+    modeKey,
+    photoQuality,
+    outputFormat,
   ])
 
   const getOptionLockedReason = useCallback(
@@ -382,6 +433,7 @@ export default function useGenerationPlanAccess({
     creditCost: generationQuote.totalCredits,
     creditBreakdown: generationQuote.breakdown,
     generationQuote,
+    closerPresetCreditDelta,
     canGenerate: generationQuote.allowed === true,
 
     lockedText: getLockedText({ planKey, isLogin }),

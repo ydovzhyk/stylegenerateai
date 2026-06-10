@@ -36,7 +36,7 @@ export const PHOTO_QUALITIES = {
   },
 }
 
-export const DEFAULT_PHOTO_QUALITY = 'standard'
+export const DEFAULT_PHOTO_QUALITY = 'draft'
 
 export function getPhotoQuality(qualityId) {
   return PHOTO_QUALITIES[qualityId] || PHOTO_QUALITIES[DEFAULT_PHOTO_QUALITY]

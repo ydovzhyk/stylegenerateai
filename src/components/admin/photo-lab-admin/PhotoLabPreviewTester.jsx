@@ -17,6 +17,11 @@ import {
   getPhotoQuality,
 } from '@/constants/photo-quality'
 import {
+  CLIENT_MODEL_PRESET_IDS,
+  CLIENT_MODEL_PRESET_META,
+  DEFAULT_MODEL_PRESET,
+} from '@/constants/model-presets'
+import {
   BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
@@ -27,9 +32,13 @@ import {
   WandSparkles,
 } from 'lucide-react'
 
-const PROFESSIONAL_PORTRAIT_MODE = 'professional_portrait'
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
-const IDENTITY_PRESET = 'identity'
+
+const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
+  id,
+  label: CLIENT_MODEL_PRESET_META[id].label,
+  description: CLIENT_MODEL_PRESET_META[id].description,
+}))
 
 const PHOTO_LAB_TEST_MODES = [
   {
@@ -61,24 +70,6 @@ const PHOTO_LAB_TEST_MODES = [
     title: 'Enhance Quality',
     label: 'Upscale / sharpen',
     icon: ImagePlus,
-  },
-]
-
-const MODEL_PRESETS = [
-  {
-    id: 'balanced',
-    label: 'Balanced',
-    description: 'Default testing preset for normal quality and cost.',
-  },
-  {
-    id: 'identity',
-    label: 'Identity critical',
-    description: 'Use when face likeness is the most important part.',
-  },
-  {
-    id: 'creative',
-    label: 'Creative edit',
-    description: 'Use for stronger style, scene, outfit, or mood changes.',
   },
 ]
 
@@ -134,7 +125,7 @@ export default function PhotoLabPreviewTester() {
   const [selectedModeId, setSelectedModeId] = useState(
     PHOTO_LAB_TEST_MODES[0].id,
   )
-  const [modelPreset, setModelPreset] = useState(IDENTITY_PRESET)
+  const [modelPreset, setModelPreset] = useState(DEFAULT_MODEL_PRESET)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
 
   const [race, setRace] = useState('european')
@@ -151,7 +142,6 @@ export default function PhotoLabPreviewTester() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [templateTitle, setTemplateTitle] = useState('')
-  const [templateDescription, setTemplateDescription] = useState('')
   const [error, setError] = useState('')
   const [previewModal, setPreviewModal] = useState({
     open: false,
@@ -167,21 +157,13 @@ export default function PhotoLabPreviewTester() {
     )
   }, [selectedModeId])
 
-  const availableModelPresets = useMemo(() => {
-    if (selectedModeId === PROFESSIONAL_PORTRAIT_MODE) {
-      return MODEL_PRESETS.filter((preset) => preset.id === IDENTITY_PRESET)
-    }
-
-    return MODEL_PRESETS
-  }, [selectedModeId])
+  const isEnhanceQualityMode = selectedModeId === ENHANCE_QUALITY_MODE
+  const canUsePrototypeSource = !isEnhanceQualityMode
+  const requiresUploadedSource = isEnhanceQualityMode
 
   const selectedPhotoQuality = useMemo(() => {
     return getPhotoQuality(photoQuality)
   }, [photoQuality])
-
-  const isEnhanceQualityMode = selectedModeId === ENHANCE_QUALITY_MODE
-  const canUsePrototypeSource = !isEnhanceQualityMode
-  const requiresUploadedSource = isEnhanceQualityMode
 
   const previewSourceKey = useMemo(() => {
     return makePreviewSourceKey({ race, gender, view })
@@ -202,9 +184,7 @@ export default function PhotoLabPreviewTester() {
     !isEnhanceQualityMode && sourceUploadPreviews.length > 1
 
   useEffect(() => {
-    if (selectedModeId === PROFESSIONAL_PORTRAIT_MODE) {
-      setModelPreset(IDENTITY_PRESET)
-    }
+    setModelPreset(DEFAULT_MODEL_PRESET)
 
     if (selectedModeId === ENHANCE_QUALITY_MODE) {
       setReferenceSourceFiles([])
@@ -401,8 +381,6 @@ export default function PhotoLabPreviewTester() {
 
   const handleSaveTemplate = async () => {
     const normalizedTitle = String(templateTitle || '').trim()
-    const normalizedDescription = String(templateDescription || '').trim()
-    const normalizedAdditionalPrompt = String(additionalPrompt || '').trim()
 
     if (!resultPreview) {
       setError('Generate preview before saving template')
@@ -411,6 +389,11 @@ export default function PhotoLabPreviewTester() {
 
     if (!normalizedTitle) {
       setError('Template title is required')
+      return
+    }
+
+    if (!gender) {
+      setError('Select man or woman before saving template')
       return
     }
 
@@ -429,10 +412,7 @@ export default function PhotoLabPreviewTester() {
 
       formData.append('mode', selectedMode.id)
       formData.append('title', normalizedTitle)
-      formData.append('description', normalizedDescription)
-      formData.append('modelPreset', modelPreset)
-      formData.append('photoQuality', selectedPhotoQuality.id)
-      formData.append('additionalPrompt', normalizedAdditionalPrompt)
+      formData.append('subjectGender', gender)
       formData.append('generatedImageUrl', resultPreview)
 
       resolvedSourceFiles.forEach((file) => {
@@ -442,7 +422,6 @@ export default function PhotoLabPreviewTester() {
       await dispatch(createPhotoLabTemplate(formData)).unwrap()
 
       setTemplateTitle('')
-      setTemplateDescription('')
     } catch (e) {
       setError(
         e?.data?.message || e?.message || 'Failed to save Photo Lab template',
@@ -540,11 +519,11 @@ export default function PhotoLabPreviewTester() {
               caseMode="sentence"
               className="mb-3 uppercase tracking-[0.18em]"
             >
-              Model preset
+              Photo likeness
             </Text>
 
             <div className="flex flex-col gap-3">
-              {availableModelPresets.map((preset) => {
+              {MODEL_PRESETS.map((preset) => {
                 const active = modelPreset === preset.id
 
                 return (
@@ -1094,18 +1073,48 @@ export default function PhotoLabPreviewTester() {
                 disabled={isGenerating || isSavingTemplate}
               />
 
-              <Input
-                id="photo-lab-template-description"
-                label="Template description"
-                placeholder="Before and after preview for this Photo Lab mode"
-                caseMode="sentence"
-                value={templateDescription}
-                onChange={(e) => setTemplateDescription(e.target.value)}
-                disabled={isGenerating || isSavingTemplate}
-              />
+              <div>
+                <Text
+                  as="p"
+                  variant="caption"
+                  color="muted"
+                  caseMode="sentence"
+                  className="mb-2"
+                >
+                  Showcase subject
+                </Text>
+
+                <div className="flex flex-col gap-2">
+                  {PERSON_OPTIONS.map((option) => (
+                    <label
+                      key={`template-${option.value}`}
+                      className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                    >
+                      <input
+                        type="radio"
+                        name="photo-lab-template-subject"
+                        value={option.value}
+                        checked={gender === option.value}
+                        onChange={() => setGender(option.value)}
+                        disabled={isGenerating || isSavingTemplate}
+                        className="h-4 w-4 accent-[var(--primary)]"
+                      />
+
+                      <Text
+                        as="span"
+                        variant="caption"
+                        color="soft"
+                        caseMode="sentence"
+                      >
+                        {option.label}
+                      </Text>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-background-soft/70 p-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-background-soft/70 p-4 sm:grid-cols-2">
               <div>
                 <Text
                   as="p"
@@ -1133,7 +1142,7 @@ export default function PhotoLabPreviewTester() {
                   color="muted"
                   caseMode="sentence"
                 >
-                  Preset
+                  Subject
                 </Text>
                 <Text
                   as="p"
@@ -1142,28 +1151,8 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="mt-1"
                 >
-                  {MODEL_PRESETS.find((item) => item.id === modelPreset)
-                    ?.label || 'Identity critical'}
-                </Text>
-              </div>
-
-              <div>
-                <Text
-                  as="p"
-                  variant="caption"
-                  color="muted"
-                  caseMode="sentence"
-                >
-                  Quality
-                </Text>
-                <Text
-                  as="p"
-                  variant="body-sm"
-                  color="white"
-                  caseMode="sentence"
-                  className="mt-1"
-                >
-                  {selectedPhotoQuality.label}
+                  {PERSON_OPTIONS.find((item) => item.value === gender)?.label ||
+                    'Not selected'}
                 </Text>
               </div>
             </div>

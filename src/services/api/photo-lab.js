@@ -5,6 +5,11 @@ export const axiosGeneratePhotoLabAdminPreview = async (formData) => {
   return data
 }
 
+export const axiosGeneratePhotoLabClientImage = async (formData) => {
+  const { data } = await instance.post('/photo-lab/generate', formData)
+  return data
+}
+
 export const axiosCreatePhotoLabTemplate = async (formData) => {
   const { data } = await instance.post('/photo-lab/templates', formData)
   return data

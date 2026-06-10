@@ -1,19 +1,64 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSelector } from 'react-redux'
 import PhotoLabHero from '@/components/photo-lab/PhotoLabHero'
 import PhotoLabShowcasePreview from '@/components/photo-lab/PhotoLabShowcasePreview'
 import PhotoLabModes from '@/components/photo-lab/PhotoLabModes'
-import PhotoLabWorkspace from '@/components/photo-lab/PhotoLabWorkspace'
+import AiImageWorkspace from '@/components/shared/ai-image-workspace/AiImageWorkspace'
+import Text from '@/components/shared/text/Text'
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
+import { getPhotoLabTemplatesState } from '@/store/photo-lab/photo-lab-selectors'
+import { Sparkles } from 'lucide-react'
+
+function pickRandomTemplatePreview(modeId, templatesByMode) {
+  const templates = (templatesByMode?.[modeId] || []).filter((item) =>
+    String(item?.resultImageUrl || '').trim(),
+  )
+
+  if (!templates.length) return ''
+
+  const randomIndex = Math.floor(Math.random() * templates.length)
+
+  return String(templates[randomIndex].resultImageUrl).trim()
+}
+
+function buildPhotoLabWorkspaceTemplate(mode, previewUrl = '') {
+  if (!mode) return null
+
+  return {
+    id: mode.id,
+    title: mode.title,
+    category: mode.label,
+    previewUrl,
+    promptPlaceholder: mode.promptPlaceholder,
+    promptHint: mode.promptHint,
+  }
+}
 
 export default function PhotoLabPage() {
-  const [selectedModeId, setSelectedModeId] = useState(PHOTO_LAB_MODES[0].id)
+  const [selectedModeId, setSelectedModeId] = useState(null)
+  const [selectedModePreviewUrl, setSelectedModePreviewUrl] = useState('')
   const workspaceRef = useRef(null)
+  const templatesByMode = useSelector(getPhotoLabTemplatesState)
 
   const selectedMode =
-    PHOTO_LAB_MODES.find((mode) => mode.id === selectedModeId) ||
-    PHOTO_LAB_MODES[0]
+    PHOTO_LAB_MODES.find((mode) => mode.id === selectedModeId) || null
+
+  const workspaceTemplate = useMemo(
+    () => buildPhotoLabWorkspaceTemplate(selectedMode, selectedModePreviewUrl),
+    [selectedMode, selectedModePreviewUrl],
+  )
+
+  useEffect(() => {
+    if (!selectedModeId || selectedModePreviewUrl) return
+
+    const previewUrl = pickRandomTemplatePreview(selectedModeId, templatesByMode)
+
+    if (previewUrl) {
+      setSelectedModePreviewUrl(previewUrl)
+    }
+  }, [selectedModeId, selectedModePreviewUrl, templatesByMode])
 
   const scrollToWorkspace = () => {
     const top =
@@ -27,6 +72,7 @@ export default function PhotoLabPage() {
 
   const handleSelectMode = (modeId) => {
     setSelectedModeId(modeId)
+    setSelectedModePreviewUrl(pickRandomTemplatePreview(modeId, templatesByMode))
 
     requestAnimationFrame(() => {
       scrollToWorkspace()
@@ -35,9 +81,33 @@ export default function PhotoLabPage() {
 
   return (
     <div className="flex flex-col gap-12">
-      <PhotoLabHero onStart={scrollToWorkspace} />
+      <PhotoLabHero />
 
       <PhotoLabShowcasePreview />
+
+      <div className="gradient-border-card flex items-start gap-4 p-5 sm:items-center sm:p-6">
+        <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
+          <Sparkles size={24} />
+        </span>
+
+        <div>
+          <Text as="h2" variant="h3" color="white" caseMode="sentence">
+            Choose a mode. Upload your photo. Let AI improve it.
+          </Text>
+
+          <Text
+            as="p"
+            variant="body"
+            color="muted"
+            caseMode="sentence"
+            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
+          >
+            Select the tool you need — portrait, restore, enhance, object
+            removal, or smart edit — upload your image, and generate a cleaner,
+            sharper, more polished result in just a few clicks.
+          </Text>
+        </div>
+      </div>
 
       <PhotoLabModes
         modes={PHOTO_LAB_MODES}
@@ -46,7 +116,23 @@ export default function PhotoLabPage() {
       />
 
       <div ref={workspaceRef}>
-        <PhotoLabWorkspace selectedMode={selectedMode} />
+        <AiImageWorkspace
+          template={workspaceTemplate}
+          productKey="photo_lab"
+          modeKey={selectedMode?.id}
+          emptyStateTitle="Edit your photo"
+          emptyStateDescription="Choose a mode above to start editing your photo with AI."
+          workspaceTitle="Edit your photo"
+          workspaceDescription="Upload your image, choose photo quality, and optionally add small refinements before generating."
+          selectionEyebrow="Selected mode"
+          promptLabel="Optional refinements"
+          showOutputFormat={false}
+          actionCardLabels={{
+            titleReady: 'Ready to edit',
+            descriptionReady: 'Start AI editing with your uploaded photo.',
+            descriptionDisabled: 'Upload your photo first to continue.',
+          }}
+        />
       </div>
     </div>
   )

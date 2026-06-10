@@ -55,6 +55,36 @@ function getOptionEntry(planConfig, groupKey, optionId) {
   return planConfig.options?.[groupKey]?.[optionId] || null
 }
 
+function unlockAllPlanOptions(planConfig = {}) {
+  const options = {}
+
+  for (const [groupKey, group] of Object.entries(planConfig.options || {})) {
+    options[groupKey] = Object.fromEntries(
+      Object.entries(group).map(([optionId, option]) => {
+        const { lockedReason, ...rest } = option || {}
+
+        return [
+          optionId,
+          {
+            ...rest,
+            available: true,
+            credits: 0,
+          },
+        ]
+      }),
+    )
+  }
+
+  return {
+    modeAccess: { available: true },
+    pricing: {
+      ...(planConfig.pricing || {}),
+      baseCredits: 0,
+    },
+    options,
+  }
+}
+
 export function getPlanDefinition(planKey) {
   const plan =
     GENERATION_PRICING_LIBRARY.plans?.[planKey] ||
@@ -227,6 +257,16 @@ export function quoteGeneration({
 }
 
 export function listPlanOptions({ productKey, modeKey = null, planKey }) {
+  if (planKey === 'admin') {
+    const { planConfig } = resolvePlanConfig({
+      productKey,
+      modeKey,
+      planKey: 'pro',
+    })
+
+    return unlockAllPlanOptions(planConfig)
+  }
+
   const { planConfig } = resolvePlanConfig({ productKey, modeKey, planKey })
 
   return {

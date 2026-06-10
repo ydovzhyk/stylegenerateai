@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {
   generatePhotoLabAdminPreview,
+  generatePhotoLabClientImage,
   createPhotoLabTemplate,
   getPhotoLabTemplates,
 } from './photo-lab-operations'
@@ -58,6 +59,16 @@ const photoLabSlice = createSlice({
       })
       .addCase(generatePhotoLabAdminPreview.rejected, (state, { payload }) => {
         state.adminPreviewLoading = false
+        state.error = errMsg(payload)
+      })
+      .addCase(generatePhotoLabClientImage.pending, (state) => {
+        state.error = null
+        state.message = null
+      })
+      .addCase(generatePhotoLabClientImage.fulfilled, (state, { payload }) => {
+        state.message = payload?.message || 'Image generated successfully'
+      })
+      .addCase(generatePhotoLabClientImage.rejected, (state, { payload }) => {
         state.error = errMsg(payload)
       })
       .addCase(createPhotoLabTemplate.pending, (state) => {
