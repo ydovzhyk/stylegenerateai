@@ -8,6 +8,7 @@ import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
 import { DEFAULT_MODEL_PRESET } from '@/constants/model-presets'
+import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restore-styles'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { useLanguage } from '@/providers/languageContext'
@@ -31,6 +32,8 @@ export default function AiImageWorkspace({
   template,
   productKey = 'create_your_look',
   modeKey,
+  restoreStyle = null,
+  onChangeRestoreStyle = null,
   emptyStateTitle = 'Generate your image',
   emptyStateDescription = 'Choose a template above to start generating your personalized look.',
   workspaceTitle = 'Generate your image',
@@ -238,6 +241,15 @@ export default function AiImageWorkspace({
         }
         formData.append('modelPreset', activePreset)
         formData.append('isRegeneration', generatedPreview ? 'true' : 'false')
+
+        if (
+          (modeKey || template.id) === RESTORE_COLORIZE_MODE &&
+          restoreStyle
+        ) {
+          formData.append('restoreStyle', restoreStyle)
+        } else if ((modeKey || template.id) === RESTORE_COLORIZE_MODE) {
+          formData.append('restoreStyle', DEFAULT_RESTORE_STYLE)
+        }
 
         if (!isLogin && visitorId) {
           formData.append('visitorId', visitorId)
@@ -609,6 +621,21 @@ export default function AiImageWorkspace({
                   alt: template.title,
                   title: template.title || selectionEyebrow,
                 }),
+              action:
+                onChangeRestoreStyle &&
+                (modeKey || template?.id) === RESTORE_COLORIZE_MODE ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onChangeRestoreStyle()
+                    }}
+                    className="h-[34px] rounded-full border-white/10 bg-white/[0.08] px-4 text-xs hover:bg-white/[0.12]"
+                  >
+                    Change restore type
+                  </Button>
+                ) : null,
             })}
           </div>
         ) : null}

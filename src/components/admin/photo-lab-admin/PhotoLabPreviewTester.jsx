@@ -22,12 +22,19 @@ import {
   DEFAULT_MODEL_PRESET,
 } from '@/constants/model-presets'
 import {
+  DEFAULT_RESTORE_STYLE,
+  RESTORE_COLORIZE_MODE,
+  RESTORE_STYLE_IDS,
+  getRestoreStyleMeta,
+} from '@/constants/restore-styles'
+import {
   BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
   Eraser,
   ImagePlus,
   Loader2,
+  Paintbrush,
   Sparkles,
   WandSparkles,
 } from 'lucide-react'
@@ -38,6 +45,12 @@ const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
   label: CLIENT_MODEL_PRESET_META[id].label,
   description: CLIENT_MODEL_PRESET_META[id].description,
+}))
+
+const RESTORE_STYLES = RESTORE_STYLE_IDS.map((id) => ({
+  id,
+  label: getRestoreStyleMeta(id).label,
+  description: getRestoreStyleMeta(id).description,
 }))
 
 const PHOTO_LAB_TEST_MODES = [
@@ -70,6 +83,12 @@ const PHOTO_LAB_TEST_MODES = [
     title: 'Enhance Quality',
     label: 'Upscale / sharpen',
     icon: ImagePlus,
+  },
+  {
+    id: 'creative_retouch',
+    title: 'Creative Retouch',
+    label: 'Style polish',
+    icon: Paintbrush,
   },
 ]
 
@@ -126,6 +145,7 @@ export default function PhotoLabPreviewTester() {
     PHOTO_LAB_TEST_MODES[0].id,
   )
   const [modelPreset, setModelPreset] = useState(DEFAULT_MODEL_PRESET)
+  const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
 
   const [race, setRace] = useState('european')
@@ -158,6 +178,7 @@ export default function PhotoLabPreviewTester() {
   }, [selectedModeId])
 
   const isEnhanceQualityMode = selectedModeId === ENHANCE_QUALITY_MODE
+  const isRestoreColorizeMode = selectedModeId === RESTORE_COLORIZE_MODE
   const canUsePrototypeSource = !isEnhanceQualityMode
   const requiresUploadedSource = isEnhanceQualityMode
 
@@ -358,6 +379,10 @@ export default function PhotoLabPreviewTester() {
       formData.append('modelPreset', modelPreset)
       formData.append('photoQuality', selectedPhotoQuality.id)
       formData.append('additionalPrompt', normalizedAdditionalPrompt)
+
+      if (selectedMode.id === RESTORE_COLORIZE_MODE) {
+        formData.append('restoreStyle', restoreStyle)
+      }
 
       resolvedSourceFiles.forEach((file) => {
         formData.append('photos', file)
@@ -572,6 +597,70 @@ export default function PhotoLabPreviewTester() {
               })}
             </div>
           </div>
+
+          {isRestoreColorizeMode ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <Text
+                as="p"
+                variant="caption"
+                color="faint"
+                caseMode="sentence"
+                className="mb-3 uppercase tracking-[0.18em]"
+              >
+                Restore type
+              </Text>
+
+              <div className="flex flex-col gap-3">
+                {RESTORE_STYLES.map((style) => {
+                  const active = restoreStyle === style.id
+
+                  return (
+                    <label
+                      key={style.id}
+                      className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${
+                        active
+                          ? 'border-amber-300/35 bg-amber-300/10'
+                          : 'border-white/10 bg-background-soft/70'
+                      }`}
+                    >
+                      <span className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="restoreStyle"
+                          value={style.id}
+                          checked={active}
+                          onChange={() => setRestoreStyle(style.id)}
+                          disabled={isGenerating || isSavingTemplate}
+                          className="mt-1 h-4 w-4 accent-[var(--primary)]"
+                        />
+
+                        <span>
+                          <Text
+                            as="span"
+                            variant="body-sm"
+                            color="soft"
+                            caseMode="sentence"
+                          >
+                            {style.label}
+                          </Text>
+
+                          <Text
+                            as="span"
+                            variant="caption"
+                            color="muted"
+                            caseMode="sentence"
+                            className="mt-1 block"
+                          >
+                            {style.description}
+                          </Text>
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <Text

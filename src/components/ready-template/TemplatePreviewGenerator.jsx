@@ -47,10 +47,12 @@ function getPrototypeGender({ race, gender }) {
   return `${race}_${gender === 'man' ? 'male' : 'female'}`
 }
 
-function getPrototypeTone({ race, view, tone }) {
-  if (tone === 'color') return 'color'
-  if (race === 'european' && view !== '3q') return 'bw'
-  return 'bw'
+function getPrototypeKeyTone(tone) {
+  return tone === 'color' ? 'color' : 'bw'
+}
+
+function getPrototypeApiTone(tone) {
+  return tone === 'color' ? 'color' : 'black'
 }
 
 function makePreviewSourceKey({ race, gender, view, tone, sourceUploadFile }) {
@@ -58,9 +60,9 @@ function makePreviewSourceKey({ race, gender, view, tone, sourceUploadFile }) {
   if (!race || !gender || !view || !tone) return ''
 
   const prototypeGender = getPrototypeGender({ race, gender })
-  const prototypeTone = getPrototypeTone({ race, view, tone })
+  const prototypeKeyTone = getPrototypeKeyTone(tone)
 
-  return `${prototypeGender}_${view}_${prototypeTone}`
+  return `${prototypeGender}_${view}_${prototypeKeyTone}`
 }
 
 async function srcToFile(src, filename = 'prototype-reference.png') {
@@ -181,7 +183,7 @@ export default function TemplatePreviewGenerator({
 
       const sourceFile = await resolveSourceFile()
       const prototypeGender = getPrototypeGender({ race, gender })
-      const prototypeTone = getPrototypeTone({ race, view, tone })
+      const prototypeTone = getPrototypeApiTone(tone)
 
       if (typeof onGenerate === 'function') {
         const result = await onGenerate({
