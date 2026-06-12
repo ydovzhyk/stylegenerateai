@@ -6,6 +6,9 @@ import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import PhotoLabMaskEditor, {
+  PHOTO_LAB_MASK_BRUSH_SIZES,
+} from '@/components/admin/photo-lab-admin/PhotoLabMaskEditor'
 import {
   createPhotoLabTemplate,
   generatePhotoLabAdminPreview,
@@ -35,6 +38,7 @@ import {
 } from '@/constants/restored-prototype-sources'
 import {
   BriefcaseBusiness,
+  Brush,
   ChevronLeft,
   ChevronRight,
   Eraser,
@@ -46,6 +50,13 @@ import {
 } from 'lucide-react'
 
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
+const REMOVE_OBJECTS_MODE = 'remove_objects'
+
+const MASK_BRUSH_OPTIONS = [
+  { id: 'small', label: 'S', size: PHOTO_LAB_MASK_BRUSH_SIZES.small },
+  { id: 'medium', label: 'M', size: PHOTO_LAB_MASK_BRUSH_SIZES.medium },
+  { id: 'large', label: 'L', size: PHOTO_LAB_MASK_BRUSH_SIZES.large },
+]
 
 const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
@@ -146,6 +157,7 @@ export default function PhotoLabPreviewTester() {
   const dispatch = useDispatch()
   const mainInputRef = useRef(null)
   const referenceInputRef = useRef(null)
+  const maskEditorRef = useRef(null)
 
   const [selectedModeId, setSelectedModeId] = useState(
     PHOTO_LAB_TEST_MODES[0].id,
@@ -171,6 +183,11 @@ export default function PhotoLabPreviewTester() {
   const [restoredPrototypeId, setRestoredPrototypeId] = useState(
     DEFAULT_RESTORED_PROTOTYPE_ID,
   )
+  const [maskTool, setMaskTool] = useState('brush')
+  const [maskBrushSize, setMaskBrushSize] = useState(
+    PHOTO_LAB_MASK_BRUSH_SIZES.medium,
+  )
+  const [hasRemovalMask, setHasRemovalMask] = useState(false)
   const [error, setError] = useState('')
   const [previewModal, setPreviewModal] = useState({
     open: false,
@@ -188,8 +205,11 @@ export default function PhotoLabPreviewTester() {
 
   const isEnhanceQualityMode = selectedModeId === ENHANCE_QUALITY_MODE
   const isRestoreColorizeMode = selectedModeId === RESTORE_COLORIZE_MODE
-  const canUsePrototypeSource = !isEnhanceQualityMode
-  const requiresUploadedSource = isEnhanceQualityMode
+  const isRemoveObjectsMode = selectedModeId === REMOVE_OBJECTS_MODE
+  const canUsePrototypeSource =
+    !isEnhanceQualityMode && !isRemoveObjectsMode
+  const requiresUploadedSource =
+    isEnhanceQualityMode || isRemoveObjectsMode
 
   const selectedPhotoQuality = useMemo(() => {
     return getPhotoQuality(photoQuality)
@@ -227,6 +247,7 @@ export default function PhotoLabPreviewTester() {
   const hasMultipleSourcePhotos =
     !isEnhanceQualityMode &&
     !isRestoreColorizeMode &&
+    !isRemoveObjectsMode &&
     sourceUploadPreviews.length > 1
 
   useEffect(() => {
@@ -234,7 +255,8 @@ export default function PhotoLabPreviewTester() {
 
     if (
       selectedModeId === ENHANCE_QUALITY_MODE ||
-      selectedModeId === RESTORE_COLORIZE_MODE
+      selectedModeId === RESTORE_COLORIZE_MODE ||
+      selectedModeId === REMOVE_OBJECTS_MODE
     ) {
       setReferenceSourceFiles([])
 
@@ -268,7 +290,7 @@ export default function PhotoLabPreviewTester() {
     }
 
     const previewItems =
-      isEnhanceQualityMode || isRestoreColorizeMode
+      isEnhanceQualityMode || isRestoreColorizeMode || isRemoveObjectsMode
         ? [
             {
               type: 'main',
@@ -298,18 +320,23 @@ export default function PhotoLabPreviewTester() {
   }, [
     isEnhanceQualityMode,
     isRestoreColorizeMode,
+    isRemoveObjectsMode,
     mainSourceFile,
     referenceSourceFiles,
   ])
 
   const resolveSourceFiles = async () => {
-    if (isEnhanceQualityMode || isRestoreColorizeMode) {
-      if (mainSourceFile) {
-        return [mainSourceFile]
+    if (isEnhanceQualityMode || isRemoveObjectsMode) {
+      if (!mainSourceFile) {
+        throw new Error('Upload a source photo before generating')
       }
 
-      if (isEnhanceQualityMode) {
-        throw new Error('Upload a source photo before generating')
+      return [mainSourceFile]
+    }
+
+    if (isRestoreColorizeMode) {
+      if (mainSourceFile) {
+        return [mainSourceFile]
       }
 
       const restoredSource = getRestoredPrototypeSource(restoredPrototypeId)
@@ -354,8 +381,10 @@ export default function PhotoLabPreviewTester() {
   const clearUploadedSources = () => {
     setMainSourceFile(null)
     setReferenceSourceFiles([])
+    setHasRemovalMask(false)
     setResultPreview('')
     setError('')
+    maskEditorRef.current?.clearMask()
 
     if (mainInputRef.current) {
       mainInputRef.current.value = ''
@@ -421,6 +450,15 @@ export default function PhotoLabPreviewTester() {
       return
     }
 
+    if (isRemoveObjectsMode) {
+      const maskBlob = await maskEditorRef.current?.exportMask()
+
+      if (!maskBlob) {
+        setError('Paint the area you want to remove before generating')
+        return
+      }
+    }
+
     setError('')
     setIsGenerating(true)
 
@@ -441,6 +479,11 @@ export default function PhotoLabPreviewTester() {
       resolvedSourceFiles.forEach((file) => {
         formData.append('photos', file)
       })
+
+      if (isRemoveObjectsMode) {
+        const maskBlob = await maskEditorRef.current.exportMask()
+        formData.append('mask', maskBlob, 'photo-lab-mask.png')
+      }
 
       const data = await dispatch(
         generatePhotoLabAdminPreview(formData),
@@ -535,7 +578,9 @@ export default function PhotoLabPreviewTester() {
             ? 'Enhance Quality uses one uploaded source photo. Test model preset and output quality before saving showcase templates.'
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
-              : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
+              : isRemoveObjectsMode
+                ? 'Remove Objects uses one uploaded photo and a painted mask. Mark the distraction you want removed, optionally add a short prompt, then generate.'
+                : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
       </div>
 
@@ -786,14 +831,16 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="text-foreground-soft"
                 >
-                  {isEnhanceQualityMode || isRestoreColorizeMode
+                  {isEnhanceQualityMode ||
+                  isRestoreColorizeMode ||
+                  isRemoveObjectsMode
                     ? 'Source photo'
                     : 'Source images'}
                 </Text>
               </div>
 
               <div
-                className={`mb-4 grid gap-3 ${isEnhanceQualityMode || isRestoreColorizeMode ? '' : 'sm:grid-cols-2'}`}
+                className={`mb-4 grid gap-3 ${isEnhanceQualityMode || isRestoreColorizeMode || isRemoveObjectsMode ? '' : 'sm:grid-cols-2'}`}
               >
                 <Button
                   type="button"
@@ -802,12 +849,16 @@ export default function PhotoLabPreviewTester() {
                   disabled={isGenerating || isSavingTemplate}
                   className="w-full"
                 >
-                  {isEnhanceQualityMode || isRestoreColorizeMode
+                  {isEnhanceQualityMode ||
+                  isRestoreColorizeMode ||
+                  isRemoveObjectsMode
                     ? 'Upload photo'
                     : 'Upload main photo'}
                 </Button>
 
-                {!isEnhanceQualityMode && !isRestoreColorizeMode ? (
+                {!isEnhanceQualityMode &&
+                !isRestoreColorizeMode &&
+                !isRemoveObjectsMode ? (
                   <Button
                     type="button"
                     variant="secondary"
@@ -1034,7 +1085,9 @@ export default function PhotoLabPreviewTester() {
                       ? 'This photo will be enhanced and used as the before image when saving a showcase template.'
                       : isRestoreColorizeMode
                         ? 'This uploaded old photo will be restored and used as the before image when saving a showcase template.'
-                        : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
+                        : isRemoveObjectsMode
+                          ? 'Paint over the object or distraction you want removed. The red overlay is only a guide; the server receives a precise PNG mask.'
+                          : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
                   </Text>
 
                   <Text
@@ -1044,7 +1097,9 @@ export default function PhotoLabPreviewTester() {
                     caseMode="sentence"
                     className="mt-2"
                   >
-                    {isEnhanceQualityMode || isRestoreColorizeMode
+                    {isEnhanceQualityMode ||
+                    isRestoreColorizeMode ||
+                    isRemoveObjectsMode
                       ? `Selected: ${mainSourceFile?.name || 'Not selected'}`
                       : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / 2`}
                   </Text>
@@ -1056,13 +1111,109 @@ export default function PhotoLabPreviewTester() {
                     disabled={isGenerating || isSavingTemplate}
                     className="mt-3 w-auto"
                   >
-                    {isEnhanceQualityMode || isRestoreColorizeMode
+                    {isEnhanceQualityMode ||
+                    isRestoreColorizeMode ||
+                    isRemoveObjectsMode
                       ? 'Remove photo'
                       : 'Use prototype instead'}
                   </Button>
                 </div>
               ) : null}
 
+              {isRemoveObjectsMode && mainSourceFile ? (
+                <div className="mb-4 rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="faint"
+                    caseMode="sentence"
+                    className="mb-3 uppercase tracking-[0.18em]"
+                  >
+                    Removal mask
+                  </Text>
+
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={maskTool === 'brush' ? 'primary' : 'secondary'}
+                      onClick={() => setMaskTool('brush')}
+                      disabled={isGenerating || isSavingTemplate}
+                      className="w-auto"
+                    >
+                      <Brush size={16} className="mr-2" />
+                      Brush
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant={maskTool === 'eraser' ? 'primary' : 'secondary'}
+                      onClick={() => setMaskTool('eraser')}
+                      disabled={isGenerating || isSavingTemplate}
+                      className="w-auto"
+                    >
+                      <Eraser size={16} className="mr-2" />
+                      Eraser
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        maskEditorRef.current?.clearMask()
+                        setHasRemovalMask(false)
+                        setResultPreview('')
+                        setError('')
+                      }}
+                      disabled={isGenerating || isSavingTemplate}
+                      className="w-auto"
+                    >
+                      Clear mask
+                    </Button>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {MASK_BRUSH_OPTIONS.map((option) => {
+                      const active = maskBrushSize === option.size
+
+                      return (
+                        <Button
+                          key={option.id}
+                          type="button"
+                          variant={active ? 'primary' : 'secondary'}
+                          onClick={() => setMaskBrushSize(option.size)}
+                          disabled={isGenerating || isSavingTemplate}
+                          className="min-w-[52px] w-auto"
+                        >
+                          {option.label}
+                        </Button>
+                      )
+                    })}
+                  </div>
+
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="muted"
+                    caseMode="sentence"
+                    className="mt-3"
+                  >
+                    {hasRemovalMask
+                      ? 'Mask ready. Generate to remove the painted area.'
+                      : 'Paint over the object you want removed. Mask is required before generating.'}
+                  </Text>
+                </div>
+              ) : null}
+
+              {isRemoveObjectsMode ? (
+                <PhotoLabMaskEditor
+                  ref={maskEditorRef}
+                  imageFile={mainSourceFile}
+                  brushSize={maskBrushSize}
+                  tool={maskTool}
+                  disabled={isGenerating || isSavingTemplate}
+                  onHasMaskChange={setHasRemovalMask}
+                />
+              ) : (
               <div className="relative flex min-h-[420px] cursor-zoom-in items-center justify-center overflow-hidden rounded-[22px] border border-dashed border-white/15 bg-background-soft/70 p-2 text-center">
                 {activeSourcePreview ? (
                   <>
@@ -1145,6 +1296,7 @@ export default function PhotoLabPreviewTester() {
                   </div>
                 )}
               </div>
+              )}
 
               <input
                 ref={mainInputRef}
@@ -1155,6 +1307,7 @@ export default function PhotoLabPreviewTester() {
                   const file = Array.from(e.target.files || [])[0] || null
                   setMainSourceFile(file)
                   setReferenceSourceFiles([])
+                  setHasRemovalMask(false)
                   setResultPreview('')
                   setError('')
 
@@ -1261,7 +1414,9 @@ export default function PhotoLabPreviewTester() {
               placeholder={
                 isEnhanceQualityMode
                   ? 'Optional: sharpen details, improve lighting, reduce noise, preserve face identity...'
-                  : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
+                  : isRemoveObjectsMode
+                    ? 'Optional: remove the street sign, trash bin, person in background...'
+                    : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
               }
               hint="Optional. This will be combined with the server-side Photo Lab prompt."
               caseMode="sentence"
@@ -1412,7 +1567,8 @@ export default function PhotoLabPreviewTester() {
                 disabled={
                   isGenerating ||
                   isSavingTemplate ||
-                  (requiresUploadedSource && !mainSourceFile)
+                  (requiresUploadedSource && !mainSourceFile) ||
+                  (isRemoveObjectsMode && !hasRemovalMask)
                 }
                 fullWidth
                 className="w-auto"
