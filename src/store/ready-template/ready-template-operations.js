@@ -4,6 +4,7 @@ import {
   axiosGenerateReadyTemplatePreview,
   axiosCreateReadyTemplate,
   axiosDeleteReadyTemplate,
+  axiosHideReadyTemplateFromCreateYourLook,
   axiosEditReadyTemplate,
   axiosResolvePromptMetadata,
   axiosGetYourLookPreviewTemplates,
@@ -85,6 +86,18 @@ export const deleteReadyTemplate = createAsyncThunk(
   async (id, { rejectWithValue }) => {
     try {
       const data = await axiosDeleteReadyTemplate(id)
+      return data
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const hideReadyTemplateFromCreateYourLook = createAsyncThunk(
+  'ready-templates/hide-from-create-your-look',
+  async (id, { rejectWithValue }) => {
+    try {
+      const data = await axiosHideReadyTemplateFromCreateYourLook(id)
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

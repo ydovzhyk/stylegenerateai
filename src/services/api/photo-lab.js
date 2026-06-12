@@ -19,3 +19,8 @@ export const axiosGetPhotoLabTemplates = async () => {
   const { data } = await instance.get('/photo-lab/templates')
   return data
 }
+
+export const axiosDeletePhotoLabTemplate = async (id) => {
+  const { data } = await instance.delete(`/photo-lab/templates/${id}`)
+  return data
+}

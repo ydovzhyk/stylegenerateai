@@ -76,3 +76,10 @@ export const axiosDeleteReadyTemplate = async (id) => {
   const { data } = await instance.delete(`/ready-templates/${id}`)
   return data
 }
+
+export const axiosHideReadyTemplateFromCreateYourLook = async (id) => {
+  const { data } = await instance.patch(
+    `/ready-templates/${id}/hide-from-create-your-look`,
+  )
+  return data
+}

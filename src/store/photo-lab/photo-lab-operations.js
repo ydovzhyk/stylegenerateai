@@ -4,6 +4,7 @@ import {
   axiosGeneratePhotoLabClientImage,
   axiosCreatePhotoLabTemplate,
   axiosGetPhotoLabTemplates,
+  axiosDeletePhotoLabTemplate,
 } from '@/services/api/photo-lab'
 
 const toReject = (error, rejectWithValue) => {
@@ -53,6 +54,17 @@ export const getPhotoLabTemplates = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       return await axiosGetPhotoLabTemplates()
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const deletePhotoLabTemplate = createAsyncThunk(
+  'photo-lab/delete-template',
+  async (id, { rejectWithValue }) => {
+    try {
+      return await axiosDeletePhotoLabTemplate(id)
     } catch (e) {
       return toReject(e, rejectWithValue)
     }

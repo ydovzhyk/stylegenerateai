@@ -3,15 +3,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { Trash2, X } from 'lucide-react'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import Button from '@/components/shared/button/Button'
+import Text from '@/components/shared/text/Text'
 import { useTranslate } from '@/utils/translate/translate'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
-import { getYourLookPreviewTemplates as getYourLookPreviewTemplatesOperation } from '@/store/ready-template/ready-template-operations'
+import {
+  getYourLookPreviewTemplates as getYourLookPreviewTemplatesOperation,
+  hideReadyTemplateFromCreateYourLook,
+} from '@/store/ready-template/ready-template-operations'
 import {
   getYourLookPreviewHasMore,
   getYourLookPreviewLoading,
   getYourLookPreviewTemplates as selectYourLookPreviewTemplates,
 } from '@/store/ready-template/ready-template-selectors'
+import { getUser } from '@/store/auth/auth-selectors'
 
 const CARD_ROTATE_MS = 8200
 const PREVIEW_LIMIT = 5
@@ -38,6 +45,7 @@ function mapPreviewItem(item) {
       item?._id ||
       item?.slug ||
       `${previewSourceKey}-${String(item?.previewUrl || '')}-${String(item?.title || '')}`,
+    templateId: item?._id || null,
     title: String(item?.title || '').trim(),
     category: String(item?.category || '').trim(),
     beforeSrc: PROTOTYPE_MAP[previewSourceKey] || '',
@@ -262,7 +270,14 @@ function PreviewPair({ item, accent = 'primary', contentKey, onOpenPreview }) {
   )
 }
 
-function PreviewGroupCard({ item, accent = 'primary', contentKey, onOpenPreview }) {
+function PreviewGroupCard({
+  item,
+  accent = 'primary',
+  contentKey,
+  onOpenPreview,
+  isAdmin = false,
+  onRequestDelete,
+}) {
   const { accentBorder, accentText } = getAccentClasses(accent)
 
   const malePreviewText = useTranslate('male preview', { caseMode: 'lower' })
@@ -277,6 +292,21 @@ function PreviewGroupCard({ item, accent = 'primary', contentKey, onOpenPreview 
 
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-5">
+      {isAdmin && item.templateId ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            onRequestDelete?.(item)
+          }}
+          className="absolute right-4 top-4 z-20 inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-400/30 bg-red-500/15 text-red-100 backdrop-blur-md transition hover:border-red-300/60 hover:bg-red-500/25 sm:right-5 sm:top-5"
+          aria-label="Delete template"
+        >
+          <Trash2 size={16} />
+        </button>
+      ) : null}
+
       <div className="mb-4 grid grid-cols-2 gap-3">
         <span
           className={`flex min-h-[42px] items-center justify-center rounded-full border px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
@@ -304,6 +334,10 @@ function PreviewGroupCard({ item, accent = 'primary', contentKey, onOpenPreview 
 
 export default function CreateYourLookAnimatedPreview() {
   const dispatch = useDispatch()
+  const user = useSelector(getUser)
+  const isAdmin = user?.role === 'admin'
+
+  const [templateToDelete, setTemplateToDelete] = useState(null)
   const [previewModal, setPreviewModal] = useState({
     open: false,
     src: '',
@@ -428,6 +462,19 @@ export default function CreateYourLookAnimatedPreview() {
     })
   }, [])
 
+  const handleConfirmDeleteTemplate = useCallback(async () => {
+    if (!templateToDelete?.templateId) return
+
+    try {
+      await dispatch(
+        hideReadyTemplateFromCreateYourLook(templateToDelete.templateId),
+      ).unwrap()
+      setTemplateToDelete(null)
+    } catch (error) {
+      console.error(error)
+    }
+  }, [dispatch, templateToDelete])
+
   if (!activeMobile && !activeMan && !activeWoman) return null
 
   return (
@@ -438,6 +485,8 @@ export default function CreateYourLookAnimatedPreview() {
           accent={activeMobile?.gender === 'man' ? 'primary' : 'cyan'}
           contentKey={`${activeMobile?.id}-${mobileIndex}`}
           onOpenPreview={openImagePreview}
+          isAdmin={isAdmin}
+          onRequestDelete={setTemplateToDelete}
         />
       </div>
 
@@ -447,6 +496,8 @@ export default function CreateYourLookAnimatedPreview() {
           accent="primary"
           contentKey={`${activeMan?.id}-${desktopIndex}`}
           onOpenPreview={openImagePreview}
+          isAdmin={isAdmin}
+          onRequestDelete={setTemplateToDelete}
         />
 
         <PreviewGroupCard
@@ -454,6 +505,8 @@ export default function CreateYourLookAnimatedPreview() {
           accent="cyan"
           contentKey={`${activeWoman?.id}-${desktopIndex}`}
           onOpenPreview={openImagePreview}
+          isAdmin={isAdmin}
+          onRequestDelete={setTemplateToDelete}
         />
       </div>
 
@@ -464,6 +517,65 @@ export default function CreateYourLookAnimatedPreview() {
         alt={previewModal.alt}
         title={previewModal.title}
       />
+
+      {templateToDelete ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-[420px] rounded-[24px] border border-white/10 bg-[#10121a] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.45)]">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <Text as="h3" variant="h3" color="white" caseMode="sentence">
+                  Delete template?
+                </Text>
+
+                <Text
+                  as="p"
+                  variant="body-sm"
+                  color="muted"
+                  caseMode="sentence"
+                  className="mt-2"
+                >
+                  This action cannot be undone.
+                </Text>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTemplateToDelete(null)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+                aria-label="Close delete confirmation"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
+              <Text as="p" variant="body-sm" color="white" caseMode="sentence">
+                {templateToDelete.title || 'Selected template'}
+              </Text>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setTemplateToDelete(null)}
+                className="rounded-full px-5"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleConfirmDeleteTemplate}
+                className="rounded-full px-5"
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

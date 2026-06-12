@@ -3,6 +3,7 @@ import {
   autogenerateReadyTemplates,
   createReadyTemplate,
   deleteReadyTemplate,
+  hideReadyTemplateFromCreateYourLook,
   editReadyTemplate,
   generateReadyTemplatePreview,
   getCategories,
@@ -231,6 +232,48 @@ const readyTemplate = createSlice({
         }
       })
       .addCase(deleteReadyTemplate.rejected, (state, { payload }) => {
+        state.loading = false
+        state.error = errMsg(payload)
+      })
+
+      .addCase(hideReadyTemplateFromCreateYourLook.pending, (state) => {
+        state.loading = true
+        state.error = null
+        state.message = null
+      })
+      .addCase(hideReadyTemplateFromCreateYourLook.fulfilled, (state, { payload }) => {
+        state.loading = false
+        state.message = okMsg(
+          payload,
+          'Template removed from Create Your Look showcase',
+        )
+
+        const hiddenId = payload?.id
+
+        if (hiddenId) {
+          state.yourLookSearchTemplates = state.yourLookSearchTemplates.filter(
+            (item) => String(item?._id) !== String(hiddenId),
+          )
+
+          state.yourLookPreviewTemplates.man =
+            state.yourLookPreviewTemplates.man.filter(
+              (item) => String(item?._id) !== String(hiddenId),
+            )
+
+          state.yourLookPreviewTemplates.woman =
+            state.yourLookPreviewTemplates.woman.filter(
+              (item) => String(item?._id) !== String(hiddenId),
+            )
+
+          if (
+            state.selectedYourLookTemplate &&
+            String(state.selectedYourLookTemplate.id) === String(hiddenId)
+          ) {
+            state.selectedYourLookTemplate = null
+          }
+        }
+      })
+      .addCase(hideReadyTemplateFromCreateYourLook.rejected, (state, { payload }) => {
         state.loading = false
         state.error = errMsg(payload)
       })

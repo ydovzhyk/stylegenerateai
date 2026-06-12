@@ -28,6 +28,12 @@ import {
   getRestoreStyleMeta,
 } from '@/constants/restore-styles'
 import {
+  DEFAULT_RESTORED_PROTOTYPE_ID,
+  RESTORED_PROTOTYPE_SOURCES,
+  formatRestoreSourceLabel,
+  getRestoredPrototypeSource,
+} from '@/constants/restored-prototype-sources'
+import {
   BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
@@ -162,6 +168,9 @@ export default function PhotoLabPreviewTester() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSavingTemplate, setIsSavingTemplate] = useState(false)
   const [templateTitle, setTemplateTitle] = useState('')
+  const [restoredPrototypeId, setRestoredPrototypeId] = useState(
+    DEFAULT_RESTORED_PROTOTYPE_ID,
+  )
   const [error, setError] = useState('')
   const [previewModal, setPreviewModal] = useState({
     open: false,
@@ -191,8 +200,22 @@ export default function PhotoLabPreviewTester() {
   }, [race, gender, view])
 
   const prototypeSrc = useMemo(() => {
+    if (isRestoreColorizeMode) {
+      return getRestoredPrototypeSource(restoredPrototypeId).src
+    }
+
     return PROTOTYPE_MAP[previewSourceKey] || PROTOTYPE_MAP.man_front_color
-  }, [previewSourceKey])
+  }, [isRestoreColorizeMode, previewSourceKey, restoredPrototypeId])
+
+  const restoreSourceLabel = useMemo(() => {
+    if (!isRestoreColorizeMode) return ''
+
+    if (mainSourceFile?.name) {
+      return formatRestoreSourceLabel(mainSourceFile.name)
+    }
+
+    return getRestoredPrototypeSource(restoredPrototypeId).label
+  }, [isRestoreColorizeMode, mainSourceFile, restoredPrototypeId])
 
   const activeSourcePreviewItem = useMemo(() => {
     return sourceUploadPreviews[activeSourceIndex] || null
@@ -202,19 +225,34 @@ export default function PhotoLabPreviewTester() {
     activeSourcePreviewItem?.url || (canUsePrototypeSource ? prototypeSrc : '')
   const isUsingUploadedSource = Boolean(mainSourceFile)
   const hasMultipleSourcePhotos =
-    !isEnhanceQualityMode && sourceUploadPreviews.length > 1
+    !isEnhanceQualityMode &&
+    !isRestoreColorizeMode &&
+    sourceUploadPreviews.length > 1
 
   useEffect(() => {
     setModelPreset(DEFAULT_MODEL_PRESET)
 
-    if (selectedModeId === ENHANCE_QUALITY_MODE) {
+    if (
+      selectedModeId === ENHANCE_QUALITY_MODE ||
+      selectedModeId === RESTORE_COLORIZE_MODE
+    ) {
       setReferenceSourceFiles([])
 
       if (referenceInputRef.current) {
         referenceInputRef.current.value = ''
       }
     }
+
+    if (selectedModeId === RESTORE_COLORIZE_MODE) {
+      setRestoredPrototypeId(DEFAULT_RESTORED_PROTOTYPE_ID)
+    }
   }, [selectedModeId])
+
+  useEffect(() => {
+    if (!isRestoreColorizeMode || !restoreSourceLabel) return
+
+    setTemplateTitle(restoreSourceLabel)
+  }, [isRestoreColorizeMode, restoreSourceLabel])
 
   useEffect(() => {
     setAdditionalPrompt('')
@@ -229,26 +267,27 @@ export default function PhotoLabPreviewTester() {
       return
     }
 
-    const previewItems = isEnhanceQualityMode
-      ? [
-          {
-            type: 'main',
-            label: 'Source photo',
-            url: URL.createObjectURL(mainSourceFile),
-          },
-        ]
-      : [
-          {
-            type: 'main',
-            label: 'Main photo',
-            url: URL.createObjectURL(mainSourceFile),
-          },
-          ...referenceSourceFiles.map((file, index) => ({
-            type: 'reference',
-            label: `Reference ${index + 1}`,
-            url: URL.createObjectURL(file),
-          })),
-        ]
+    const previewItems =
+      isEnhanceQualityMode || isRestoreColorizeMode
+        ? [
+            {
+              type: 'main',
+              label: 'Source photo',
+              url: URL.createObjectURL(mainSourceFile),
+            },
+          ]
+        : [
+            {
+              type: 'main',
+              label: 'Main photo',
+              url: URL.createObjectURL(mainSourceFile),
+            },
+            ...referenceSourceFiles.map((file, index) => ({
+              type: 'reference',
+              label: `Reference ${index + 1}`,
+              url: URL.createObjectURL(file),
+            })),
+          ]
 
     setSourceUploadPreviews(previewItems)
     setActiveSourceIndex(0)
@@ -256,15 +295,30 @@ export default function PhotoLabPreviewTester() {
     return () => {
       previewItems.forEach((item) => URL.revokeObjectURL(item.url))
     }
-  }, [isEnhanceQualityMode, mainSourceFile, referenceSourceFiles])
+  }, [
+    isEnhanceQualityMode,
+    isRestoreColorizeMode,
+    mainSourceFile,
+    referenceSourceFiles,
+  ])
 
   const resolveSourceFiles = async () => {
-    if (isEnhanceQualityMode) {
-      if (!mainSourceFile) {
+    if (isEnhanceQualityMode || isRestoreColorizeMode) {
+      if (mainSourceFile) {
+        return [mainSourceFile]
+      }
+
+      if (isEnhanceQualityMode) {
         throw new Error('Upload a source photo before generating')
       }
 
-      return [mainSourceFile]
+      const restoredSource = getRestoredPrototypeSource(restoredPrototypeId)
+      const prototypeFile = await srcToFile(
+        restoredSource.src,
+        `${restoredSource.id}.png`,
+      )
+
+      return [prototypeFile]
     }
 
     if (mainSourceFile) {
@@ -417,7 +471,7 @@ export default function PhotoLabPreviewTester() {
       return
     }
 
-    if (!gender) {
+    if (!isRestoreColorizeMode && !gender) {
       setError('Select man or woman before saving template')
       return
     }
@@ -437,7 +491,14 @@ export default function PhotoLabPreviewTester() {
 
       formData.append('mode', selectedMode.id)
       formData.append('title', normalizedTitle)
-      formData.append('subjectGender', gender)
+      formData.append(
+        'subjectGender',
+        isRestoreColorizeMode
+          ? restoreSourceLabel.toLowerCase() === 'lady'
+            ? 'woman'
+            : 'man'
+          : gender,
+      )
       formData.append('generatedImageUrl', resultPreview)
 
       resolvedSourceFiles.forEach((file) => {
@@ -472,7 +533,9 @@ export default function PhotoLabPreviewTester() {
         >
           {isEnhanceQualityMode
             ? 'Enhance Quality uses one uploaded source photo. Test model preset and output quality before saving showcase templates.'
-            : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
+            : isRestoreColorizeMode
+              ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
+              : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
       </div>
 
@@ -723,12 +786,14 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="text-foreground-soft"
                 >
-                  {isEnhanceQualityMode ? 'Source photo' : 'Source images'}
+                  {isEnhanceQualityMode || isRestoreColorizeMode
+                    ? 'Source photo'
+                    : 'Source images'}
                 </Text>
               </div>
 
               <div
-                className={`mb-4 grid gap-3 ${isEnhanceQualityMode ? '' : 'sm:grid-cols-2'}`}
+                className={`mb-4 grid gap-3 ${isEnhanceQualityMode || isRestoreColorizeMode ? '' : 'sm:grid-cols-2'}`}
               >
                 <Button
                   type="button"
@@ -737,10 +802,12 @@ export default function PhotoLabPreviewTester() {
                   disabled={isGenerating || isSavingTemplate}
                   className="w-full"
                 >
-                  {isEnhanceQualityMode ? 'Upload photo' : 'Upload main photo'}
+                  {isEnhanceQualityMode || isRestoreColorizeMode
+                    ? 'Upload photo'
+                    : 'Upload main photo'}
                 </Button>
 
-                {!isEnhanceQualityMode ? (
+                {!isEnhanceQualityMode && !isRestoreColorizeMode ? (
                   <Button
                     type="button"
                     variant="secondary"
@@ -767,31 +834,27 @@ export default function PhotoLabPreviewTester() {
                     Prototype source
                   </Text>
 
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div>
-                      <Text
-                        as="p"
-                        variant="caption"
-                        color="muted"
-                        caseMode="sentence"
-                        className="mb-2"
-                      >
-                        Race
-                      </Text>
+                  {isRestoreColorizeMode ? (
+                    <div className="flex flex-col gap-2">
+                      {RESTORED_PROTOTYPE_SOURCES.map((source) => {
+                        const active = restoredPrototypeId === source.id
 
-                      <div className="flex flex-col gap-2">
-                        {RACE_OPTIONS.map((option) => (
+                        return (
                           <label
-                            key={option.value}
-                            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                            key={source.id}
+                            className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition ${
+                              active
+                                ? 'border-amber-300/35 bg-amber-300/10'
+                                : 'border-white/10 bg-white/[0.03]'
+                            }`}
                           >
                             <input
                               type="radio"
-                              name="photo-lab-race"
-                              value={option.value}
-                              checked={race === option.value}
+                              name="restored-prototype"
+                              value={source.id}
+                              checked={active}
                               onChange={() => {
-                                setRace(option.value)
+                                setRestoredPrototypeId(source.id)
                                 setResultPreview('')
                                 setError('')
                               }}
@@ -805,101 +868,147 @@ export default function PhotoLabPreviewTester() {
                               color="soft"
                               caseMode="sentence"
                             >
-                              {option.label}
+                              {source.label}
                             </Text>
                           </label>
-                        ))}
-                      </div>
+                        )
+                      })}
                     </div>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <Text
+                          as="p"
+                          variant="caption"
+                          color="muted"
+                          caseMode="sentence"
+                          className="mb-2"
+                        >
+                          Race
+                        </Text>
 
-                    <div>
-                      <Text
-                        as="p"
-                        variant="caption"
-                        color="muted"
-                        caseMode="sentence"
-                        className="mb-2"
-                      >
-                        Person
-                      </Text>
-
-                      <div className="flex flex-col gap-2">
-                        {PERSON_OPTIONS.map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                          >
-                            <input
-                              type="radio"
-                              name="photo-lab-person"
-                              value={option.value}
-                              checked={gender === option.value}
-                              onChange={() => {
-                                setGender(option.value)
-                                setResultPreview('')
-                                setError('')
-                              }}
-                              disabled={isGenerating || isSavingTemplate}
-                              className="h-4 w-4 accent-[var(--primary)]"
-                            />
-
-                            <Text
-                              as="span"
-                              variant="caption"
-                              color="soft"
-                              caseMode="sentence"
+                        <div className="flex flex-col gap-2">
+                          {RACE_OPTIONS.map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
                             >
-                              {option.label}
-                            </Text>
-                          </label>
-                        ))}
+                              <input
+                                type="radio"
+                                name="photo-lab-race"
+                                value={option.value}
+                                checked={race === option.value}
+                                onChange={() => {
+                                  setRace(option.value)
+                                  setResultPreview('')
+                                  setError('')
+                                }}
+                                disabled={isGenerating || isSavingTemplate}
+                                className="h-4 w-4 accent-[var(--primary)]"
+                              />
+
+                              <Text
+                                as="span"
+                                variant="caption"
+                                color="soft"
+                                caseMode="sentence"
+                              >
+                                {option.label}
+                              </Text>
+                            </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <Text
-                        as="p"
-                        variant="caption"
-                        color="muted"
-                        caseMode="sentence"
-                        className="mb-2"
-                      >
-                        View
-                      </Text>
+                      <div>
+                        <Text
+                          as="p"
+                          variant="caption"
+                          color="muted"
+                          caseMode="sentence"
+                          className="mb-2"
+                        >
+                          Person
+                        </Text>
 
-                      <div className="flex flex-col gap-2">
-                        {VIEW_OPTIONS.map((option) => (
-                          <label
-                            key={option.value}
-                            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                          >
-                            <input
-                              type="radio"
-                              name="photo-lab-view"
-                              value={option.value}
-                              checked={view === option.value}
-                              onChange={() => {
-                                setView(option.value)
-                                setResultPreview('')
-                                setError('')
-                              }}
-                              disabled={isGenerating || isSavingTemplate}
-                              className="h-4 w-4 accent-[var(--primary)]"
-                            />
-
-                            <Text
-                              as="span"
-                              variant="caption"
-                              color="soft"
-                              caseMode="sentence"
+                        <div className="flex flex-col gap-2">
+                          {PERSON_OPTIONS.map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
                             >
-                              {option.label}
-                            </Text>
-                          </label>
-                        ))}
+                              <input
+                                type="radio"
+                                name="photo-lab-person"
+                                value={option.value}
+                                checked={gender === option.value}
+                                onChange={() => {
+                                  setGender(option.value)
+                                  setResultPreview('')
+                                  setError('')
+                                }}
+                                disabled={isGenerating || isSavingTemplate}
+                                className="h-4 w-4 accent-[var(--primary)]"
+                              />
+
+                              <Text
+                                as="span"
+                                variant="caption"
+                                color="soft"
+                                caseMode="sentence"
+                              >
+                                {option.label}
+                              </Text>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Text
+                          as="p"
+                          variant="caption"
+                          color="muted"
+                          caseMode="sentence"
+                          className="mb-2"
+                        >
+                          View
+                        </Text>
+
+                        <div className="flex flex-col gap-2">
+                          {VIEW_OPTIONS.map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                            >
+                              <input
+                                type="radio"
+                                name="photo-lab-view"
+                                value={option.value}
+                                checked={view === option.value}
+                                onChange={() => {
+                                  setView(option.value)
+                                  setResultPreview('')
+                                  setError('')
+                                }}
+                                disabled={isGenerating || isSavingTemplate}
+                                className="h-4 w-4 accent-[var(--primary)]"
+                              />
+
+                              <Text
+                                as="span"
+                                variant="caption"
+                                color="soft"
+                                caseMode="sentence"
+                              >
+                                {option.label}
+                              </Text>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                   <Text
                     as="p"
@@ -908,7 +1017,9 @@ export default function PhotoLabPreviewTester() {
                     caseMode="sentence"
                     className="mt-3"
                   >
-                    Active prototype: {previewSourceKey}
+                    {isRestoreColorizeMode
+                      ? `Active prototype: ${restoreSourceLabel}`
+                      : `Active prototype: ${previewSourceKey}`}
                   </Text>
                 </div>
               ) : isUsingUploadedSource ? (
@@ -921,7 +1032,9 @@ export default function PhotoLabPreviewTester() {
                   >
                     {isEnhanceQualityMode
                       ? 'This photo will be enhanced and used as the before image when saving a showcase template.'
-                      : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
+                      : isRestoreColorizeMode
+                        ? 'This uploaded old photo will be restored and used as the before image when saving a showcase template.'
+                        : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
                   </Text>
 
                   <Text
@@ -931,7 +1044,7 @@ export default function PhotoLabPreviewTester() {
                     caseMode="sentence"
                     className="mt-2"
                   >
-                    {isEnhanceQualityMode
+                    {isEnhanceQualityMode || isRestoreColorizeMode
                       ? `Selected: ${mainSourceFile?.name || 'Not selected'}`
                       : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / 2`}
                   </Text>
@@ -943,7 +1056,9 @@ export default function PhotoLabPreviewTester() {
                     disabled={isGenerating || isSavingTemplate}
                     className="mt-3 w-auto"
                   >
-                    {isEnhanceQualityMode ? 'Remove photo' : 'Use prototype instead'}
+                    {isEnhanceQualityMode || isRestoreColorizeMode
+                      ? 'Remove photo'
+                      : 'Use prototype instead'}
                   </Button>
                 </div>
               ) : null}
@@ -1009,7 +1124,9 @@ export default function PhotoLabPreviewTester() {
                     >
                       {isEnhanceQualityMode
                         ? 'Upload a source photo'
-                        : 'Upload main source photo'}
+                        : isRestoreColorizeMode
+                          ? 'Pick a restored preset or upload a photo'
+                          : 'Upload main source photo'}
                     </Text>
 
                     <Text
@@ -1021,7 +1138,9 @@ export default function PhotoLabPreviewTester() {
                     >
                       {isEnhanceQualityMode
                         ? 'Upload one low-quality, blurry, compressed, or dark photo to test enhancement.'
-                        : 'The main photo will always be sent first. You can add up to two supporting reference photos after it.'}
+                        : isRestoreColorizeMode
+                          ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
+                          : 'The main photo will always be sent first. You can add up to two supporting reference photos after it.'}
                     </Text>
                   </div>
                 )}
@@ -1155,52 +1274,89 @@ export default function PhotoLabPreviewTester() {
               <Input
                 id="photo-lab-template-title"
                 label="Template title"
-                placeholder="Professional LinkedIn portrait"
+                placeholder={
+                  isRestoreColorizeMode ? 'Kyiv' : 'Professional LinkedIn portrait'
+                }
                 caseMode="sentence"
                 value={templateTitle}
                 onChange={(e) => setTemplateTitle(e.target.value)}
                 disabled={isGenerating || isSavingTemplate}
               />
 
-              <div>
-                <Text
-                  as="p"
-                  variant="caption"
-                  color="muted"
-                  caseMode="sentence"
-                  className="mb-2"
-                >
-                  Showcase subject
-                </Text>
+              {isRestoreColorizeMode ? (
+                <div>
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="muted"
+                    caseMode="sentence"
+                    className="mb-2"
+                  >
+                    Showcase subject
+                  </Text>
 
-                <div className="flex flex-col gap-2">
-                  {PERSON_OPTIONS.map((option) => (
-                    <label
-                      key={`template-${option.value}`}
-                      className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3">
+                    <Text
+                      as="p"
+                      variant="body-sm"
+                      color="soft"
+                      caseMode="sentence"
                     >
-                      <input
-                        type="radio"
-                        name="photo-lab-template-subject"
-                        value={option.value}
-                        checked={gender === option.value}
-                        onChange={() => setGender(option.value)}
-                        disabled={isGenerating || isSavingTemplate}
-                        className="h-4 w-4 accent-[var(--primary)]"
-                      />
+                      {restoreSourceLabel || 'Not selected'}
+                    </Text>
 
-                      <Text
-                        as="span"
-                        variant="caption"
-                        color="soft"
-                        caseMode="sentence"
-                      >
-                        {option.label}
-                      </Text>
-                    </label>
-                  ))}
+                    <Text
+                      as="p"
+                      variant="caption"
+                      color="muted"
+                      caseMode="sentence"
+                      className="mt-1"
+                    >
+                      Filled automatically from the active source photo.
+                    </Text>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div>
+                  <Text
+                    as="p"
+                    variant="caption"
+                    color="muted"
+                    caseMode="sentence"
+                    className="mb-2"
+                  >
+                    Showcase subject
+                  </Text>
+
+                  <div className="flex flex-col gap-2">
+                    {PERSON_OPTIONS.map((option) => (
+                      <label
+                        key={`template-${option.value}`}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                      >
+                        <input
+                          type="radio"
+                          name="photo-lab-template-subject"
+                          value={option.value}
+                          checked={gender === option.value}
+                          onChange={() => setGender(option.value)}
+                          disabled={isGenerating || isSavingTemplate}
+                          className="h-4 w-4 accent-[var(--primary)]"
+                        />
+
+                        <Text
+                          as="span"
+                          variant="caption"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {option.label}
+                        </Text>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-background-soft/70 p-4 sm:grid-cols-2">
@@ -1240,8 +1396,10 @@ export default function PhotoLabPreviewTester() {
                   caseMode="sentence"
                   className="mt-1"
                 >
-                  {PERSON_OPTIONS.find((item) => item.value === gender)?.label ||
-                    'Not selected'}
+                  {isRestoreColorizeMode
+                    ? restoreSourceLabel || 'Not selected'
+                    : PERSON_OPTIONS.find((item) => item.value === gender)
+                        ?.label || 'Not selected'}
                 </Text>
               </div>
             </div>

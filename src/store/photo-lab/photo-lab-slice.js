@@ -4,7 +4,20 @@ import {
   generatePhotoLabClientImage,
   createPhotoLabTemplate,
   getPhotoLabTemplates,
+  deletePhotoLabTemplate,
 } from './photo-lab-operations'
+
+function removeTemplateFromGroupedTemplates(templates = {}, deletedId) {
+  const next = { ...templates }
+
+  Object.keys(next).forEach((modeKey) => {
+    next[modeKey] = (next[modeKey] || []).filter(
+      (item) => String(item?._id) !== String(deletedId),
+    )
+  })
+
+  return next
+}
 
 const initialState = {
   error: null,
@@ -100,6 +113,26 @@ const photoLabSlice = createSlice({
       })
       .addCase(getPhotoLabTemplates.rejected, (state, { payload }) => {
         state.templatesLoading = false
+        state.error = errMsg(payload)
+      })
+      .addCase(deletePhotoLabTemplate.pending, (state) => {
+        state.error = null
+        state.message = null
+      })
+      .addCase(deletePhotoLabTemplate.fulfilled, (state, { payload }) => {
+        state.message =
+          payload?.message || 'Photo Lab template deleted successfully'
+
+        const deletedId = payload?.id
+
+        if (deletedId) {
+          state.templates = removeTemplateFromGroupedTemplates(
+            state.templates,
+            deletedId,
+          )
+        }
+      })
+      .addCase(deletePhotoLabTemplate.rejected, (state, { payload }) => {
         state.error = errMsg(payload)
       })
   },
