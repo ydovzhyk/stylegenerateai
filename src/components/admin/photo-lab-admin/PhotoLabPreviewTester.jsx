@@ -9,6 +9,9 @@ import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePrev
 import PhotoLabMaskEditor, {
   PHOTO_LAB_MASK_BRUSH_SIZES,
 } from '@/components/admin/photo-lab-admin/PhotoLabMaskEditor'
+import PhotoLabMaskToolbar, {
+  DEFAULT_MASK_ZOOM_STATE,
+} from '@/components/photo-lab/PhotoLabMaskToolbar'
 import {
   createPhotoLabTemplate,
   generatePhotoLabAdminPreview,
@@ -38,7 +41,6 @@ import {
 } from '@/constants/restored-prototype-sources'
 import {
   BriefcaseBusiness,
-  Brush,
   ChevronLeft,
   ChevronRight,
   Eraser,
@@ -51,12 +53,6 @@ import {
 
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const REMOVE_OBJECTS_MODE = 'remove_objects'
-
-const MASK_BRUSH_OPTIONS = [
-  { id: 'small', label: 'S', size: PHOTO_LAB_MASK_BRUSH_SIZES.small },
-  { id: 'medium', label: 'M', size: PHOTO_LAB_MASK_BRUSH_SIZES.medium },
-  { id: 'large', label: 'L', size: PHOTO_LAB_MASK_BRUSH_SIZES.large },
-]
 
 const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
@@ -184,10 +180,12 @@ export default function PhotoLabPreviewTester() {
     DEFAULT_RESTORED_PROTOTYPE_ID,
   )
   const [maskTool, setMaskTool] = useState('brush')
+  const [maskPaintActive, setMaskPaintActive] = useState(true)
   const [maskBrushSize, setMaskBrushSize] = useState(
-    PHOTO_LAB_MASK_BRUSH_SIZES.medium,
+    PHOTO_LAB_MASK_BRUSH_SIZES.small,
   )
   const [hasRemovalMask, setHasRemovalMask] = useState(false)
+  const [maskZoomState, setMaskZoomState] = useState(DEFAULT_MASK_ZOOM_STATE)
   const [error, setError] = useState('')
   const [previewModal, setPreviewModal] = useState({
     open: false,
@@ -275,6 +273,12 @@ export default function PhotoLabPreviewTester() {
 
     setTemplateTitle(restoreSourceLabel)
   }, [isRestoreColorizeMode, restoreSourceLabel])
+
+  useEffect(() => {
+    if (!mainSourceFile) {
+      setMaskZoomState(DEFAULT_MASK_ZOOM_STATE)
+    }
+  }, [mainSourceFile])
 
   useEffect(() => {
     setAdditionalPrompt('')
@@ -1121,87 +1125,23 @@ export default function PhotoLabPreviewTester() {
               ) : null}
 
               {isRemoveObjectsMode && mainSourceFile ? (
-                <div className="mb-4 rounded-2xl border border-white/10 bg-background-soft/70 p-4">
-                  <Text
-                    as="p"
-                    variant="caption"
-                    color="faint"
-                    caseMode="sentence"
-                    className="mb-3 uppercase tracking-[0.18em]"
-                  >
-                    Removal mask
-                  </Text>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant={maskTool === 'brush' ? 'primary' : 'secondary'}
-                      onClick={() => setMaskTool('brush')}
-                      disabled={isGenerating || isSavingTemplate}
-                      className="w-auto"
-                    >
-                      <Brush size={16} className="mr-2" />
-                      Brush
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant={maskTool === 'eraser' ? 'primary' : 'secondary'}
-                      onClick={() => setMaskTool('eraser')}
-                      disabled={isGenerating || isSavingTemplate}
-                      className="w-auto"
-                    >
-                      <Eraser size={16} className="mr-2" />
-                      Eraser
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => {
-                        maskEditorRef.current?.clearMask()
-                        setHasRemovalMask(false)
-                        setResultPreview('')
-                        setError('')
-                      }}
-                      disabled={isGenerating || isSavingTemplate}
-                      className="w-auto"
-                    >
-                      Clear mask
-                    </Button>
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {MASK_BRUSH_OPTIONS.map((option) => {
-                      const active = maskBrushSize === option.size
-
-                      return (
-                        <Button
-                          key={option.id}
-                          type="button"
-                          variant={active ? 'primary' : 'secondary'}
-                          onClick={() => setMaskBrushSize(option.size)}
-                          disabled={isGenerating || isSavingTemplate}
-                          className="min-w-[52px] w-auto"
-                        >
-                          {option.label}
-                        </Button>
-                      )
-                    })}
-                  </div>
-
-                  <Text
-                    as="p"
-                    variant="caption"
-                    color="muted"
-                    caseMode="sentence"
-                    className="mt-3"
-                  >
-                    {hasRemovalMask
-                      ? 'Mask ready. Generate to remove the painted area.'
-                      : 'Paint over the object you want removed. Mask is required before generating.'}
-                  </Text>
-                </div>
+                <PhotoLabMaskToolbar
+                  className="mb-4"
+                  maskEditorRef={maskEditorRef}
+                  maskTool={maskTool}
+                  onMaskToolChange={setMaskTool}
+                  maskPaintActive={maskPaintActive}
+                  onMaskPaintActiveChange={setMaskPaintActive}
+                  maskBrushSize={maskBrushSize}
+                  onMaskBrushSizeChange={setMaskBrushSize}
+                  maskZoomState={maskZoomState}
+                  disabled={isGenerating || isSavingTemplate}
+                  onClearMask={() => {
+                    setHasRemovalMask(false)
+                    setResultPreview('')
+                    setError('')
+                  }}
+                />
               ) : null}
 
               {isRemoveObjectsMode ? (
@@ -1210,6 +1150,10 @@ export default function PhotoLabPreviewTester() {
                   imageFile={mainSourceFile}
                   brushSize={maskBrushSize}
                   tool={maskTool}
+                  paintActive={maskPaintActive}
+                  onPanModeEnter={() => setMaskPaintActive(false)}
+                  onFitView={() => setMaskPaintActive(true)}
+                  onZoomChange={setMaskZoomState}
                   disabled={isGenerating || isSavingTemplate}
                   onHasMaskChange={setHasRemovalMask}
                 />
@@ -1308,6 +1252,8 @@ export default function PhotoLabPreviewTester() {
                   setMainSourceFile(file)
                   setReferenceSourceFiles([])
                   setHasRemovalMask(false)
+                  setMaskPaintActive(true)
+                  setMaskTool('brush')
                   setResultPreview('')
                   setError('')
 
@@ -1425,7 +1371,7 @@ export default function PhotoLabPreviewTester() {
               disabled={isGenerating || isSavingTemplate}
             />
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-4">
               <Input
                 id="photo-lab-template-title"
                 label="Template title"
@@ -1437,81 +1383,6 @@ export default function PhotoLabPreviewTester() {
                 onChange={(e) => setTemplateTitle(e.target.value)}
                 disabled={isGenerating || isSavingTemplate}
               />
-
-              {isRestoreColorizeMode ? (
-                <div>
-                  <Text
-                    as="p"
-                    variant="caption"
-                    color="muted"
-                    caseMode="sentence"
-                    className="mb-2"
-                  >
-                    Showcase subject
-                  </Text>
-
-                  <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3">
-                    <Text
-                      as="p"
-                      variant="body-sm"
-                      color="soft"
-                      caseMode="sentence"
-                    >
-                      {restoreSourceLabel || 'Not selected'}
-                    </Text>
-
-                    <Text
-                      as="p"
-                      variant="caption"
-                      color="muted"
-                      caseMode="sentence"
-                      className="mt-1"
-                    >
-                      Filled automatically from the active source photo.
-                    </Text>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <Text
-                    as="p"
-                    variant="caption"
-                    color="muted"
-                    caseMode="sentence"
-                    className="mb-2"
-                  >
-                    Showcase subject
-                  </Text>
-
-                  <div className="flex flex-col gap-2">
-                    {PERSON_OPTIONS.map((option) => (
-                      <label
-                        key={`template-${option.value}`}
-                        className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
-                      >
-                        <input
-                          type="radio"
-                          name="photo-lab-template-subject"
-                          value={option.value}
-                          checked={gender === option.value}
-                          onChange={() => setGender(option.value)}
-                          disabled={isGenerating || isSavingTemplate}
-                          className="h-4 w-4 accent-[var(--primary)]"
-                        />
-
-                        <Text
-                          as="span"
-                          variant="caption"
-                          color="soft"
-                          caseMode="sentence"
-                        >
-                          {option.label}
-                        </Text>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className="mt-4 grid gap-3 rounded-2xl border border-white/10 bg-background-soft/70 p-4 sm:grid-cols-2">
@@ -1541,21 +1412,61 @@ export default function PhotoLabPreviewTester() {
                   variant="caption"
                   color="muted"
                   caseMode="sentence"
+                  className="mb-2"
                 >
                   Subject
                 </Text>
-                <Text
-                  as="p"
-                  variant="body-sm"
-                  color="white"
-                  caseMode="sentence"
-                  className="mt-1"
-                >
-                  {isRestoreColorizeMode
-                    ? restoreSourceLabel || 'Not selected'
-                    : PERSON_OPTIONS.find((item) => item.value === gender)
-                        ?.label || 'Not selected'}
-                </Text>
+
+                {isRestoreColorizeMode ? (
+                  <>
+                    <Text
+                      as="p"
+                      variant="body-sm"
+                      color="white"
+                      caseMode="sentence"
+                    >
+                      {restoreSourceLabel || 'Not selected'}
+                    </Text>
+
+                    <Text
+                      as="p"
+                      variant="caption"
+                      color="muted"
+                      caseMode="sentence"
+                      className="mt-1"
+                    >
+                      Filled automatically from the active source photo.
+                    </Text>
+                  </>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {PERSON_OPTIONS.map((option) => (
+                      <label
+                        key={`template-${option.value}`}
+                        className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2"
+                      >
+                        <input
+                          type="radio"
+                          name="photo-lab-template-subject"
+                          value={option.value}
+                          checked={gender === option.value}
+                          onChange={() => setGender(option.value)}
+                          disabled={isGenerating || isSavingTemplate}
+                          className="h-4 w-4 accent-[var(--primary)]"
+                        />
+
+                        <Text
+                          as="span"
+                          variant="caption"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {option.label}
+                        </Text>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

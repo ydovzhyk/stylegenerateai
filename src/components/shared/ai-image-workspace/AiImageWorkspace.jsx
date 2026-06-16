@@ -1,15 +1,28 @@
 'use client'
 
+import BeforeAfterComparisonSlider, {
+  ComparisonPreviewBadge,
+  resolveComparisonPreviewTarget,
+} from '@/components/shared/before-after-comparison/BeforeAfterComparisonSlider'
 import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
 import GenerationCloserPresetModal from '@/components/shared/ai-image-workspace/GenerationCloserPresetModal'
 import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import PhotoLabMaskEditor, {
+  PHOTO_LAB_MASK_BRUSH_SIZES,
+} from '@/components/admin/photo-lab-admin/PhotoLabMaskEditor'
+import PhotoLabMaskToolbar, {
+  DEFAULT_MASK_ZOOM_STATE,
+} from '@/components/photo-lab/PhotoLabMaskToolbar'
+import RestoreStyleToolbar from '@/components/photo-lab/RestoreStyleToolbar'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
 import { DEFAULT_MODEL_PRESET } from '@/constants/model-presets'
 import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restore-styles'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
+import { getModePreviewLabels } from '@/constants/mode-preview-labels'
+import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { useLanguage } from '@/providers/languageContext'
 import { axiosCreateGeneratedImageFile } from '@/services/api/generated-image'
@@ -27,13 +40,16 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 const DEFAULT_ACTION_CARD_LABELS = {}
+const REMOVE_OBJECTS_MODE = 'remove_objects'
+const WORKSPACE_PREVIEW_FRAME_CLASS =
+  'group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5]'
 
 export default function AiImageWorkspace({
   template,
   productKey = 'create_your_look',
   modeKey,
   restoreStyle = null,
-  onChangeRestoreStyle = null,
+  onRestoreStyleChange = null,
   emptyStateTitle = 'Generate your image',
   emptyStateDescription = 'Choose a template above to start generating your personalized look.',
   workspaceTitle = 'Generate your image',
@@ -48,6 +64,7 @@ export default function AiImageWorkspace({
   const isPhotoLab = productKey === 'photo_lab'
   const inputRef = useRef(null)
   const resultRef = useRef(null)
+  const maskEditorRef = useRef(null)
   const previousTemplateIdRef = useRef(null)
 
   const dispatch = useDispatch()
@@ -64,6 +81,14 @@ export default function AiImageWorkspace({
   const [imageTitle, setImageTitle] = useState('')
   const [saveLoading, setSaveLoading] = useState(false)
   const [closerPresetModalOpen, setCloserPresetModalOpen] = useState(false)
+  const [maskTool, setMaskTool] = useState('brush')
+  const [maskPaintActive, setMaskPaintActive] = useState(true)
+  const [maskBrushSize, setMaskBrushSize] = useState(
+    PHOTO_LAB_MASK_BRUSH_SIZES.small,
+  )
+  const [hasRemovalMask, setHasRemovalMask] = useState(false)
+  const [maskZoomState, setMaskZoomState] = useState(DEFAULT_MASK_ZOOM_STATE)
+  const [comparisonSliderPosition, setComparisonSliderPosition] = useState(100)
 
   const [previewModal, setPreviewModal] = useState({
     open: false,
@@ -73,6 +98,21 @@ export default function AiImageWorkspace({
   })
 
   const { languageIndex } = useLanguage()
+
+  const activeModeId = modeKey || template?.id || ''
+  const isRemoveObjectsMode =
+    isPhotoLab && activeModeId === REMOVE_OBJECTS_MODE
+  const isRestoreColorizeMode =
+    isPhotoLab && activeModeId === RESTORE_COLORIZE_MODE
+
+  const resetMaskState = () => {
+    setMaskTool('brush')
+    setMaskPaintActive(true)
+    setMaskBrushSize(PHOTO_LAB_MASK_BRUSH_SIZES.small)
+    setHasRemovalMask(false)
+    setMaskZoomState(DEFAULT_MASK_ZOOM_STATE)
+    maskEditorRef.current?.clearMask()
+  }
 
   const pricingContext = useMemo(() => {
     if (!template?.id) return undefined
@@ -178,6 +218,7 @@ export default function AiImageWorkspace({
     setSaveToGallery(false)
     setImageTitle('')
     setExtraPrompt('')
+    resetMaskState()
     setClientFile(null)
     setClientPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev)
@@ -189,6 +230,57 @@ export default function AiImageWorkspace({
     }
   }, [template?.id])
 
+  const selectionComparison = useMemo(() => {
+    if (!template) return null
+
+    const afterUrl = String(
+      template.afterPreviewUrl ||
+        template.previewUrl ||
+        template.resultImageUrl ||
+        '',
+    ).trim()
+
+    let beforeUrl = String(
+      template.beforePreviewUrl || template.sourceImageUrl || '',
+    ).trim()
+
+    if (!beforeUrl && template.previewSourceKey) {
+      beforeUrl = String(PROTOTYPE_MAP[template.previewSourceKey] || '').trim()
+    }
+
+    if (!beforeUrl || !afterUrl) return null
+
+    const modeLabels = isPhotoLab
+      ? getModePreviewLabels(modeKey || template.id)
+      : { before: 'Before', after: 'After' }
+
+    return {
+      beforeUrl,
+      afterUrl,
+      beforeLabel: template.beforePreviewLabel || modeLabels.before,
+      afterLabel: template.afterPreviewLabel || modeLabels.after,
+    }
+  }, [isPhotoLab, modeKey, template])
+
+  useEffect(() => {
+    setComparisonSliderPosition(100)
+  }, [template?.id, selectionComparison?.beforeUrl, selectionComparison?.afterUrl])
+
+  const previousRestoreStyleRef = useRef(restoreStyle)
+
+  useEffect(() => {
+    if (!isRestoreColorizeMode) {
+      previousRestoreStyleRef.current = restoreStyle
+      return
+    }
+
+    if (previousRestoreStyleRef.current === restoreStyle) return
+
+    previousRestoreStyleRef.current = restoreStyle
+    setGeneratedPreview('')
+    setGeneratedFile(null)
+  }, [isRestoreColorizeMode, restoreStyle])
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -199,12 +291,21 @@ export default function AiImageWorkspace({
     setClientPreview(URL.createObjectURL(file))
     setGeneratedPreview('')
     setGeneratedFile(null)
+    resetMaskState()
 
     e.target.value = ''
   }
 
   const runGeneration = async (presetOverride) => {
     if (!clientFile || !template?.id) return
+
+    if (isRemoveObjectsMode) {
+      const maskBlob = await maskEditorRef.current?.exportMask()
+
+      if (!maskBlob) {
+        return
+      }
+    }
 
     const activePreset = presetOverride || modelPreset || DEFAULT_MODEL_PRESET
 
@@ -253,6 +354,11 @@ export default function AiImageWorkspace({
 
         if (!isLogin && visitorId) {
           formData.append('visitorId', visitorId)
+        }
+
+        if (isRemoveObjectsMode) {
+          const maskBlob = await maskEditorRef.current.exportMask()
+          formData.append('mask', maskBlob, 'photo-lab-mask.png')
         }
 
         const result = await dispatch(
@@ -370,6 +476,7 @@ export default function AiImageWorkspace({
 
   const handleGenerateClick = () => {
     if (!clientFile || !template?.id) return
+    if (isRemoveObjectsMode && !hasRemovalMask) return
 
     if (shouldOfferCloserPreset) {
       setCloserPresetModalOpen(true)
@@ -494,29 +601,55 @@ export default function AiImageWorkspace({
     onPreview,
     action,
     borderClassName = 'border-white/10',
+    imageFit = 'cover',
+    imagePadding = true,
     children,
     titleTranslate = true,
   }) => {
+    const useContain = imageFit === 'contain'
+
     return (
       <div
-        className={`group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5] ${borderClassName}`}
+        className={`${WORKSPACE_PREVIEW_FRAME_CLASS} ${borderClassName}`}
       >
         {src && !empty ? (
           <>
-            <img
-              src={src}
-              alt=""
-              aria-hidden="true"
-              className="absolute inset-0 h-full w-full scale-110 object-cover object-[center_18%] opacity-25 blur-2xl"
-            />
+            {!useContain ? (
+              <>
+                <img
+                  src={src}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full scale-110 object-cover object-[center_18%] opacity-25 blur-2xl"
+                />
 
-            <div className="absolute inset-0 bg-black/20" />
+                <div className="absolute inset-0 bg-black/20" />
+              </>
+            ) : null}
 
-            <img
-              src={src}
-              alt={alt}
-              className="relative z-[1] h-full w-full object-cover object-[center_18%] transition duration-700 group-hover:scale-[1.018]"
-            />
+            {useContain ? (
+              imagePadding ? (
+                <div className="absolute inset-0 z-[1] flex items-center justify-center p-3">
+                  <img
+                    src={src}
+                    alt={alt}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+              ) : (
+                <img
+                  src={src}
+                  alt={alt}
+                  className="absolute inset-0 z-[1] h-full w-full object-contain"
+                />
+              )
+            ) : (
+              <img
+                src={src}
+                alt={alt}
+                className="absolute inset-0 z-[1] h-full w-full object-cover object-[center_18%] transition duration-700 group-hover:scale-[1.018]"
+              />
+            )}
 
             {onPreview ? (
               <button
@@ -587,7 +720,373 @@ export default function AiImageWorkspace({
 
   const resolvedPromptHint = template?.promptHint || promptHint
 
-  const showSelectionPreview = Boolean(template.previewUrl)
+  const resolvedWorkspaceDescription = isRemoveObjectsMode
+    ? 'Upload your photo, paint over the distraction you want removed, optionally add a short note, then generate.'
+    : workspaceDescription
+
+  const isGenerateDisabled =
+    !clientFile || (isRemoveObjectsMode && !hasRemovalMask)
+
+  const resolvedActionCardLabels = {
+    ...actionCardLabels,
+    descriptionDisabled: isRemoveObjectsMode
+      ? !clientFile
+        ? 'Upload your photo first to continue.'
+        : 'Paint the distraction you want removed before generating.'
+      : actionCardLabels.descriptionDisabled,
+  }
+
+  const showSelectionPreview = Boolean(
+    template?.previewUrl ||
+      template?.afterPreviewUrl ||
+      template?.beforePreviewUrl,
+  )
+
+  const renderSelectionPreviewCard = ({ onPreview, action } = {}) => {
+    if (selectionComparison) {
+      return (
+        <div className={`${WORKSPACE_PREVIEW_FRAME_CLASS} border-white/10`}>
+          <BeforeAfterComparisonSlider
+            beforeSrc={selectionComparison.beforeUrl}
+            afterSrc={selectionComparison.afterUrl}
+            beforeLabel={selectionComparison.beforeLabel}
+            afterLabel={selectionComparison.afterLabel}
+            onPositionChange={setComparisonSliderPosition}
+            showLabels={false}
+            className="absolute inset-0"
+          />
+
+          {onPreview ? (
+            <button
+              type="button"
+              onClick={() =>
+                onPreview(
+                  resolveComparisonPreviewTarget(
+                    selectionComparison,
+                    comparisonSliderPosition,
+                    {
+                      title: template.title || selectionEyebrow,
+                    },
+                  ),
+                )
+              }
+              className="absolute right-3 top-3 z-[3] hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 opacity-0 backdrop-blur-md transition hover:bg-black/40 hover:text-white group-hover:opacity-100 lg:inline-flex"
+              aria-label="Open image preview"
+            >
+              <Maximize2 size={15} />
+            </button>
+          ) : null}
+
+          <ComparisonPreviewBadge
+            beforeLabel={selectionComparison.beforeLabel}
+            afterLabel={selectionComparison.afterLabel}
+            position={comparisonSliderPosition}
+            shineSeed={`${template.id}-${selectionComparison.afterUrl}`}
+            wrapperClassName="pointer-events-none absolute bottom-4 right-4 z-[5]"
+          />
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
+            <Text as="p" variant="caption" color="soft" caseMode="sentence">
+              {selectionEyebrow}
+            </Text>
+
+            <Text
+              as="p"
+              variant="body"
+              color="white"
+              className="mt-1 line-clamp-1"
+            >
+              {template.title}
+            </Text>
+
+            {template.category ? (
+              <Text
+                as="p"
+                variant="caption"
+                color="muted"
+                caseMode="sentence"
+                className="mt-1 line-clamp-1"
+              >
+                {template.category}
+              </Text>
+            ) : null}
+
+            {action ? (
+              <div className="pointer-events-auto mt-3">{action}</div>
+            ) : null}
+          </div>
+        </div>
+      )
+    }
+
+    if (!template?.previewUrl) return null
+
+    return renderPreviewCard({
+      src: template.previewUrl,
+      alt: template.title,
+      eyebrow: selectionEyebrow,
+      title: template.title,
+      description: template.category,
+      onPreview: onPreview
+        ? () =>
+            onPreview({
+              src: template.previewUrl,
+              alt: template.title,
+              title: template.title || selectionEyebrow,
+            })
+        : undefined,
+      action,
+    })
+  }
+
+  const showRemoveObjectsWorkspace = isRemoveObjectsMode && clientFile
+  const showRestoreStyleWorkspace =
+    isRestoreColorizeMode &&
+    Boolean(clientFile) &&
+    onRestoreStyleChange &&
+    restoreStyle
+  const showExpandedPhotoWorkspace =
+    showRemoveObjectsWorkspace || showRestoreStyleWorkspace
+
+  const toolbarColumnClassName = showSelectionPreview
+    ? 'md:col-start-1 lg:col-start-2 lg:row-start-1'
+    : 'md:col-start-1 lg:row-start-1'
+
+  const uploadPhotoColumnClassName = showSelectionPreview
+    ? 'md:col-start-1 lg:col-start-2 lg:row-start-2'
+    : 'md:col-start-1 lg:row-start-2'
+
+  const resultPhotoColumnClassName = showSelectionPreview
+    ? 'md:col-start-2 lg:col-start-3 lg:row-start-2'
+    : 'md:col-start-2 lg:row-start-2'
+
+  const renderStandardResultPreview = () =>
+    generatedPreview
+      ? renderPreviewCard({
+          src: generatedPreview,
+          alt: 'Generated result',
+          eyebrow: 'AI generated result',
+          title: isRemoveObjectsMode
+            ? 'Your edited photo is ready'
+            : 'Your new look is ready',
+          onPreview: () =>
+            openImagePreview({
+              src: generatedPreview,
+              alt: 'Generated result',
+              title: imageTitle || 'Generated result',
+            }),
+        })
+      : renderPreviewCard({
+          empty: true,
+          children: (
+            <div className="px-6 text-center">
+              <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-cyan-300">
+                <Sparkles size={24} />
+              </span>
+
+              <Text as="p" variant="body" color="white" caseMode="sentence">
+                Result preview
+              </Text>
+
+              <Text
+                as="p"
+                variant="caption"
+                color="muted"
+                caseMode="sentence"
+                className="mt-2 max-w-[260px]"
+              >
+                {isRemoveObjectsMode
+                  ? 'Paint the removal mask and click generate to clean your photo.'
+                  : 'Upload your photo and click generate to create your AI result.'}
+              </Text>
+            </div>
+          ),
+        })
+
+  const renderStandardUploadPhotoCard = () => {
+    if (isRemoveObjectsMode) {
+      return renderPreviewCard({
+        empty: true,
+        borderClassName: 'border-dashed border-white/15',
+        children: (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            className="group flex h-full w-full flex-col items-center justify-center p-5 text-center transition hover:bg-white/[0.035]"
+          >
+            <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-primary-soft">
+              <ImagePlus size={24} />
+            </span>
+
+            <Text as="span" variant="body" color="white" caseMode="sentence">
+              Upload your photo
+            </Text>
+
+            <Text
+              as="span"
+              variant="caption"
+              color="muted"
+              caseMode="sentence"
+              className="mt-2 max-w-[260px]"
+            >
+              Upload a photo with the object you want removed, then paint over
+              the distraction.
+            </Text>
+          </button>
+        ),
+      })
+    }
+
+    if (clientPreview) {
+      return renderPreviewCard({
+        src: clientPreview,
+        alt: 'Uploaded photo',
+        eyebrow: 'Uploaded photo',
+        title: clientFile?.name || 'Uploaded photo',
+        titleTranslate: !clientFile?.name,
+        borderClassName: 'border-dashed border-white/15',
+        onPreview: () =>
+          openImagePreview({
+            src: clientPreview,
+            alt: 'Uploaded photo',
+            title: clientFile?.name || 'Uploaded photo',
+          }),
+        action: (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={(e) => {
+              e.stopPropagation()
+              inputRef.current?.click()
+            }}
+            className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-5 hover:bg-white/[0.12]"
+          >
+            Change photo
+          </Button>
+        ),
+      })
+    }
+
+    return renderPreviewCard({
+      empty: true,
+      borderClassName: 'border-dashed border-white/15',
+      children: (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="group flex h-full w-full flex-col items-center justify-center p-5 text-center transition hover:bg-white/[0.035]"
+        >
+          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-primary-soft">
+            <ImagePlus size={24} />
+          </span>
+
+          <Text as="span" variant="body" color="white" caseMode="sentence">
+            Upload your photo
+          </Text>
+
+          <Text
+            as="span"
+            variant="caption"
+            color="muted"
+            caseMode="sentence"
+            className="mt-2 max-w-[230px]"
+          >
+            Choose a clear portrait photo for the best result.
+          </Text>
+        </button>
+      ),
+    })
+  }
+
+  const renderRemoveObjectsResultPreview = () =>
+    generatedPreview
+      ? renderPreviewCard({
+          src: generatedPreview,
+          alt: 'Generated result',
+          eyebrow: 'AI generated result',
+          title: 'Your edited photo is ready',
+          onPreview: () =>
+            openImagePreview({
+              src: generatedPreview,
+              alt: 'Generated result',
+              title: imageTitle || 'Generated result',
+            }),
+        })
+      : renderPreviewCard({
+          empty: true,
+          children: (
+            <div className="px-6 text-center">
+              <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-cyan-300">
+                <Sparkles size={24} />
+              </span>
+
+              <Text as="p" variant="body" color="white" caseMode="sentence">
+                Result preview
+              </Text>
+
+              <Text
+                as="p"
+                variant="caption"
+                color="muted"
+                caseMode="sentence"
+                className="mt-2 max-w-[260px]"
+              >
+                Paint the removal mask and click generate to clean your photo.
+              </Text>
+            </div>
+          ),
+        })
+
+  const renderRemoveObjectsMaskFrame = () => (
+    <div
+      className={`${WORKSPACE_PREVIEW_FRAME_CLASS} border-dashed border-white/15`}
+    >
+      <PhotoLabMaskEditor
+        ref={maskEditorRef}
+        imageFile={clientFile}
+        brushSize={maskBrushSize}
+        tool={maskTool}
+        paintActive={maskPaintActive}
+        onPanModeEnter={() => setMaskPaintActive(false)}
+        onFitView={() => setMaskPaintActive(true)}
+        onZoomChange={setMaskZoomState}
+        disabled={loading}
+        onHasMaskChange={setHasRemovalMask}
+        fillContainer
+        viewportPadding={0}
+        className="absolute inset-0 h-full w-full"
+      />
+
+      <div className="absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
+        <Text as="p" variant="caption" color="soft" caseMode="sentence">
+          Uploaded photo
+        </Text>
+
+        <Text
+          as="p"
+          variant="body"
+          color="white"
+          caseMode="sentence"
+          className="mt-1 line-clamp-1"
+          translate={false}
+        >
+          {clientFile?.name || 'Uploaded photo'}
+        </Text>
+
+        <div className="mt-3">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => inputRef.current?.click()}
+            disabled={loading}
+            className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-5 hover:bg-white/[0.12]"
+          >
+            Change photo
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <section className="gradient-border-card p-5 sm:p-6 lg:p-7">
@@ -597,157 +1096,108 @@ export default function AiImageWorkspace({
         </Text>
 
         <Text className="mt-3 max-w-2xl" color="muted" caseMode="sentence">
-          {workspaceDescription}
+          {resolvedWorkspaceDescription}
         </Text>
       </div>
 
       <div
         className={clsx(
-          'mb-5 grid gap-5 md:grid-cols-2',
-          showSelectionPreview ? 'lg:grid-cols-3' : 'lg:grid-cols-2',
+          'mb-5 grid items-stretch gap-5',
+          showExpandedPhotoWorkspace
+            ? clsx('grid-cols-1 md:grid-cols-2', showSelectionPreview && 'lg:grid-cols-3')
+            : clsx('md:grid-cols-2', showSelectionPreview && 'lg:grid-cols-3'),
         )}
       >
-        {showSelectionPreview ? (
-          <div className="hidden lg:block">
-            {renderPreviewCard({
-              src: template.previewUrl,
-              alt: template.title,
-              eyebrow: selectionEyebrow,
-              title: template.title,
-              description: template.category,
-              onPreview: () =>
-                openImagePreview({
-                  src: template.previewUrl,
-                  alt: template.title,
-                  title: template.title || selectionEyebrow,
-                }),
-              action:
-                onChangeRestoreStyle &&
-                (modeKey || template?.id) === RESTORE_COLORIZE_MODE ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onChangeRestoreStyle()
-                    }}
-                    className="h-[34px] rounded-full border-white/10 bg-white/[0.08] px-4 text-xs hover:bg-white/[0.12]"
-                  >
-                    Change restore type
-                  </Button>
-                ) : null,
-            })}
-          </div>
-        ) : null}
+        {showExpandedPhotoWorkspace ? (
+          <>
+            {showSelectionPreview ? (
+              <div className="hidden min-w-0 lg:col-start-1 lg:row-start-2 lg:block">
+                {renderSelectionPreviewCard({
+                  onPreview: ({ src, alt, title }) =>
+                    openImagePreview({ src, alt, title }),
+                })}
+              </div>
+            ) : null}
 
-        {clientPreview
-          ? renderPreviewCard({
-              src: clientPreview,
-              alt: 'Uploaded photo',
-              eyebrow: 'Uploaded photo',
-              title: clientFile?.name || 'Uploaded photo',
-              titleTranslate: !clientFile?.name,
-              borderClassName: 'border-dashed border-white/15',
-              onPreview: () =>
-                openImagePreview({
-                  src: clientPreview,
-                  alt: 'Uploaded photo',
-                  title: clientFile?.name || 'Uploaded photo',
-                }),
-              action: (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    inputRef.current?.click()
+            {showRemoveObjectsWorkspace ? (
+              <div
+                className={clsx('flex min-w-0 flex-col gap-3', toolbarColumnClassName)}
+              >
+                <PhotoLabMaskToolbar
+                  showTitle={false}
+                  maskEditorRef={maskEditorRef}
+                  maskTool={maskTool}
+                  onMaskToolChange={setMaskTool}
+                  maskPaintActive={maskPaintActive}
+                  onMaskPaintActiveChange={setMaskPaintActive}
+                  maskBrushSize={maskBrushSize}
+                  onMaskBrushSizeChange={setMaskBrushSize}
+                  maskZoomState={maskZoomState}
+                  disabled={loading}
+                  onClearMask={() => {
+                    setHasRemovalMask(false)
+                    setGeneratedPreview('')
                   }}
-                  className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-5 hover:bg-white/[0.12]"
-                >
-                  Change photo
-                </Button>
-              ),
-            })
-          : renderPreviewCard({
-              empty: true,
-              borderClassName: 'border-dashed border-white/15',
-              children: (
-                <button
-                  type="button"
-                  onClick={() => inputRef.current?.click()}
-                  className="group flex h-full w-full flex-col items-center justify-center p-5 text-center transition hover:bg-white/[0.035]"
-                >
-                  <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-primary-soft">
-                    <ImagePlus size={24} />
-                  </span>
+                />
 
+                {!maskPaintActive && maskZoomState.zoom > 1 ? (
                   <Text
-                    as="span"
-                    variant="body"
-                    color="white"
-                    caseMode="sentence"
-                  >
-                    Upload your photo
-                  </Text>
-
-                  <Text
-                    as="span"
+                    as="p"
                     variant="caption"
                     color="muted"
                     caseMode="sentence"
-                    className="mt-2 max-w-[230px]"
+                    className="text-center"
                   >
-                    Choose a clear portrait photo for the best result.
+                    Drag the photo to move it. Tap Brush to paint again.
                   </Text>
-                </button>
-              ),
-            })}
+                ) : null}
+              </div>
+            ) : null}
 
-        <div ref={resultRef}>
-          {generatedPreview
-            ? renderPreviewCard({
-                src: generatedPreview,
-                alt: 'Generated result',
-                eyebrow: 'AI generated result',
-                title: 'Your new look is ready',
-                onPreview: () =>
-                  openImagePreview({
-                    src: generatedPreview,
-                    alt: 'Generated result',
-                    title: imageTitle || 'Generated result',
-                  }),
-              })
-            : renderPreviewCard({
-                empty: true,
-                children: (
-                  <div className="px-6 text-center">
-                    <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-cyan-300">
-                      <Sparkles size={24} />
-                    </span>
+            {showRestoreStyleWorkspace ? (
+              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
+                <RestoreStyleToolbar
+                  restoreStyle={restoreStyle}
+                  onRestoreStyleChange={onRestoreStyleChange}
+                  disabled={loading}
+                  showTitle={false}
+                />
+              </div>
+            ) : null}
 
-                    <Text
-                      as="p"
-                      variant="body"
-                      color="white"
-                      caseMode="sentence"
-                    >
-                      Result preview
-                    </Text>
+            <div className={clsx('min-w-0', uploadPhotoColumnClassName)}>
+              {showRemoveObjectsWorkspace
+                ? renderRemoveObjectsMaskFrame()
+                : renderStandardUploadPhotoCard()}
+            </div>
 
-                    <Text
-                      as="p"
-                      variant="caption"
-                      color="muted"
-                      caseMode="sentence"
-                      className="mt-2 max-w-[260px]"
-                    >
-                      Upload your photo and click generate to create your AI
-                      result.
-                    </Text>
-                  </div>
-                ),
-              })}
-        </div>
+            <div
+              ref={resultRef}
+              className={clsx('min-w-0', resultPhotoColumnClassName)}
+            >
+              {showRemoveObjectsWorkspace
+                ? renderRemoveObjectsResultPreview()
+                : renderStandardResultPreview()}
+            </div>
+          </>
+        ) : (
+          <>
+            {showSelectionPreview ? (
+              <div className="hidden lg:block">
+                {renderSelectionPreviewCard({
+                  onPreview: ({ src, alt, title }) =>
+                    openImagePreview({ src, alt, title }),
+                })}
+              </div>
+            ) : null}
+
+            {renderStandardUploadPhotoCard()}
+
+            <div ref={resultRef} className="flex min-h-0 flex-col">
+              {renderStandardResultPreview()}
+            </div>
+          </>
+        )}
 
         <input
           ref={inputRef}
@@ -799,7 +1249,7 @@ export default function AiImageWorkspace({
         <GenerationActionCard
           generatedPreview={generatedPreview}
           loading={loading}
-          disabled={!clientFile}
+          disabled={isGenerateDisabled}
           onGenerate={handleGenerateClick}
           onDownload={handleDownloadGeneratedImage}
           planHint={planHint}
@@ -815,7 +1265,7 @@ export default function AiImageWorkspace({
           isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
           formatLockedText={lockedText}
           creditCost={creditCost}
-          {...actionCardLabels}
+          {...resolvedActionCardLabels}
         />
       </div>
 

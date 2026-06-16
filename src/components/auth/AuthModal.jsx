@@ -1,6 +1,7 @@
 'use client'
 
 import Text from '@/components/shared/text/Text'
+import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 
 export default function AuthModal({
   open,
@@ -12,7 +13,7 @@ export default function AuthModal({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 backdrop-blur-md">
+    <div className={MODAL_OVERLAY_CLASS}>
       <div className={`gradient-border-card w-full ${maxWidth} p-5 sm:p-6`}>
         {title ? (
           <Text as="h2" variant="h2" color="white" caseMode="sentence">

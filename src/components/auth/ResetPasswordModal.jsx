@@ -10,6 +10,10 @@ import { resetPassword } from '@/store/auth/auth-operations'
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
+import {
+  MODAL_BACKDROP_LAYER_CLASS,
+  MODAL_OVERLAY_ELEVATED_CLASS,
+} from '@/constants/modal-overlay'
 
 export default function ResetPasswordModal({
   open,
@@ -85,11 +89,11 @@ export default function ResetPasswordModal({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+    <div className={MODAL_OVERLAY_ELEVATED_CLASS}>
       <button
         type="button"
         aria-label="Close modal overlay"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className={MODAL_BACKDROP_LAYER_CLASS}
         onClick={onClose}
       />
 

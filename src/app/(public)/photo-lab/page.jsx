@@ -12,8 +12,6 @@ import PhotoLabShowcasePreview from '@/components/photo-lab/PhotoLabShowcasePrev
 
 import PhotoLabModes from '@/components/photo-lab/PhotoLabModes'
 
-import RestoreStyleModal from '@/components/photo-lab/RestoreStyleModal'
-
 import AiImageWorkspace from '@/components/shared/ai-image-workspace/AiImageWorkspace'
 
 import Text from '@/components/shared/text/Text'
@@ -30,68 +28,73 @@ import {
 
 } from '@/constants/restore-styles'
 
+import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { getPhotoLabTemplatesState } from '@/store/photo-lab/photo-lab-selectors'
 
 import { Sparkles } from 'lucide-react'
 
 
 
-function pickRandomTemplatePreview(modeId, templatesByMode) {
+const EMPTY_MODE_PREVIEW = { beforeUrl: '', afterUrl: '' }
 
-  const templates = (templatesByMode?.[modeId] || []).filter((item) =>
-
-    String(item?.resultImageUrl || '').trim(),
-
+function pickRandomTemplatePreviewPair(modeId, templatesByMode) {
+  const modeTemplates = templatesByMode?.[modeId] || []
+  const pairedTemplates = modeTemplates.filter(
+    (item) =>
+      String(item?.sourceImageUrl || '').trim() &&
+      String(item?.resultImageUrl || '').trim(),
   )
 
+  if (pairedTemplates.length) {
+    const randomIndex = Math.floor(Math.random() * pairedTemplates.length)
+    const template = pairedTemplates[randomIndex]
 
-
-  if (!templates.length) return ''
-
-
-
-  const randomIndex = Math.floor(Math.random() * templates.length)
-
-
-
-  return String(templates[randomIndex].resultImageUrl).trim()
-
-}
-
-
-
-function buildPhotoLabWorkspaceTemplate(mode, previewUrl = '', restoreStyle = null) {
-
-  if (!mode) return null
-
-
-
-  const category =
-
-    mode.id === RESTORE_COLORIZE_MODE && restoreStyle
-
-      ? `${mode.label} · ${getRestoreStyleMeta(restoreStyle).shortLabel}`
-
-      : mode.label
-
-
-
-  return {
-
-    id: mode.id,
-
-    title: mode.title,
-
-    category,
-
-    previewUrl,
-
-    promptPlaceholder: mode.promptPlaceholder,
-
-    promptHint: mode.promptHint,
-
+    return {
+      beforeUrl: String(template.sourceImageUrl).trim(),
+      afterUrl: String(template.resultImageUrl).trim(),
+    }
   }
 
+  const resultOnlyTemplates = modeTemplates.filter((item) =>
+    String(item?.resultImageUrl || '').trim(),
+  )
+
+  if (!resultOnlyTemplates.length) return EMPTY_MODE_PREVIEW
+
+  const randomIndex = Math.floor(Math.random() * resultOnlyTemplates.length)
+
+  return {
+    beforeUrl: '',
+    afterUrl: String(resultOnlyTemplates[randomIndex].resultImageUrl).trim(),
+  }
+}
+
+function buildPhotoLabWorkspaceTemplate(
+  mode,
+  previewPair = EMPTY_MODE_PREVIEW,
+  restoreStyle = null,
+) {
+  if (!mode) return null
+
+  const category =
+    mode.id === RESTORE_COLORIZE_MODE && restoreStyle
+      ? `${mode.label} · ${getRestoreStyleMeta(restoreStyle).shortLabel}`
+      : mode.label
+
+  const labels = getModePreviewLabels(mode.id)
+
+  return {
+    id: mode.id,
+    title: mode.title,
+    category,
+    previewUrl: previewPair.afterUrl,
+    beforePreviewUrl: previewPair.beforeUrl,
+    afterPreviewUrl: previewPair.afterUrl,
+    beforePreviewLabel: labels.before,
+    afterPreviewLabel: labels.after,
+    promptPlaceholder: mode.promptPlaceholder,
+    promptHint: mode.promptHint,
+  }
 }
 
 
@@ -100,11 +103,9 @@ export default function PhotoLabPage() {
 
   const [selectedModeId, setSelectedModeId] = useState(null)
 
-  const [selectedModePreviewUrl, setSelectedModePreviewUrl] = useState('')
+  const [selectedModePreview, setSelectedModePreview] = useState(EMPTY_MODE_PREVIEW)
 
   const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
-
-  const [restoreStyleModalOpen, setRestoreStyleModalOpen] = useState(false)
 
   const workspaceRef = useRef(null)
 
@@ -123,38 +124,25 @@ export default function PhotoLabPage() {
     () =>
 
       buildPhotoLabWorkspaceTemplate(
-
         selectedMode,
-
-        selectedModePreviewUrl,
-
+        selectedModePreview,
         selectedModeId === RESTORE_COLORIZE_MODE ? restoreStyle : null,
-
       ),
-
-    [selectedMode, selectedModePreviewUrl, selectedModeId, restoreStyle],
-
+    [selectedMode, selectedModePreview, selectedModeId, restoreStyle],
   )
 
-
-
   useEffect(() => {
+    if (!selectedModeId || selectedModePreview.afterUrl) return
 
-    if (!selectedModeId || selectedModePreviewUrl) return
+    const previewPair = pickRandomTemplatePreviewPair(
+      selectedModeId,
+      templatesByMode,
+    )
 
-
-
-    const previewUrl = pickRandomTemplatePreview(selectedModeId, templatesByMode)
-
-
-
-    if (previewUrl) {
-
-      setSelectedModePreviewUrl(previewUrl)
-
+    if (previewPair.afterUrl) {
+      setSelectedModePreview(previewPair)
     }
-
-  }, [selectedModeId, selectedModePreviewUrl, templatesByMode])
+  }, [selectedModeId, selectedModePreview.afterUrl, templatesByMode])
 
 
 
@@ -178,72 +166,16 @@ export default function PhotoLabPage() {
 
 
 
-  const activateRestoreMode = (styleId) => {
-
-    setRestoreStyle(styleId)
-
-    setSelectedModeId(RESTORE_COLORIZE_MODE)
-
-    setSelectedModePreviewUrl(
-
-      pickRandomTemplatePreview(RESTORE_COLORIZE_MODE, templatesByMode),
-
-    )
-
-
-
-    requestAnimationFrame(() => {
-
-      scrollToWorkspace()
-
-    })
-
-  }
-
-
-
   const handleSelectMode = (modeId) => {
-
-    if (modeId === RESTORE_COLORIZE_MODE) {
-
-      setRestoreStyleModalOpen(true)
-
-      return
-
-    }
-
-
-
     setSelectedModeId(modeId)
 
-    setSelectedModePreviewUrl(pickRandomTemplatePreview(modeId, templatesByMode))
-
-
+    setSelectedModePreview(
+      pickRandomTemplatePreviewPair(modeId, templatesByMode),
+    )
 
     requestAnimationFrame(() => {
-
       scrollToWorkspace()
-
     })
-
-  }
-
-
-
-  const handleRestoreStyleSelect = (styleId) => {
-
-    setRestoreStyleModalOpen(false)
-
-    activateRestoreMode(styleId)
-
-  }
-
-
-
-  const handleRestoreStyleModalClose = () => {
-
-    setRestoreStyleModalOpen(false)
-
   }
 
 
@@ -336,14 +268,8 @@ export default function PhotoLabPage() {
 
           }
 
-          onChangeRestoreStyle={
-
-            selectedModeId === RESTORE_COLORIZE_MODE
-
-              ? () => setRestoreStyleModalOpen(true)
-
-              : null
-
+          onRestoreStyleChange={
+            selectedModeId === RESTORE_COLORIZE_MODE ? setRestoreStyle : null
           }
 
           emptyStateTitle="Edit your photo"
@@ -373,18 +299,6 @@ export default function PhotoLabPage() {
         />
 
       </div>
-
-
-
-      <RestoreStyleModal
-
-        open={restoreStyleModalOpen}
-
-        onSelect={handleRestoreStyleSelect}
-
-        onClose={handleRestoreStyleModalClose}
-
-      />
 
     </div>
 

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
+import { MODAL_OVERLAY_ELEVATED_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
 
 import { editUser, deleteUser } from '@/store/auth/auth-operations'
@@ -508,7 +509,7 @@ export default function SettingsPage() {
       </form>
 
       {isDeleteModalOpen ? (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 px-4">
+        <div className={MODAL_OVERLAY_ELEVATED_CLASS}>
           <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-background p-5 shadow-2xl sm:p-6">
             <Text as="h3" variant="h3" color="white" caseMode="sentence">
               Delete profile?

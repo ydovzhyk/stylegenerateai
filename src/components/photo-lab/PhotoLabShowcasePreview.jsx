@@ -8,6 +8,7 @@ import { Trash2, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
 import { getPhotoLabTemplates, deletePhotoLabTemplate } from '@/store/photo-lab/photo-lab-operations'
@@ -623,7 +624,7 @@ export default function PhotoLabShowcasePreview() {
       />
 
       {templateToDelete ? (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+        <div className={MODAL_OVERLAY_CLASS}>
           <div className="w-full max-w-[420px] rounded-[24px] border border-white/10 bg-[#10121a] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.45)]">
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>

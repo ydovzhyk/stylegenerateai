@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Minus, Plus, RotateCcw } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
+import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 
 const MIN_ZOOM = 1
 const MAX_ZOOM = 3
@@ -167,7 +168,7 @@ export default function ImagePreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-background/35 backdrop-blur-md"
+      className={MODAL_OVERLAY_CLASS}
       onClick={onClose}
     >
       <div
