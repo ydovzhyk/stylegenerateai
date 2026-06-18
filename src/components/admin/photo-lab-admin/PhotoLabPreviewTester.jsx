@@ -1146,6 +1146,11 @@ export default function PhotoLabPreviewTester() {
 
               {isRemoveObjectsMode ? (
                 <PhotoLabMaskEditor
+                  key={
+                    mainSourceFile
+                      ? `${mainSourceFile.name}-${mainSourceFile.lastModified}-${mainSourceFile.size}`
+                      : 'no-file'
+                  }
                   ref={maskEditorRef}
                   imageFile={mainSourceFile}
                   brushSize={maskBrushSize}

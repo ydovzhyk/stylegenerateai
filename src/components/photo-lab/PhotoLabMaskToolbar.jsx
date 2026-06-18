@@ -37,7 +37,7 @@ export const DEFAULT_MASK_ZOOM_STATE = {
 
 export const MASK_TOOL_HINTS = {
   brush:
-    'Paint the area you want to remove. The red overlay marks the removal region.',
+    'Draw a tight closed outline around only the object to remove, then release to fill. Use the eraser to exclude railings, shadows, and ground you want to keep.',
   eraser: 'Erase painted mask strokes to keep those areas unchanged.',
   clearMask: 'Remove the entire painted mask and start over.',
 }

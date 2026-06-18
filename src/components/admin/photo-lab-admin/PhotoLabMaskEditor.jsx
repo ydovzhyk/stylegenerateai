@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react'
@@ -88,39 +89,97 @@ function maskHasEditableRegion(maskCanvas) {
   return false
 }
 
+function subsampleStrokePoints(strokePoints, maxPoints = 64) {
+  if (strokePoints.length <= maxPoints) {
+    return strokePoints
+  }
+
+  const step = Math.ceil(strokePoints.length / maxPoints)
+
+  return strokePoints.filter((_, index) => index % step === 0)
+}
+
+function fillStrokeInteriorOnMask(maskCtx, strokePoints, brushRadius) {
+  if (strokePoints.length < 3) return false
+
+  const first = strokePoints[0]
+  const last = strokePoints[strokePoints.length - 1]
+  const closureDistance = Math.max(brushRadius * 12, 64)
+
+  if (
+    Math.hypot(last.maskX - first.maskX, last.maskY - first.maskY) >
+    closureDistance
+  ) {
+    return false
+  }
+
+  const path = new Path2D()
+  const points = subsampleStrokePoints(strokePoints, 150)
+
+  path.moveTo(points[0].maskX, points[0].maskY)
+
+  for (let index = 1; index < points.length; index += 1) {
+    path.lineTo(points[index].maskX, points[index].maskY)
+  }
+
+  path.closePath()
+
+  maskCtx.save()
+  maskCtx.globalCompositeOperation = 'destination-out'
+  maskCtx.fillStyle = '#000000'
+  maskCtx.lineWidth = Math.max(brushRadius * 2, brushRadius + 2)
+  maskCtx.lineCap = 'round'
+  maskCtx.lineJoin = 'round'
+  maskCtx.stroke(path)
+  maskCtx.fill(path, 'nonzero')
+  maskCtx.restore()
+
+  return true
+}
+
+function tryAutoFillStrokeRegion(maskCanvas, strokePoints, brushRadius) {
+  const maskCtx = maskCanvas.getContext('2d')
+
+  if (!maskCtx) return false
+
+  return fillStrokeInteriorOnMask(maskCtx, strokePoints, brushRadius)
+}
+
+const MIN_VIEWPORT_DIMENSION = 16
+
 function redrawDisplayFromMask(displayCanvas, maskCanvas) {
   const displayCtx = displayCanvas.getContext('2d')
   const maskCtx = maskCanvas.getContext('2d')
 
   if (!displayCtx || !maskCtx) return
 
-  displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height)
+  const displayWidth = displayCanvas.width
+  const displayHeight = displayCanvas.height
+  const maskWidth = maskCanvas.width
+  const maskHeight = maskCanvas.height
 
-  const tempCanvas = document.createElement('canvas')
-  tempCanvas.width = displayCanvas.width
-  tempCanvas.height = displayCanvas.height
+  if (!displayWidth || !displayHeight || !maskWidth || !maskHeight) {
+    return
+  }
 
-  const tempCtx = tempCanvas.getContext('2d')
+  displayCtx.clearRect(0, 0, displayWidth, displayHeight)
 
-  if (!tempCtx) return
+  const maskData = maskCtx.getImageData(0, 0, maskWidth, maskHeight)
+  const scaleX = maskWidth / displayWidth
+  const scaleY = maskHeight / displayHeight
 
-  tempCtx.drawImage(
-    maskCanvas,
-    0,
-    0,
-    tempCanvas.width,
-    tempCanvas.height,
-  )
-
-  const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height)
   displayCtx.fillStyle = 'rgba(255, 70, 70, 0.55)'
 
-  for (let index = 0; index < imageData.data.length; index += 4) {
-    if (imageData.data[index + 3] < 250) {
-      const pixelIndex = index / 4
-      const x = pixelIndex % tempCanvas.width
-      const y = Math.floor(pixelIndex / tempCanvas.width)
-      displayCtx.fillRect(x, y, 1, 1)
+  for (let displayY = 0; displayY < displayHeight; displayY += 1) {
+    const maskY = Math.min(maskHeight - 1, Math.floor(displayY * scaleY))
+
+    for (let displayX = 0; displayX < displayWidth; displayX += 1) {
+      const maskX = Math.min(maskWidth - 1, Math.floor(displayX * scaleX))
+      const alpha = maskData.data[(maskY * maskWidth + maskX) * 4 + 3]
+
+      if (alpha < 250) {
+        displayCtx.fillRect(displayX, displayY, 1, 1)
+      }
     }
   }
 }
@@ -157,6 +216,7 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
   })
   const isDrawingRef = useRef(false)
   const lastPointRef = useRef(null)
+  const currentStrokeRef = useRef(null)
   const activePointerIdRef = useRef(null)
   const dragStateRef = useRef({
     active: false,
@@ -175,7 +235,8 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
 
   const canPan = zoom > MIN_ZOOM
   const isPanMode = canPan && !paintActive
-  const canPaint = paintActive
+  const canPaint = paintActive && tool === 'brush'
+  const canErase = paintActive && tool === 'eraser'
 
   const updateHasMask = useCallback(
     (nextValue) => {
@@ -289,22 +350,38 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     const image = imageRef.current
     const displayCanvas = displayCanvasRef.current
 
-    if (!viewport || !image || !displayCanvas) return
-    if (!image.naturalWidth || !image.naturalHeight) return
+    if (!viewport || !image || !displayCanvas) return false
+    if (!image.naturalWidth || !image.naturalHeight) return false
 
     const viewportWidth = viewport.clientWidth
     const viewportHeight = viewport.clientHeight
+
+    if (
+      viewportWidth < MIN_VIEWPORT_DIMENSION ||
+      viewportHeight < MIN_VIEWPORT_DIMENSION
+    ) {
+      return false
+    }
+
     const naturalWidth = image.naturalWidth
     const naturalHeight = image.naturalHeight
     const fitScale = Math.min(
       (viewportWidth - viewportPadding) / naturalWidth,
       (viewportHeight - viewportPadding) / naturalHeight,
     )
+
+    if (!Number.isFinite(fitScale) || fitScale <= 0) {
+      return false
+    }
+
     const width = Math.max(1, Math.round(naturalWidth * fitScale))
     const height = Math.max(1, Math.round(naturalHeight * fitScale))
     const previousLayout = layoutRef.current
     const sizeChanged =
       previousLayout.width !== width || previousLayout.height !== height
+    const naturalSizeChanged =
+      previousLayout.naturalWidth !== naturalWidth ||
+      previousLayout.naturalHeight !== naturalHeight
 
     layoutRef.current = {
       width,
@@ -324,29 +401,57 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     if (sizeChanged) {
       displayCanvas.width = width
       displayCanvas.height = height
-
-      if (
-        !maskCanvasRef.current?.width ||
-        maskCanvasRef.current.width !== naturalWidth ||
-        maskCanvasRef.current.height !== naturalHeight
-      ) {
-        initializeMaskCanvas(naturalWidth, naturalHeight)
-        clearDisplayCanvas()
-      } else if (maskCanvasRef.current) {
-        redrawDisplayFromMask(displayCanvas, maskCanvasRef.current)
-      }
     }
 
     if (
+      naturalSizeChanged ||
       !maskCanvasRef.current?.width ||
       maskCanvasRef.current.width !== naturalWidth ||
       maskCanvasRef.current.height !== naturalHeight
     ) {
       initializeMaskCanvas(naturalWidth, naturalHeight)
+      clearDisplayCanvas()
+    } else     if (maskCanvasRef.current && maskHasEditableRegion(maskCanvasRef.current)) {
+      redrawDisplayFromMask(displayCanvas, maskCanvasRef.current)
     }
 
-    setPan((current) => clampPan(current, zoom))
+    setPan((current) => {
+      const nextPan = clampPan(current, zoom)
+
+      if (nextPan.x === current.x && nextPan.y === current.y) {
+        return current
+      }
+
+      return nextPan
+    })
+
+    return true
   }, [clampPan, clearDisplayCanvas, initializeMaskCanvas, viewportPadding, zoom])
+
+  const ensureLayoutReady = useCallback(() => {
+    if (measureLayout()) {
+      return true
+    }
+
+    const image = imageRef.current
+
+    if (image?.complete && image.naturalWidth > 0 && image.naturalHeight > 0) {
+      return measureLayout()
+    }
+
+    return false
+  }, [measureLayout])
+
+  const assignImageRef = useCallback(
+    (node) => {
+      imageRef.current = node
+
+      if (node?.complete && node.naturalWidth > 0 && node.naturalHeight > 0) {
+        measureLayout()
+      }
+    },
+    [measureLayout],
+  )
 
   useEffect(() => {
     if (!imageFile) {
@@ -357,6 +462,14 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     }
 
     const nextUrl = URL.createObjectURL(imageFile)
+    layoutRef.current = {
+      width: 0,
+      height: 0,
+      naturalWidth: 0,
+      naturalHeight: 0,
+      scaleX: 1,
+      scaleY: 1,
+    }
     setImageUrl(nextUrl)
     resetView()
 
@@ -365,6 +478,12 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     }
   }, [imageFile, resetView, updateHasMask])
 
+  useLayoutEffect(() => {
+    if (!imageUrl) return
+
+    ensureLayoutReady()
+  }, [ensureLayoutReady, imageUrl])
+
   useEffect(() => {
     if (!imageUrl) return
 
@@ -372,10 +491,10 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
 
     if (!viewport) return
 
-    measureLayout()
-
     const resizeObserver = new ResizeObserver(() => {
-      measureLayout()
+      if (isDrawingRef.current) return
+
+      ensureLayoutReady()
     })
 
     resizeObserver.observe(viewport)
@@ -383,7 +502,7 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     return () => {
       resizeObserver.disconnect()
     }
-  }, [imageUrl, measureLayout])
+  }, [ensureLayoutReady, imageUrl])
 
   useEffect(() => {
     if (!isPanMode || !canPan) return
@@ -426,7 +545,14 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
       const displayCanvas = displayCanvasRef.current
       const layout = layoutRef.current
 
-      if (!displayCanvas || !layout.scaleX) return null
+      if (
+        !displayCanvas ||
+        !layout.naturalWidth ||
+        !layout.naturalHeight ||
+        layout.width < MIN_VIEWPORT_DIMENSION
+      ) {
+        return null
+      }
 
       const rect = displayCanvas.getBoundingClientRect()
 
@@ -467,6 +593,17 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
 
       if (!displayCanvas || !maskCanvas || !point) return
 
+      const layout = layoutRef.current
+
+      if (
+        !layout.naturalWidth ||
+        !layout.naturalHeight ||
+        maskCanvas.width !== layout.naturalWidth ||
+        maskCanvas.height !== layout.naturalHeight
+      ) {
+        return
+      }
+
       const displayCtx = displayCanvas.getContext('2d')
       const maskCtx = maskCanvas.getContext('2d')
 
@@ -493,6 +630,7 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
           ? lastPoint.maskY + (point.maskY - lastPoint.maskY) * ratio
           : point.maskY
 
+        drawMaskStroke(maskCtx, maskX, maskY, point.maskRadius, tool)
         drawVisualStroke(
           displayCtx,
           displayX,
@@ -500,7 +638,18 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
           point.displayRadius,
           tool,
         )
-        drawMaskStroke(maskCtx, maskX, maskY, point.maskRadius, tool)
+
+        if (tool === 'brush' && currentStrokeRef.current) {
+          const strokePoints = currentStrokeRef.current.points
+          const previousPoint = strokePoints[strokePoints.length - 1]
+
+          if (
+            !previousPoint ||
+            Math.hypot(maskX - previousPoint.maskX, maskY - previousPoint.maskY) > 0.5
+          ) {
+            strokePoints.push({ maskX, maskY })
+          }
+        }
       }
 
       lastPointRef.current = point
@@ -509,11 +658,36 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     [syncHasMaskFromCanvas, tool],
   )
 
+  const finalizeBrushStroke = useCallback(() => {
+    const displayCanvas = displayCanvasRef.current
+    const maskCanvas = maskCanvasRef.current
+    const stroke = currentStrokeRef.current
+
+    if (
+      tool !== 'brush' ||
+      !displayCanvas ||
+      !maskCanvas ||
+      !stroke?.points?.length
+    ) {
+      currentStrokeRef.current = null
+      return
+    }
+
+    tryAutoFillStrokeRegion(maskCanvas, stroke.points, stroke.brushRadius)
+
+    currentStrokeRef.current = null
+    redrawDisplayFromMask(displayCanvas, maskCanvas)
+    syncHasMaskFromCanvas()
+  }, [syncHasMaskFromCanvas, tool])
+
   const handleCanvasPointerDown = (event) => {
-    if (disabled || !canPaint) return
+    if (disabled || (!canPaint && !canErase)) return
+
+    if (!ensureLayoutReady()) return
 
     event.preventDefault()
     event.stopPropagation()
+
     isDrawingRef.current = true
     lastPointRef.current = null
     activePointerIdRef.current = event.pointerId
@@ -522,13 +696,22 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
     const point = getPointerPosition(event)
 
     if (point) {
+      if (tool === 'brush') {
+        currentStrokeRef.current = {
+          points: [{ maskX: point.maskX, maskY: point.maskY }],
+          brushRadius: point.maskRadius,
+        }
+      } else {
+        currentStrokeRef.current = null
+      }
+
       paintStroke(point)
     }
   }
 
   const handleCanvasPointerMove = (event) => {
     if (
-      !canPaint ||
+      (!canPaint && !canErase) ||
       !isDrawingRef.current ||
       disabled ||
       activePointerIdRef.current !== event.pointerId
@@ -555,6 +738,18 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
 
     if (event?.pointerId != null) {
       displayCanvasRef.current?.releasePointerCapture(event.pointerId)
+    }
+
+    if (isDrawingRef.current) {
+      const displayCanvas = displayCanvasRef.current
+      const maskCanvas = maskCanvasRef.current
+
+      if (tool === 'brush') {
+        finalizeBrushStroke()
+      } else if (tool === 'eraser' && displayCanvas && maskCanvas) {
+        redrawDisplayFromMask(displayCanvas, maskCanvas)
+        syncHasMaskFromCanvas()
+      }
     }
 
     isDrawingRef.current = false
@@ -669,7 +864,7 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
               ? isDragging
                 ? 'cursor-grabbing'
                 : 'cursor-grab'
-              : canPaint
+              : canPaint || canErase
                 ? 'cursor-crosshair'
                 : 'cursor-default',
           )}
@@ -685,10 +880,10 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
               }}
             >
               <img
-                ref={imageRef}
+                ref={assignImageRef}
                 src={imageUrl}
                 alt="Mask editor source"
-                onLoad={measureLayout}
+                onLoad={ensureLayoutReady}
                 className="pointer-events-none block max-w-none select-none"
                 draggable={false}
               />
@@ -696,7 +891,7 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
               <canvas
                 ref={displayCanvasRef}
                 className={`absolute left-0 top-0 touch-none select-none ${
-                  disabled || !canPaint
+                  disabled || (!canPaint && !canErase)
                     ? 'pointer-events-none opacity-100'
                     : 'pointer-events-auto'
                 } ${disabled ? 'opacity-60' : ''}`}
@@ -714,10 +909,8 @@ const PhotoLabMaskEditor = forwardRef(function PhotoLabMaskEditor(
 
       <canvas
         ref={maskCanvasRef}
-        hidden
         aria-hidden="true"
-        className="pointer-events-none"
-        style={{ display: 'none' }}
+        className="pointer-events-none fixed left-[-10000px] top-0 opacity-0"
       />
     </div>
   )

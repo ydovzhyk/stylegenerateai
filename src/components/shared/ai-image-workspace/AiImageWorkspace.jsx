@@ -1042,6 +1042,11 @@ export default function AiImageWorkspace({
       className={`${WORKSPACE_PREVIEW_FRAME_CLASS} border-dashed border-white/15`}
     >
       <PhotoLabMaskEditor
+        key={
+          clientFile
+            ? `${clientFile.name}-${clientFile.lastModified}-${clientFile.size}`
+            : 'no-file'
+        }
         ref={maskEditorRef}
         imageFile={clientFile}
         brushSize={maskBrushSize}
