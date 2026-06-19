@@ -56,14 +56,15 @@ export const PHOTO_LAB_MODES = [
     title: 'Remove Objects',
     label: 'Clean distractions',
     description:
-      'Remove unwanted objects, people, background distractions, or visual noise from your photo.',
+      'Remove unwanted objects or distractions. Paint a mask, describe what to remove, or both.',
     icon: Eraser,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: remove the person in the background, clean the table clutter.',
+      'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...',
     promptHint:
-      'Optional. Tell us what to remove or clean — the mode handles the rest.',
-    uploadHint: 'Upload a photo with the object you want removed.',
+      'Paint a mask, enter a prompt, or both. Required if no mask is painted.',
+    uploadHint:
+      'Upload a photo, then paint a mask and/or describe what to remove.',
   },
   {
     id: 'enhance_quality',

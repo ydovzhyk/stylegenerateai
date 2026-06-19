@@ -296,15 +296,14 @@ export default function AiImageWorkspace({
     e.target.value = ''
   }
 
+  const trimmedExtraPrompt = String(extraPrompt || '').trim()
+  const canRunRemoveObjects = hasRemovalMask || Boolean(trimmedExtraPrompt)
+
   const runGeneration = async (presetOverride) => {
     if (!clientFile || !template?.id) return
 
-    if (isRemoveObjectsMode) {
-      const maskBlob = await maskEditorRef.current?.exportMask()
-
-      if (!maskBlob) {
-        return
-      }
+    if (isRemoveObjectsMode && !canRunRemoveObjects) {
+      return
     }
 
     const activePreset = presetOverride || modelPreset || DEFAULT_MODEL_PRESET
@@ -357,8 +356,11 @@ export default function AiImageWorkspace({
         }
 
         if (isRemoveObjectsMode) {
-          const maskBlob = await maskEditorRef.current.exportMask()
-          formData.append('mask', maskBlob, 'photo-lab-mask.png')
+          const maskBlob = await maskEditorRef.current?.exportMask()
+
+          if (maskBlob) {
+            formData.append('mask', maskBlob, 'photo-lab-mask.png')
+          }
         }
 
         const result = await dispatch(
@@ -476,7 +478,7 @@ export default function AiImageWorkspace({
 
   const handleGenerateClick = () => {
     if (!clientFile || !template?.id) return
-    if (isRemoveObjectsMode && !hasRemovalMask) return
+    if (isRemoveObjectsMode && !canRunRemoveObjects) return
 
     if (shouldOfferCloserPreset) {
       setCloserPresetModalOpen(true)
@@ -715,24 +717,31 @@ export default function AiImageWorkspace({
     )
   }
 
-  const resolvedPromptPlaceholder =
-    template?.promptPlaceholder || promptPlaceholder
+  const resolvedPromptLabel = isRemoveObjectsMode
+    ? 'Additional prompt'
+    : promptLabel
 
-  const resolvedPromptHint = template?.promptHint || promptHint
+  const resolvedPromptPlaceholder = isRemoveObjectsMode
+    ? "Optional with a mask. Or prompt-only: remove the seagulls near the man's feet..."
+    : template?.promptPlaceholder || promptPlaceholder
+
+  const resolvedPromptHint = isRemoveObjectsMode
+    ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
+    : template?.promptHint || promptHint
 
   const resolvedWorkspaceDescription = isRemoveObjectsMode
-    ? 'Upload your photo, paint over the distraction you want removed, optionally add a short note, then generate.'
+    ? 'Upload your photo, paint a mask, describe what to remove, or both — then generate.'
     : workspaceDescription
 
   const isGenerateDisabled =
-    !clientFile || (isRemoveObjectsMode && !hasRemovalMask)
+    !clientFile || (isRemoveObjectsMode && !canRunRemoveObjects)
 
   const resolvedActionCardLabels = {
     ...actionCardLabels,
     descriptionDisabled: isRemoveObjectsMode
       ? !clientFile
         ? 'Upload your photo first to continue.'
-        : 'Paint the distraction you want removed before generating.'
+        : 'Paint a removal mask, add a prompt, or both before generating.'
       : actionCardLabels.descriptionDisabled,
   }
 
@@ -896,7 +905,7 @@ export default function AiImageWorkspace({
                 className="mt-2 max-w-[260px]"
               >
                 {isRemoveObjectsMode
-                  ? 'Paint the removal mask and click generate to clean your photo.'
+                  ? 'Paint a mask, add a prompt, or both, then click generate.'
                   : 'Upload your photo and click generate to create your AI result.'}
               </Text>
             </div>
@@ -929,8 +938,7 @@ export default function AiImageWorkspace({
               caseMode="sentence"
               className="mt-2 max-w-[260px]"
             >
-              Upload a photo with the object you want removed, then paint over
-              the distraction.
+              Upload a photo, then paint a mask and/or describe what to remove.
             </Text>
           </button>
         ),
@@ -1031,7 +1039,7 @@ export default function AiImageWorkspace({
                 caseMode="sentence"
                 className="mt-2 max-w-[260px]"
               >
-                Paint the removal mask and click generate to clean your photo.
+                Paint a mask, add a prompt, or both, then click generate.
               </Text>
             </div>
           ),
@@ -1218,7 +1226,7 @@ export default function AiImageWorkspace({
           <Input
             as="textarea"
             rows={5}
-            label={promptLabel}
+            label={resolvedPromptLabel}
             placeholder={resolvedPromptPlaceholder}
             hint={resolvedPromptHint}
             value={extraPrompt}

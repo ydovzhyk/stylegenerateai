@@ -457,8 +457,10 @@ export default function PhotoLabPreviewTester() {
     if (isRemoveObjectsMode) {
       const maskBlob = await maskEditorRef.current?.exportMask()
 
-      if (!maskBlob) {
-        setError('Paint the area you want to remove before generating')
+      if (!maskBlob && !normalizedAdditionalPrompt) {
+        setError(
+          'Paint a removal mask, add a prompt, or both before generating',
+        )
         return
       }
     }
@@ -485,8 +487,11 @@ export default function PhotoLabPreviewTester() {
       })
 
       if (isRemoveObjectsMode) {
-        const maskBlob = await maskEditorRef.current.exportMask()
-        formData.append('mask', maskBlob, 'photo-lab-mask.png')
+        const maskBlob = await maskEditorRef.current?.exportMask()
+
+        if (maskBlob) {
+          formData.append('mask', maskBlob, 'photo-lab-mask.png')
+        }
       }
 
       const data = await dispatch(
@@ -583,7 +588,7 @@ export default function PhotoLabPreviewTester() {
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
               : isRemoveObjectsMode
-                ? 'Remove Objects uses one uploaded photo and a painted mask. Mark the distraction you want removed, optionally add a short prompt, then generate.'
+                ? 'Remove Objects uses one uploaded photo. Paint a mask, describe what to remove, or both — at least one is required.'
                 : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
       </div>
@@ -1090,7 +1095,7 @@ export default function PhotoLabPreviewTester() {
                       : isRestoreColorizeMode
                         ? 'This uploaded old photo will be restored and used as the before image when saving a showcase template.'
                         : isRemoveObjectsMode
-                          ? 'Paint over the object or distraction you want removed. The red overlay is only a guide; the server receives a precise PNG mask.'
+                          ? 'Paint over the object or distraction you want removed. The red overlay is only a guide; the server receives a precise PNG mask. You can also skip the mask and describe what to remove in the prompt below.'
                           : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
                   </Text>
 
@@ -1366,10 +1371,14 @@ export default function PhotoLabPreviewTester() {
                 isEnhanceQualityMode
                   ? 'Optional: sharpen details, improve lighting, reduce noise, preserve face identity...'
                   : isRemoveObjectsMode
-                    ? 'Optional: remove the street sign, trash bin, person in background...'
+                    ? 'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...'
                     : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
               }
-              hint="Optional. This will be combined with the server-side Photo Lab prompt."
+              hint={
+                isRemoveObjectsMode
+                  ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
+                  : 'Optional. This will be combined with the server-side Photo Lab prompt.'
+              }
               caseMode="sentence"
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}
@@ -1484,7 +1493,9 @@ export default function PhotoLabPreviewTester() {
                   isGenerating ||
                   isSavingTemplate ||
                   (requiresUploadedSource && !mainSourceFile) ||
-                  (isRemoveObjectsMode && !hasRemovalMask)
+                  (isRemoveObjectsMode &&
+                    !hasRemovalMask &&
+                    !String(additionalPrompt || '').trim())
                 }
                 fullWidth
                 className="w-auto"
