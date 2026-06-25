@@ -30,6 +30,7 @@ import {
   CLIENT_MODEL_PRESET_IDS,
   DEFAULT_MODEL_PRESET,
   getClientPresetMeta,
+  resolveDefaultModelPreset,
 } from '@/constants/model-presets'
 
 export function getLockedText({ planKey, isLogin, lockedReason }) {
@@ -150,19 +151,31 @@ export default function useGenerationPlanAccess({
       : Object.keys(GENERATED_IMAGE_FORMATS)
   }, [planOptions.options])
 
-  const defaultPhotoQuality = allowedQualities.includes('draft')
-    ? 'draft'
-    : allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
+  const defaultPhotoQuality = useMemo(() => {
+    if (
+      modeKey === 'enhance_quality' &&
+      allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
+    ) {
+      return DEFAULT_PHOTO_QUALITY
+    }
+
+    if (allowedQualities.includes('draft')) {
+      return 'draft'
+    }
+
+    return allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
       ? DEFAULT_PHOTO_QUALITY
       : allowedQualities[0] || DEFAULT_PHOTO_QUALITY
+  }, [allowedQualities, modeKey])
 
   const defaultOutputFormat = allowedFormats.includes(DEFAULT_OUTPUT_FORMAT)
     ? DEFAULT_OUTPUT_FORMAT
     : allowedFormats[0] || DEFAULT_OUTPUT_FORMAT
 
-  const defaultModelPreset = allowedModelPresets.includes(DEFAULT_MODEL_PRESET)
-    ? DEFAULT_MODEL_PRESET
-    : allowedModelPresets[0] || DEFAULT_MODEL_PRESET
+  const defaultModelPreset = resolveDefaultModelPreset(
+    modeKey,
+    allowedModelPresets,
+  )
 
   const [selectedOutputFormat, setSelectedOutputFormat] = useState(
     defaultOutputFormat,

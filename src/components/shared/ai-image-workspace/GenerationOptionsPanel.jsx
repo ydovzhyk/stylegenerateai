@@ -44,6 +44,7 @@ export default function GenerationOptionsPanel({
   isModelPresetAllowed,
   promptLabel = 'Additional prompt',
   promptPlaceholder = 'Add small details, mood, colors, or background...',
+  photoQualityLabel = 'Photo quality',
 }) {
   const columns =
     showOutputFormat && showPhotoQuality ? 'md:grid-cols-2' : 'md:grid-cols-1'
@@ -110,7 +111,7 @@ export default function GenerationOptionsPanel({
           {showPhotoQuality ? (
             <div>
               <Text className="mb-2" variant="caption">
-                Photo quality
+                {photoQualityLabel}
               </Text>
 
               <div className="grid gap-2">

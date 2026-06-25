@@ -41,6 +41,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 const DEFAULT_ACTION_CARD_LABELS = {}
 const REMOVE_OBJECTS_MODE = 'remove_objects'
+const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const WORKSPACE_PREVIEW_FRAME_CLASS =
   'group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5]'
 
@@ -102,6 +103,8 @@ export default function AiImageWorkspace({
   const activeModeId = modeKey || template?.id || ''
   const isRemoveObjectsMode =
     isPhotoLab && activeModeId === REMOVE_OBJECTS_MODE
+  const isEnhanceQualityMode =
+    isPhotoLab && activeModeId === ENHANCE_QUALITY_MODE
   const isRestoreColorizeMode =
     isPhotoLab && activeModeId === RESTORE_COLORIZE_MODE
 
@@ -731,7 +734,9 @@ export default function AiImageWorkspace({
 
   const resolvedWorkspaceDescription = isRemoveObjectsMode
     ? 'Upload your photo, paint a mask, describe what to remove, or both — then generate.'
-    : workspaceDescription
+    : isEnhanceQualityMode
+      ? 'Upload your photo, choose likeness and export size, then generate a cleaner version of the same photo.'
+      : workspaceDescription
 
   const isGenerateDisabled =
     !clientFile || (isRemoveObjectsMode && !canRunRemoveObjects)
@@ -1238,26 +1243,42 @@ export default function AiImageWorkspace({
           />
         </div>
 
-        <GenerationOptionsPanel
-          extraPrompt={extraPrompt}
-          setExtraPrompt={setExtraPrompt}
-          outputFormat={outputFormat}
-          setOutputFormat={setOutputFormat}
-          photoQuality={photoQuality}
-          setPhotoQuality={setPhotoQuality}
-          outputFormats={outputFormats}
-          photoQualities={photoQualities}
-          isFormatAllowed={isFormatAllowed}
-          isQualityAllowed={isQualityAllowed}
-          lockedText={lockedText}
-          showPrompt={false}
-          showOutputFormat={showOutputFormat}
-          showModelPreset={showModelPreset}
-          modelPreset={modelPreset}
-          setModelPreset={setModelPreset}
-          modelPresets={modelPresets}
-          isModelPresetAllowed={isModelPresetAllowed}
-        />
+        <div className="flex flex-col gap-3">
+          <GenerationOptionsPanel
+            extraPrompt={extraPrompt}
+            setExtraPrompt={setExtraPrompt}
+            outputFormat={outputFormat}
+            setOutputFormat={setOutputFormat}
+            photoQuality={photoQuality}
+            setPhotoQuality={setPhotoQuality}
+            outputFormats={outputFormats}
+            photoQualities={photoQualities}
+            isFormatAllowed={isFormatAllowed}
+            isQualityAllowed={isQualityAllowed}
+            lockedText={lockedText}
+            showPrompt={false}
+            showOutputFormat={showOutputFormat}
+            showModelPreset={showModelPreset}
+            modelPreset={modelPreset}
+            setModelPreset={setModelPreset}
+            modelPresets={modelPresets}
+            isModelPresetAllowed={isModelPresetAllowed}
+            photoQualityLabel="Export size"
+          />
+
+          {isEnhanceQualityMode && modelPreset === 'balanced' ? (
+            <Text
+              as="p"
+              variant="caption"
+              color="muted"
+              caseMode="sentence"
+              className="rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-3"
+            >
+              More enhancement may change small face or background details.
+              Choose Closer to original for maximum likeness.
+            </Text>
+          ) : null}
+        </div>
 
         <GenerationActionCard
           generatedPreview={generatedPreview}

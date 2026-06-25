@@ -2,41 +2,32 @@ export const PHOTO_QUALITIES = {
   draft: {
     id: 'draft',
     label: 'Draft',
-    apiQuality: 'low',
-    outputFormat: 'webp',
-    outputCompression: 70,
-    description: 'Fast preview export with lighter compression.',
+    description: 'Lightweight preview file for quick checks and sharing in chat.',
   },
 
   standard: {
     id: 'standard',
     label: 'Standard',
-    apiQuality: 'medium',
-    outputFormat: 'webp',
-    outputCompression: 82,
-    description: 'Balanced export density for everyday use.',
+    description:
+      'Everyday download at your photo size — balanced file weight and clarity.',
   },
 
   premium: {
     id: 'premium',
     label: 'Premium',
-    apiQuality: 'high',
-    outputFormat: 'jpeg',
-    outputCompression: 92,
-    description: 'Higher export density with refined JPEG output.',
+    description:
+      'High-quality JPEG at full photo size for saving and editing.',
   },
 
   print: {
     id: 'print',
     label: 'Print',
-    apiQuality: 'high',
-    outputFormat: 'png',
-    outputCompression: null,
-    description: 'Lossless PNG export for print and archive.',
+    description:
+      'Real-ESRGAN 2× upscale to PNG for large prints, posters, and archive use.',
   },
 }
 
-export const DEFAULT_PHOTO_QUALITY = 'draft'
+export const DEFAULT_PHOTO_QUALITY = 'standard'
 
 export function getPhotoQuality(qualityId) {
   return PHOTO_QUALITIES[qualityId] || PHOTO_QUALITIES[DEFAULT_PHOTO_QUALITY]
