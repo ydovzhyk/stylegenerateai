@@ -52,6 +52,12 @@ const photoLabSlice = createSlice({
     clearPhotoLabMessage: (state) => {
       state.message = null
     },
+    setPhotoLabError: (state, action) => {
+      state.error = action.payload
+    },
+    setPhotoLabMessage: (state, action) => {
+      state.message = action.payload
+    },
     clearPhotoLabAdminPreview: (state) => {
       state.adminPreview = null
       state.error = null
@@ -142,6 +148,8 @@ export const {
   clearPhotoLabError,
   clearPhotoLabMessage,
   clearPhotoLabAdminPreview,
+  setPhotoLabError,
+  setPhotoLabMessage,
 } = photoLabSlice.actions
 
 export default photoLabSlice.reducer

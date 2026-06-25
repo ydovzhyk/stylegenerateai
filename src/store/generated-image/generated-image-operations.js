@@ -1,6 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit'
 import {
   axiosCreateGeneratedImage,
+  axiosDeleteGeneratedImage,
+  axiosFetchGeneratedImages,
 } from '@/services/api/generated-image'
 
 const toReject = (error, rejectWithValue) => {
@@ -24,3 +26,26 @@ export const createGeneratedImage = createAsyncThunk(
   },
 )
 
+export const fetchGeneratedImages = createAsyncThunk(
+  'generated-image/fetch',
+  async (section, { rejectWithValue }) => {
+    try {
+      const data = await axiosFetchGeneratedImages(section)
+      return { section: section || 'all', items: data?.items || [] }
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)
+
+export const deleteGeneratedImage = createAsyncThunk(
+  'generated-image/delete',
+  async (id, { rejectWithValue }) => {
+    try {
+      const data = await axiosDeleteGeneratedImage(id)
+      return { id, ...data }
+    } catch (e) {
+      return toReject(e, rejectWithValue)
+    }
+  },
+)

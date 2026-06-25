@@ -5,6 +5,11 @@ import Text from '@/components/shared/text/Text'
 import Input from '@/components/shared/input/Input'
 import { useTranslate } from '@/utils/translate/translate'
 
+const SECTION_TITLE_LABEL_CLASS =
+  'text-lg font-semibold text-white md:text-xl'
+
+const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
+
 function LockedHint({ text }) {
   const translatedText = useTranslate(text, { caseMode: 'sentence' })
 
@@ -56,6 +61,7 @@ export default function GenerationOptionsPanel({
           as="textarea"
           rows={3}
           label={promptLabel}
+          labelClassName={SECTION_TITLE_LABEL_CLASS}
           placeholder={promptPlaceholder}
           value={extraPrompt}
           onChange={(e) => setExtraPrompt(e.target.value)}
@@ -72,7 +78,7 @@ export default function GenerationOptionsPanel({
         >
           {showOutputFormat ? (
             <div>
-              <Text className="mb-2" variant="caption">
+              <Text variant="section-title" color="white" className="mb-2">
                 Output format
               </Text>
 
@@ -110,7 +116,7 @@ export default function GenerationOptionsPanel({
 
           {showPhotoQuality ? (
             <div>
-              <Text className="mb-2" variant="caption">
+              <Text variant="section-title" color="white" className="mb-2">
                 {photoQualityLabel}
               </Text>
 
@@ -150,7 +156,7 @@ export default function GenerationOptionsPanel({
 
       {showModelPreset && modelPresets.length ? (
         <div className={showPrompt || showOutputFormat || showPhotoQuality ? 'mt-4' : ''}>
-          <Text className="mb-2" variant="caption">
+          <Text variant="section-title" color="white" className="mb-2">
             Photo likeness
           </Text>
 
@@ -175,7 +181,7 @@ export default function GenerationOptionsPanel({
                       : 'text-white'
                   }`}
                 >
-                  <Text as="span" variant="caption" caseMode="title">
+                  <Text as="span" variant="sub-block-label" color="white" caseMode="title">
                     {preset.label}
                   </Text>
 
@@ -185,7 +191,7 @@ export default function GenerationOptionsPanel({
                       variant="caption"
                       color="muted"
                       caseMode="sentence"
-                      className="mt-1 text-[11px] leading-4"
+                      className="mt-1.5 text-sm leading-5"
                     >
                       {preset.description}
                     </Text>

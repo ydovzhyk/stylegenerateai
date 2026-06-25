@@ -98,8 +98,8 @@ const Input = forwardRef(function Input(
         <label
           htmlFor={id}
           className={clsx(
-            'mb-2 block text-sm font-medium text-foreground-soft',
-            labelClassName,
+            'mb-2 block',
+            labelClassName ?? 'text-sm font-medium text-foreground-soft',
           )}
         >
           {resolvedLabel}

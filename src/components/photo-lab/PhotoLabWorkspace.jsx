@@ -410,6 +410,7 @@ export default function PhotoLabWorkspace({ selectedMode }) {
           isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
           formatLockedText={lockedText}
           creditCost={creditCost}
+          isPrintExport={photoQuality === 'print'}
           titleReady="Ready to edit"
           descriptionReady="Start AI editing with your uploaded photo."
           descriptionDisabled="Upload your photo first to continue."

@@ -4,6 +4,22 @@ import { Download, Info, RotateCcw, Sparkles } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import { useTranslate } from '@/utils/translate/translate'
+
+const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
+
+function HoverHint({ text, children, className = '' }) {
+  const translatedText = useTranslate(text, { caseMode: 'sentence' })
+
+  return (
+    <div className={`group/hint relative w-full ${className}`.trim()}>
+      {children}
+      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-[210px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-center text-xs leading-relaxed text-cyan-300 opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/hint:opacity-100">
+        {translatedText}
+      </span>
+    </div>
+  )
+}
 
 export default function GenerationActionCard({
   generatedPreview,
@@ -31,12 +47,26 @@ export default function GenerationActionCard({
   descriptionDisabled = 'Upload your photo first to continue.',
   buttonGenerate = 'Generate',
   buttonRegenerate = 'Regenerate',
+  buttonGenerating = 'Generating...',
   buttonDownload = 'Download',
+  buttonDownloadProcessing = 'Processing…',
+  printExportProcessingHint = "We're preparing your file format. Please wait — this may take a little while.",
   creditCost = null,
+  printExportProcessing = false,
+  printExportProgress = null,
+  downloadDisabled = false,
+  isPrintExport = false,
+  downloadOptionsTitle = 'Download options',
 }) {
   const canDownload = Boolean(generatedPreview)
   const isActionLoading = loading || saveLoading
   const description = disabled ? descriptionDisabled : descriptionReady
+  const translatedDownloadLabel = useTranslate(buttonDownload, {
+    caseMode: 'sentence',
+  })
+  const translatedProcessingLabel = useTranslate(buttonDownloadProcessing, {
+    caseMode: 'sentence',
+  })
 
   const hasUnlockedFileFormats =
     isLogin &&
@@ -47,7 +77,9 @@ export default function GenerationActionCard({
     )
 
   const canChooseFileFormat =
-    hasUnlockedFileFormats && generatedImageFormats.length > 1
+    hasUnlockedFileFormats &&
+    generatedImageFormats.length > 1 &&
+    !isPrintExport
 
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[26px] border border-white/10 bg-white/[0.025] p-5 text-center">
@@ -77,6 +109,7 @@ export default function GenerationActionCard({
         type="button"
         variant="primary"
         loading={loading}
+        loadingText={buttonGenerating}
         disabled={disabled || saveLoading}
         onClick={onGenerate}
         className={
@@ -99,9 +132,14 @@ export default function GenerationActionCard({
 
       {canDownload ? (
         <div className="mt-5 w-full rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-left">
+          <Text variant="section-title" color="white" className="mb-2">
+            {downloadOptionsTitle}
+          </Text>
+
           <Input
             id="generated-image-title"
             label="Image title"
+            labelClassName={SUB_BLOCK_LABEL_CLASS}
             placeholder="My generated look"
             value={imageTitle}
             onChange={(e) => setImageTitle?.(e.target.value)}
@@ -114,8 +152,8 @@ export default function GenerationActionCard({
                 <div className="mb-4 rounded-2xl border border-white/10 bg-black/10 p-3">
                   <Text
                     as="p"
-                    variant="caption"
-                    color="soft"
+                    variant="sub-block-label"
+                    color="white"
                     caseMode="sentence"
                     className="mb-2"
                   >
@@ -191,7 +229,7 @@ export default function GenerationActionCard({
                   >
                     <Text
                       as="span"
-                      variant="label"
+                      variant="sub-block-label"
                       color="white"
                       caseMode="sentence"
                     >
@@ -221,19 +259,39 @@ export default function GenerationActionCard({
             </Text>
           )}
 
-          <Button
-            type="button"
-            variant="secondary"
-            loading={saveLoading}
-            disabled={isActionLoading}
-            onClick={onDownload}
-            className="mt-5 h-[44px] w-full rounded-full px-7"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Download size={16} />
-              {buttonDownload}
-            </span>
-          </Button>
+          {printExportProcessing ? (
+            <HoverHint text={printExportProcessingHint}>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled
+                translate={false}
+                className="mt-5 h-[44px] w-full rounded-full px-7"
+              >
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span>{translatedProcessingLabel}</span>
+                  <span className="tabular-nums">
+                    {Math.max(0, printExportProgress ?? 0)}%
+                  </span>
+                </span>
+              </Button>
+            </HoverHint>
+          ) : (
+            <Button
+              type="button"
+              variant="secondary"
+              loading={saveLoading}
+              disabled={isActionLoading || downloadDisabled}
+              onClick={onDownload}
+              className="mt-5 h-[44px] w-full rounded-full px-7"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Download size={16} />
+                {translatedDownloadLabel}
+              </span>
+            </Button>
+          )}
         </div>
       ) : null}
 

@@ -79,6 +79,9 @@ const readyTemplate = createSlice({
     setReadyTemplateError: (state, action) => {
       state.error = action.payload
     },
+    setReadyTemplateMessage: (state, action) => {
+      state.message = action.payload
+    },
     clearResolvePromptMetadata: (state) => {
       state.promptCategory = null
       state.suggestedTitle = null
@@ -409,6 +412,7 @@ export const {
   clearReadyTemplateError,
   clearReadyTemplateMessage,
   setReadyTemplateError,
+  setReadyTemplateMessage,
   clearResolvePromptMetadata,
   setCreateYourLookSearchParams,
   clearCreateYourLookSearchTemplates,

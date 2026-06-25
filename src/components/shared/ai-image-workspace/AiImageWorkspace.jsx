@@ -21,15 +21,23 @@ import Text from '@/components/shared/text/Text'
 import { DEFAULT_MODEL_PRESET } from '@/constants/model-presets'
 import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restore-styles'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
+import { resolveGallerySourceType } from '@/constants/gallery-sections'
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { useLanguage } from '@/providers/languageContext'
 import { axiosCreateGeneratedImageFile } from '@/services/api/generated-image'
+import {
+  axiosDiscardPrintExportJob,
+  axiosDownloadPrintExportFile,
+  axiosGetPrintExportJob,
+} from '@/services/api/print-export'
 import { createGeneratedImage } from '@/store/generated-image/generated-image-operations'
 import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
 import { generateYourLookClientImage } from '@/store/ready-template/ready-template-operations'
+import { setReadyTemplateError, setReadyTemplateMessage } from '@/store/ready-template/ready-template-slice'
 import { generatePhotoLabClientImage } from '@/store/photo-lab/photo-lab-operations'
+import { setPhotoLabError, setPhotoLabMessage } from '@/store/photo-lab/photo-lab-slice'
 import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 import languagesAndCodes from '@/utils/translate/languagesAndCodes'
@@ -42,6 +50,7 @@ import { useDispatch, useSelector } from 'react-redux'
 const DEFAULT_ACTION_CARD_LABELS = {}
 const REMOVE_OBJECTS_MODE = 'remove_objects'
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
+const PRINT_EXPORT_POLL_MS = 10_000
 const WORKSPACE_PREVIEW_FRAME_CLASS =
   'group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5]'
 
@@ -67,6 +76,8 @@ export default function AiImageWorkspace({
   const resultRef = useRef(null)
   const maskEditorRef = useRef(null)
   const previousTemplateIdRef = useRef(null)
+  const lastPrintExportErrorRef = useRef('')
+  const lastPrintExportReadyRef = useRef('')
 
   const dispatch = useDispatch()
   const visitorId = useSelector(getVisitorId)
@@ -76,6 +87,7 @@ export default function AiImageWorkspace({
   const [extraPrompt, setExtraPrompt] = useState('')
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [generatedFile, setGeneratedFile] = useState(null)
+  const [printExport, setPrintExport] = useState(null)
   const [loading, setLoading] = useState(false)
 
   const [saveToGallery, setSaveToGallery] = useState(false)
@@ -152,6 +164,127 @@ export default function AiImageWorkspace({
     isGeneratedImageFormatAllowed,
   } = useGenerationPlanAccess(pricingContext)
 
+  useEffect(() => {
+    if (!printExport?.jobId || printExport.status !== 'processing') {
+      return undefined
+    }
+
+    let cancelled = false
+
+    const pollPrintExportStatus = async () => {
+      try {
+        const status = await axiosGetPrintExportJob(
+          printExport.jobId,
+          isLogin ? '' : visitorId,
+        )
+
+        if (cancelled) return
+
+        setPrintExport((current) => ({
+          ...(current || {}),
+          ...status,
+        }))
+      } catch {
+        // Ignore transient polling errors; next tick will retry.
+      }
+    }
+
+    pollPrintExportStatus()
+
+    const intervalId = window.setInterval(
+      pollPrintExportStatus,
+      PRINT_EXPORT_POLL_MS,
+    )
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [printExport?.jobId, printExport?.status, isLogin, visitorId])
+
+  useEffect(() => {
+    if (printExport?.status !== 'failed') return
+
+    const errorMessage =
+      String(printExport?.errorMessage || '').trim() ||
+      'Print export failed. Please try again.'
+
+    const errorKey = `${printExport?.jobId || 'print-export'}:${errorMessage}`
+
+    if (lastPrintExportErrorRef.current === errorKey) return
+    lastPrintExportErrorRef.current = errorKey
+
+    if (isPhotoLab) {
+      dispatch(setPhotoLabError(errorMessage))
+      return
+    }
+
+    dispatch(setReadyTemplateError(errorMessage))
+  }, [
+    dispatch,
+    isPhotoLab,
+    printExport?.errorMessage,
+    printExport?.jobId,
+    printExport?.status,
+  ])
+
+  useEffect(() => {
+    if (printExport?.status !== 'ready') return
+    if (!printExport?.jobId) return
+
+    if (lastPrintExportReadyRef.current === printExport.jobId) return
+    lastPrintExportReadyRef.current = printExport.jobId
+
+    const message = 'Your file is ready for download.'
+
+    if (isPhotoLab) {
+      dispatch(setPhotoLabMessage(message))
+      return
+    }
+
+    dispatch(setReadyTemplateMessage(message))
+  }, [dispatch, isPhotoLab, printExport?.jobId, printExport?.status])
+
+  const applyGenerationResult = (result) => {
+    const previewUrl =
+      result?.previewUrl ||
+      result?.result?.previewUrl ||
+      result?.value?.previewUrl ||
+      ''
+
+    if (!previewUrl) return
+
+    setGeneratedPreview(previewUrl)
+    setImageTitle(
+      template?.title
+        ? `${template.title} result`
+        : isPhotoLab
+          ? 'Photo Lab result'
+          : 'My generated look',
+    )
+    setSaveToGallery(false)
+    setPrintExport(result?.printExport || null)
+
+    requestAnimationFrame(() => {
+      scrollToResult()
+    })
+
+    if (isLogin || visitorId) {
+      dispatch(getGenerationUsage())
+    }
+
+    if (previewUrl.startsWith('data:')) {
+      setGeneratedFile(
+        dataUrlToFile(
+          previewUrl,
+          isPhotoLab ? 'photo-lab-result.webp' : 'your-look-result.webp',
+        ),
+      )
+    } else {
+      setGeneratedFile(null)
+    }
+  }
+
   const scrollToResult = () => {
     if (!resultRef.current) return
 
@@ -218,6 +351,9 @@ export default function AiImageWorkspace({
     setSaveLoading(false)
     setGeneratedPreview('')
     setGeneratedFile(null)
+    setPrintExport(null)
+    lastPrintExportErrorRef.current = ''
+    lastPrintExportReadyRef.current = ''
     setSaveToGallery(false)
     setImageTitle('')
     setExtraPrompt('')
@@ -316,6 +452,9 @@ export default function AiImageWorkspace({
     }
 
     setLoading(true)
+    setPrintExport(null)
+    lastPrintExportErrorRef.current = ''
+    lastPrintExportReadyRef.current = ''
 
     try {
       if (isPhotoLab) {
@@ -370,35 +509,7 @@ export default function AiImageWorkspace({
           generatePhotoLabClientImage(formData),
         ).unwrap()
 
-        const previewUrl =
-          result?.previewUrl ||
-          result?.result?.previewUrl ||
-          result?.value?.previewUrl ||
-          ''
-
-        if (previewUrl) {
-          setGeneratedPreview(previewUrl)
-          setImageTitle(
-            template?.title ? `${template.title} result` : 'Photo Lab result',
-          )
-          setSaveToGallery(false)
-
-          requestAnimationFrame(() => {
-            scrollToResult()
-          })
-
-          if (isLogin) {
-            dispatch(getGenerationUsage())
-          } else if (visitorId) {
-            dispatch(getGenerationUsage())
-          }
-
-          if (previewUrl.startsWith('data:')) {
-            setGeneratedFile(dataUrlToFile(previewUrl, 'photo-lab-result.png'))
-          } else {
-            setGeneratedFile(null)
-          }
-        }
+        applyGenerationResult(result)
 
         return
       }
@@ -435,36 +546,7 @@ export default function AiImageWorkspace({
         generateYourLookClientImage(formData),
       ).unwrap()
 
-      const previewUrl =
-        result?.previewUrl ||
-        result?.result?.previewUrl ||
-        result?.value?.previewUrl ||
-        ''
-
-      if (previewUrl) {
-        setGeneratedPreview(previewUrl)
-
-        setImageTitle(
-          template?.title ? `${template.title} result` : 'My generated look',
-        )
-        setSaveToGallery(false)
-
-        requestAnimationFrame(() => {
-          scrollToResult()
-        })
-
-        if (isLogin) {
-          dispatch(getGenerationUsage())
-        } else if (visitorId) {
-          dispatch(getGenerationUsage())
-        }
-
-        if (previewUrl.startsWith('data:')) {
-          setGeneratedFile(dataUrlToFile(previewUrl, 'your-look-result.png'))
-        } else {
-          setGeneratedFile(null)
-        }
-      }
+      applyGenerationResult(result)
     } catch (error) {
       dispatch(getGenerationUsage())
     } finally {
@@ -520,10 +602,23 @@ export default function AiImageWorkspace({
     document.body.removeChild(link)
   }
 
+  const buildPreviewFile = (normalizedTitle) => {
+    if (generatedFile) {
+      return generatedFile
+    }
+
+    return dataUrlToFile(
+      generatedPreview,
+      `${normalizedTitle}-preview.webp`,
+    )
+  }
+
   const buildGeneratedImageFormData = (shouldSaveToGallery) => {
     const fallbackTitle = template?.title
       ? `${template.title} result`
-      : 'My generated look'
+      : isPhotoLab
+        ? 'Photo Lab result'
+        : 'My generated look'
 
     const normalizedTitle = String(imageTitle || '').trim() || fallbackTitle
 
@@ -532,7 +627,11 @@ export default function AiImageWorkspace({
     formData.append('title', normalizedTitle)
     formData.append(
       'sourceType',
-      isPhotoLab ? 'photo_lab' : 'create_your_look',
+      resolveGallerySourceType({
+        productKey,
+        modeKey: activeModeId,
+        restoreStyle,
+      }),
     )
     formData.append('templateId', template.id)
     formData.append('extraPrompt', extraPrompt || '')
@@ -540,6 +639,10 @@ export default function AiImageWorkspace({
     formData.append('photoQuality', photoQuality || '')
     formData.append('fileFormat', generatedImageFormat || 'png')
     formData.append('saveToGallery', shouldSaveToGallery ? 'true' : 'false')
+
+    if (shouldSaveToGallery) {
+      formData.append('previewImage', buildPreviewFile(normalizedTitle))
+    }
 
     const file =
       generatedFile || dataUrlToFile(generatedPreview, `${normalizedTitle}.png`)
@@ -552,23 +655,87 @@ export default function AiImageWorkspace({
     }
   }
 
+  const downloadFromBlob = (blob, normalizedTitle, extension) => {
+    const objectUrl = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `${normalizedTitle}.${extension}`
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setTimeout(() => {
+      URL.revokeObjectURL(objectUrl)
+    }, 1000)
+  }
+
+  const fetchPrintExportBlob = async (normalizedTitle) => {
+    const { blob } = await axiosDownloadPrintExportFile(printExport.jobId, {
+      visitorId: isLogin ? '' : visitorId,
+      title: normalizedTitle,
+    })
+
+    return blob
+  }
+
   const handleDownloadGeneratedImage = async () => {
     if (!generatedPreview) return
 
-    if (!isLogin) {
-      downloadGeneratedImage()
-      return
-    }
+    const isPrintExportReady =
+      printExport?.status === 'ready' && Boolean(printExport?.downloadUrl)
+
+    if (printExport && !isPrintExportReady) return
+
+    const fallbackTitle = template?.title
+      ? `${template.title} result`
+      : isPhotoLab
+        ? 'Photo Lab result'
+        : 'My generated look'
+
+    const normalizedTitle = String(imageTitle || '').trim() || fallbackTitle
 
     setSaveLoading(true)
 
     try {
+      if (isPrintExportReady) {
+        const printBlob = await fetchPrintExportBlob(normalizedTitle)
+
+        if (isLogin && saveToGallery) {
+          const saveFormData = buildGeneratedImageFormData(true).formData
+
+          saveFormData.set('fileFormat', 'png')
+          saveFormData.set('printExportJobId', printExport.jobId)
+          saveFormData.delete('image')
+
+          await dispatch(createGeneratedImage(saveFormData)).unwrap()
+        }
+
+        downloadFromBlob(printBlob, normalizedTitle, 'png')
+
+        if (!isLogin || !saveToGallery) {
+          await axiosDiscardPrintExportJob(
+            printExport.jobId,
+            isLogin ? '' : visitorId,
+          )
+          setPrintExport(null)
+        }
+
+        return
+      }
+
+      if (!isLogin) {
+        downloadGeneratedImage()
+        return
+      }
+
       if (saveToGallery) {
         const { formData: saveFormData } = buildGeneratedImageFormData(true)
         await dispatch(createGeneratedImage(saveFormData)).unwrap()
       }
 
-      const { formData: downloadFormData, normalizedTitle } =
+      const { formData: downloadFormData, normalizedTitle: downloadTitle } =
         buildGeneratedImageFormData(false)
 
       const convertedImage =
@@ -582,7 +749,7 @@ export default function AiImageWorkspace({
 
       const link = document.createElement('a')
       link.href = objectUrl
-      link.download = `${normalizedTitle}.${fileFormat.extension}`
+      link.download = `${downloadTitle}.${fileFormat.extension}`
 
       document.body.appendChild(link)
       link.click()
@@ -1232,6 +1399,7 @@ export default function AiImageWorkspace({
             as="textarea"
             rows={5}
             label={resolvedPromptLabel}
+            labelClassName="text-lg font-semibold text-white md:text-xl"
             placeholder={resolvedPromptPlaceholder}
             hint={resolvedPromptHint}
             value={extraPrompt}
@@ -1299,6 +1467,18 @@ export default function AiImageWorkspace({
           isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
           formatLockedText={lockedText}
           creditCost={creditCost}
+          printExportProcessing={printExport?.status === 'processing'}
+          printExportProgress={
+            printExport?.status === 'processing'
+              ? typeof printExport?.progress === 'number'
+                ? printExport.progress
+                : 0
+              : null
+          }
+          downloadDisabled={
+            Boolean(printExport) && printExport?.status !== 'ready'
+          }
+          isPrintExport={photoQuality === 'print'}
           {...resolvedActionCardLabels}
         />
       </div>

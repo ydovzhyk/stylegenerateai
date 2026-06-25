@@ -12,6 +12,8 @@ const variantClasses = {
   'body-sm': 'text-sm font-normal leading-6 md:text-base',
   caption: 'text-sm font-medium leading-5',
   label: 'text-sm font-medium leading-5',
+  'sub-block-label': 'text-base font-medium leading-6',
+  'section-title': 'text-lg font-semibold leading-snug md:text-xl',
   button: 'text-sm font-semibold leading-none',
 }
 
