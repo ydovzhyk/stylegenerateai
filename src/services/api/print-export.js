@@ -54,12 +54,3 @@ export const axiosDiscardPrintExportJob = async (jobId, visitorId) => {
 
   return data
 }
-
-export const axiosMarkPrintExportJobSaved = async (jobId, visitorId) => {
-  const { data } = await instance.post(
-    `/print-export/${jobId}/mark-saved`,
-    visitorId ? { visitorId } : {},
-  )
-
-  return data
-}

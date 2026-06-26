@@ -50,7 +50,7 @@ import { useDispatch, useSelector } from 'react-redux'
 const DEFAULT_ACTION_CARD_LABELS = {}
 const REMOVE_OBJECTS_MODE = 'remove_objects'
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
-const PRINT_EXPORT_POLL_MS = 10_000
+const PRINT_EXPORT_POLL_MS = 3_000
 const WORKSPACE_PREVIEW_FRAME_CLASS =
   'group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5]'
 
@@ -549,6 +549,16 @@ export default function AiImageWorkspace({
       applyGenerationResult(result)
     } catch (error) {
       dispatch(getGenerationUsage())
+
+      const errorMessage =
+        String(error?.data?.message || error?.message || '').trim() ||
+        'Generation failed. Please try again.'
+
+      if (isPhotoLab) {
+        dispatch(setPhotoLabError(errorMessage))
+      } else {
+        dispatch(setReadyTemplateError(errorMessage))
+      }
     } finally {
       setLoading(false)
     }
@@ -758,6 +768,16 @@ export default function AiImageWorkspace({
       setTimeout(() => {
         URL.revokeObjectURL(objectUrl)
       }, 1000)
+    } catch (error) {
+      const errorMessage =
+        String(error?.data?.message || error?.message || '').trim() ||
+        'Failed to save or download your image.'
+
+      if (isPhotoLab) {
+        dispatch(setPhotoLabError(errorMessage))
+      } else {
+        dispatch(setReadyTemplateError(errorMessage))
+      }
     } finally {
       setSaveLoading(false)
     }
@@ -1433,19 +1453,6 @@ export default function AiImageWorkspace({
             isModelPresetAllowed={isModelPresetAllowed}
             photoQualityLabel="Export size"
           />
-
-          {isEnhanceQualityMode && modelPreset === 'balanced' ? (
-            <Text
-              as="p"
-              variant="caption"
-              color="muted"
-              caseMode="sentence"
-              className="rounded-2xl border border-amber-400/20 bg-amber-400/5 px-4 py-3"
-            >
-              More enhancement may change small face or background details.
-              Choose Closer to original for maximum likeness.
-            </Text>
-          ) : null}
         </div>
 
         <GenerationActionCard

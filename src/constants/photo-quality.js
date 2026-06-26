@@ -23,7 +23,7 @@ export const PHOTO_QUALITIES = {
     id: 'print',
     label: 'Print',
     description:
-      'Real-ESRGAN 2× upscale to PNG for large prints, posters, and archive use.',
+      '2× upscale to PNG for large prints, posters, and archive use.',
   },
 }
 

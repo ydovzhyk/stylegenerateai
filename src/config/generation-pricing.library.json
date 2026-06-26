@@ -74,9 +74,9 @@
             "photoQuality": {
               "draft": {
                 "available": true,
-                "credits": 1,
+                "credits": 0,
                 "label": "Draft",
-                "description": "Fast and lightweight preview."
+                "description": "Lightweight export preview for quick checks."
               },
               "standard": {
                 "available": false,
@@ -119,15 +119,15 @@
             "modelPreset": {
               "balanced": {
                 "available": true,
-                "credits": 0,
-                "label": "Default",
-                "description": "Balanced improvement for most photos."
+                "credits": 1,
+                "label": "More enhancement",
+                "description": "Stronger cleanup; small scene or face details may shift slightly."
               },
               "identity": {
                 "available": true,
                 "credits": 3,
                 "label": "Closer to original",
-                "description": "Stronger likeness to your uploaded photo."
+                "description": "Maximum likeness to your uploaded photo."
               }
             },
             "generatedImageFormat": {
@@ -168,15 +168,15 @@
             "photoQuality": {
               "draft": {
                 "available": true,
-                "credits": 1,
+                "credits": 0,
                 "label": "Draft",
-                "description": "Fast and lightweight preview."
+                "description": "Lightweight export preview for quick checks."
               },
               "standard": {
                 "available": true,
-                "credits": 3,
+                "credits": 1,
                 "label": "Standard",
-                "description": "Balanced quality for everyday use."
+                "description": "Everyday export at your photo size."
               },
               "premium": {
                 "available": false,
@@ -211,15 +211,15 @@
             "modelPreset": {
               "balanced": {
                 "available": true,
-                "credits": 0,
-                "label": "Default",
-                "description": "Balanced improvement for most photos."
+                "credits": 1,
+                "label": "More enhancement",
+                "description": "Stronger cleanup; small scene or face details may shift slightly."
               },
               "identity": {
                 "available": true,
                 "credits": 3,
                 "label": "Closer to original",
-                "description": "Stronger likeness to your uploaded photo."
+                "description": "Maximum likeness to your uploaded photo."
               }
             },
             "generatedImageFormat": {
@@ -260,15 +260,15 @@
             "photoQuality": {
               "draft": {
                 "available": true,
-                "credits": 1,
+                "credits": 0,
                 "label": "Draft",
-                "description": "Fast and lightweight preview."
+                "description": "Lightweight export preview for quick checks."
               },
               "standard": {
                 "available": true,
-                "credits": 3,
+                "credits": 1,
                 "label": "Standard",
-                "description": "Balanced quality for everyday use."
+                "description": "Everyday export at your photo size."
               },
               "premium": {
                 "available": false,
@@ -303,15 +303,15 @@
             "modelPreset": {
               "balanced": {
                 "available": true,
-                "credits": 0,
-                "label": "Default",
-                "description": "Balanced improvement for most photos."
+                "credits": 1,
+                "label": "More enhancement",
+                "description": "Stronger cleanup; small scene or face details may shift slightly."
               },
               "identity": {
                 "available": true,
                 "credits": 3,
                 "label": "Closer to original",
-                "description": "Stronger likeness to your uploaded photo."
+                "description": "Maximum likeness to your uploaded photo."
               }
             },
             "generatedImageFormat": {
@@ -350,27 +350,27 @@
             "photoQuality": {
               "draft": {
                 "available": true,
-                "credits": 1,
+                "credits": 0,
                 "label": "Draft",
-                "description": "Fast and lightweight preview."
+                "description": "Lightweight export preview for quick checks."
               },
               "standard": {
                 "available": true,
-                "credits": 3,
+                "credits": 1,
                 "label": "Standard",
-                "description": "Balanced quality for everyday use."
+                "description": "Everyday export at your photo size."
               },
               "premium": {
                 "available": true,
-                "credits": 8,
+                "credits": 1,
                 "label": "Premium",
-                "description": "Higher quality with richer detail."
+                "description": "High-quality export for saving and editing."
               },
               "print": {
                 "available": true,
-                "credits": 20,
+                "credits": 2,
                 "label": "Print",
-                "description": "Best export quality for print use."
+                "description": "2× upscale to PNG for large prints and archive use."
               }
             },
             "outputFormat": {
@@ -393,15 +393,15 @@
             "modelPreset": {
               "balanced": {
                 "available": true,
-                "credits": 0,
-                "label": "Default",
-                "description": "Balanced improvement for most photos."
+                "credits": 1,
+                "label": "More enhancement",
+                "description": "Stronger cleanup; small scene or face details may shift slightly."
               },
               "identity": {
                 "available": true,
                 "credits": 3,
                 "label": "Closer to original",
-                "description": "Stronger likeness to your uploaded photo."
+                "description": "Maximum likeness to your uploaded photo."
               }
             },
             "generatedImageFormat": {
@@ -453,7 +453,7 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview.",
+                    "description": "Lightweight export preview for quick checks.",
                     "includedInPresetPrice": true
                   },
                   "standard": {
@@ -478,15 +478,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 }
               }
@@ -508,13 +508,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -532,15 +532,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -581,13 +581,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -605,15 +605,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -652,39 +652,39 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 8,
+                    "credits": 1,
                     "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "description": "High-quality export for saving and editing."
                   },
                   "print": {
                     "available": true,
-                    "credits": 20,
+                    "credits": 2,
                     "label": "Print",
-                    "description": "Best export quality for print use."
+                    "description": "2× upscale to PNG for large prints and archive use."
                   }
                 },
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -728,7 +728,7 @@
                   "draft": {
                     "available": true,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": false,
@@ -772,15 +772,15 @@
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 }
               }
@@ -804,13 +804,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -845,15 +845,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -896,13 +896,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -937,15 +937,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -986,25 +986,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 8,
+                    "credits": 1,
                     "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "description": "High-quality export for saving and editing."
                   },
                   "print": {
                     "available": true,
-                    "credits": 20,
+                    "credits": 2,
                     "label": "Print",
-                    "description": "Best export quality for print use."
+                    "description": "2× upscale to PNG for large prints and archive use."
                   }
                 },
                 "outputFormat": {
@@ -1027,15 +1027,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1083,7 +1083,7 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview.",
+                    "description": "Lightweight export preview for quick checks.",
                     "includedInPresetPrice": true
                   },
                   "standard": {
@@ -1108,15 +1108,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 }
               }
@@ -1139,13 +1139,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -1163,15 +1163,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1213,13 +1213,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -1237,15 +1237,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1285,39 +1285,39 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 8,
+                    "credits": 1,
                     "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "description": "High-quality export for saving and editing."
                   },
                   "print": {
                     "available": true,
-                    "credits": 20,
+                    "credits": 2,
                     "label": "Print",
-                    "description": "Best export quality for print use."
+                    "description": "2× upscale to PNG for large prints and archive use."
                   }
                 },
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1361,7 +1361,7 @@
                   "draft": {
                     "available": true,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": false,
@@ -1387,15 +1387,15 @@
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 }
               }
@@ -1418,13 +1418,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -1442,15 +1442,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1492,13 +1492,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -1516,15 +1516,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1564,39 +1564,39 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 8,
+                    "credits": 1,
                     "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "description": "High-quality export for saving and editing."
                   },
                   "print": {
                     "available": true,
-                    "credits": 20,
+                    "credits": 2,
                     "label": "Print",
-                    "description": "Best export quality for print use."
+                    "description": "2× upscale to PNG for large prints and archive use."
                   }
                 },
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1640,7 +1640,7 @@
                   "draft": {
                     "available": true,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": false,
@@ -1666,15 +1666,15 @@
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 }
               }
@@ -1697,13 +1697,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -1721,15 +1721,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1771,13 +1771,13 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": false,
@@ -1795,15 +1795,15 @@
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
@@ -1843,318 +1843,39 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Fast and lightweight preview."
+                    "description": "Lightweight export preview for quick checks."
                   },
                   "standard": {
                     "available": true,
-                    "credits": 3,
+                    "credits": 1,
                     "label": "Standard",
-                    "description": "Balanced quality for everyday use."
+                    "description": "Everyday export at your photo size."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 8,
+                    "credits": 1,
                     "label": "Premium",
-                    "description": "Higher quality with richer detail."
+                    "description": "High-quality export for saving and editing."
                   },
                   "print": {
                     "available": true,
-                    "credits": 20,
+                    "credits": 2,
                     "label": "Print",
-                    "description": "Best export quality for print use."
+                    "description": "2× upscale to PNG for large prints and archive use."
                   }
                 },
                 "modelPreset": {
                   "balanced": {
                     "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
                   },
                   "identity": {
                     "available": true,
                     "credits": 3,
                     "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
-                  }
-                },
-                "generatedImageFormat": {
-                  "png": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "PNG"
-                  },
-                  "jpeg": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "JPEG"
-                  },
-                  "webp": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "WebP"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "creative_retouch": {
-          "title": "Creative Retouch",
-          "modeKey": "creative_retouch",
-          "usesSourceDimensions": true,
-          "plans": {
-            "visitor": {
-              "modeAccess": {
-                "available": true
-              },
-              "pricing": {
-                "formula": "sum",
-                "components": [
-                  "modelPreset"
-                ],
-                "fixedSelections": {
-                  "photoQuality": "draft"
-                }
-              },
-              "options": {
-                "photoQuality": {
-                  "draft": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Draft",
-                    "description": "Fast and lightweight preview.",
-                    "includedInPresetPrice": true
-                  },
-                  "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
-                  },
-                  "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Premium"
-                  },
-                  "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Print"
-                  }
-                },
-                "modelPreset": {
-                  "balanced": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
-                  },
-                  "identity": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
-                  }
-                }
-              }
-            },
-            "free": {
-              "modeAccess": {
-                "available": true
-              },
-              "pricing": {
-                "formula": "sum",
-                "components": [
-                  "photoQuality",
-                  "modelPreset"
-                ]
-              },
-              "options": {
-                "photoQuality": {
-                  "draft": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Draft",
-                    "description": "Fast and lightweight preview."
-                  },
-                  "standard": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Standard",
-                    "description": "Balanced quality for everyday use."
-                  },
-                  "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
-                  },
-                  "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
-                  }
-                },
-                "modelPreset": {
-                  "balanced": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
-                  },
-                  "identity": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
-                  }
-                },
-                "generatedImageFormat": {
-                  "png": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "PNG"
-                  },
-                  "jpeg": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_basic_required",
-                    "label": "JPEG"
-                  },
-                  "webp": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_basic_required",
-                    "label": "WebP"
-                  }
-                }
-              }
-            },
-            "basic": {
-              "modeAccess": {
-                "available": true
-              },
-              "pricing": {
-                "formula": "sum",
-                "components": [
-                  "photoQuality",
-                  "modelPreset"
-                ]
-              },
-              "options": {
-                "photoQuality": {
-                  "draft": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Draft",
-                    "description": "Fast and lightweight preview."
-                  },
-                  "standard": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Standard",
-                    "description": "Balanced quality for everyday use."
-                  },
-                  "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
-                  },
-                  "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
-                  }
-                },
-                "modelPreset": {
-                  "balanced": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
-                  },
-                  "identity": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
-                  }
-                },
-                "generatedImageFormat": {
-                  "png": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "PNG"
-                  },
-                  "jpeg": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "JPEG"
-                  },
-                  "webp": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "WebP"
-                  }
-                }
-              }
-            },
-            "pro": {
-              "modeAccess": {
-                "available": true
-              },
-              "pricing": {
-                "formula": "sum",
-                "components": [
-                  "photoQuality",
-                  "modelPreset"
-                ]
-              },
-              "options": {
-                "photoQuality": {
-                  "draft": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Draft",
-                    "description": "Fast and lightweight preview."
-                  },
-                  "standard": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Standard",
-                    "description": "Balanced quality for everyday use."
-                  },
-                  "premium": {
-                    "available": true,
-                    "credits": 8,
-                    "label": "Premium",
-                    "description": "Higher quality with richer detail."
-                  },
-                  "print": {
-                    "available": true,
-                    "credits": 20,
-                    "label": "Print",
-                    "description": "Best export quality for print use."
-                  }
-                },
-                "modelPreset": {
-                  "balanced": {
-                    "available": true,
-                    "credits": 0,
-                    "label": "Default",
-                    "description": "Balanced improvement for most photos."
-                  },
-                  "identity": {
-                    "available": true,
-                    "credits": 3,
-                    "label": "Closer to original",
-                    "description": "Stronger likeness to your uploaded photo."
+                    "description": "Maximum likeness to your uploaded photo."
                   }
                 },
                 "generatedImageFormat": {
