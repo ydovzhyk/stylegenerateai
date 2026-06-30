@@ -25,7 +25,7 @@ import {
 import {
   CLIENT_MODEL_PRESET_IDS,
   CLIENT_MODEL_PRESET_META,
-  DEFAULT_MODEL_PRESET,
+  PHOTO_LAB_DEFAULT_MODEL_PRESET,
 } from '@/constants/model-presets'
 import {
   DEFAULT_RESTORE_STYLE,
@@ -94,7 +94,7 @@ const PHOTO_LAB_TEST_MODES = [
   {
     id: 'enhance_quality',
     title: 'Enhance Quality',
-    label: 'Upscale / sharpen',
+    label: 'Clarity cleanup',
     icon: ImagePlus,
   },
   {
@@ -158,7 +158,7 @@ export default function PhotoLabPreviewTester() {
   const [selectedModeId, setSelectedModeId] = useState(
     PHOTO_LAB_TEST_MODES[0].id,
   )
-  const [modelPreset, setModelPreset] = useState(DEFAULT_MODEL_PRESET)
+  const [modelPreset, setModelPreset] = useState(PHOTO_LAB_DEFAULT_MODEL_PRESET)
   const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
 
@@ -249,7 +249,7 @@ export default function PhotoLabPreviewTester() {
     sourceUploadPreviews.length > 1
 
   useEffect(() => {
-    setModelPreset(DEFAULT_MODEL_PRESET)
+    setModelPreset(PHOTO_LAB_DEFAULT_MODEL_PRESET)
 
     if (
       selectedModeId === ENHANCE_QUALITY_MODE ||
@@ -584,7 +584,7 @@ export default function PhotoLabPreviewTester() {
           className="mt-2 max-w-3xl"
         >
           {isEnhanceQualityMode
-            ? 'Enhance Quality uses one uploaded source photo. Test model preset and output quality before saving showcase templates.'
+            ? 'Enhance Quality uses one uploaded source photo. Test photo likeness and export size before saving showcase templates.'
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
               : isRemoveObjectsMode
@@ -787,35 +787,57 @@ export default function PhotoLabPreviewTester() {
               caseMode="sentence"
               className="mb-3 uppercase tracking-[0.18em]"
             >
-              Photo quality
+              Export size
             </Text>
 
             <div className="flex flex-col gap-3">
-              {Object.values(PHOTO_QUALITIES).map((quality) => (
-                <label
-                  key={quality.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/70 px-4 py-3"
-                >
-                  <input
-                    type="radio"
-                    name="photo-quality"
-                    value={quality.id}
-                    checked={photoQuality === quality.id}
-                    onChange={() => setPhotoQuality(quality.id)}
-                    disabled={isGenerating || isSavingTemplate}
-                    className="h-4 w-4 accent-[var(--primary)]"
-                  />
+              {Object.values(PHOTO_QUALITIES).map((quality) => {
+                const active = photoQuality === quality.id
 
-                  <Text
-                    as="span"
-                    variant="caption"
-                    color="soft"
-                    caseMode="sentence"
+                return (
+                  <label
+                    key={quality.id}
+                    className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${
+                      active
+                        ? 'border-primary/35 bg-primary/10'
+                        : 'border-white/10 bg-background-soft/70'
+                    }`}
                   >
-                    {quality.label}
-                  </Text>
-                </label>
-              ))}
+                    <span className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="photo-quality"
+                        value={quality.id}
+                        checked={active}
+                        onChange={() => setPhotoQuality(quality.id)}
+                        disabled={isGenerating || isSavingTemplate}
+                        className="mt-1 h-4 w-4 accent-[var(--primary)]"
+                      />
+
+                      <span>
+                        <Text
+                          as="span"
+                          variant="body-sm"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {quality.label}
+                        </Text>
+
+                        <Text
+                          as="span"
+                          variant="caption"
+                          color="muted"
+                          caseMode="sentence"
+                          className="mt-1 block"
+                        >
+                          {quality.description}
+                        </Text>
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
             </div>
 
             <Text
@@ -825,7 +847,8 @@ export default function PhotoLabPreviewTester() {
               caseMode="sentence"
               className="mt-3"
             >
-              Active: {selectedPhotoQuality.label}
+              Active: {selectedPhotoQuality.label} —{' '}
+              {selectedPhotoQuality.description}
             </Text>
           </div>
         </div>
@@ -1091,7 +1114,7 @@ export default function PhotoLabPreviewTester() {
                     caseMode="sentence"
                   >
                     {isEnhanceQualityMode
-                      ? 'This photo will be enhanced and used as the before image when saving a showcase template.'
+                      ? 'This photo will be cleaned up and used as the before image when saving a showcase template.'
                       : isRestoreColorizeMode
                         ? 'This uploaded old photo will be restored and used as the before image when saving a showcase template.'
                         : isRemoveObjectsMode
@@ -1242,7 +1265,7 @@ export default function PhotoLabPreviewTester() {
                       className="mt-2"
                     >
                       {isEnhanceQualityMode
-                        ? 'Upload one low-quality, blurry, compressed, or dark photo to test enhancement.'
+                        ? 'Upload one dark, blurry, noisy, compressed, or hazy photo to test clarity cleanup.'
                         : isRestoreColorizeMode
                           ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
                           : 'The main photo will always be sent first. You can add up to two supporting reference photos after it.'}
@@ -1369,7 +1392,7 @@ export default function PhotoLabPreviewTester() {
               label="Additional prompt"
               placeholder={
                 isEnhanceQualityMode
-                  ? 'Optional: sharpen details, improve lighting, reduce noise, preserve face identity...'
+                  ? 'Optional: reduce noise in shadows, preserve face identity, keep the same lighting...'
                   : isRemoveObjectsMode
                     ? 'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...'
                     : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'

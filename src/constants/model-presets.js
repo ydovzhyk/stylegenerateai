@@ -1,8 +1,14 @@
 export const CLIENT_MODEL_PRESET_IDS = ['balanced', 'identity']
 
-export const DEFAULT_MODEL_PRESET = 'balanced'
+export const BALANCED_MODEL_PRESET = 'balanced'
+export const IDENTITY_MODEL_PRESET = 'identity'
 
-export const ENHANCE_QUALITY_DEFAULT_MODEL_PRESET = 'identity'
+export const DEFAULT_MODEL_PRESET = IDENTITY_MODEL_PRESET
+
+export const PHOTO_LAB_DEFAULT_MODEL_PRESET = IDENTITY_MODEL_PRESET
+
+/** @deprecated Use PHOTO_LAB_DEFAULT_MODEL_PRESET */
+export const ENHANCE_QUALITY_DEFAULT_MODEL_PRESET = PHOTO_LAB_DEFAULT_MODEL_PRESET
 
 export const CLIENT_MODEL_PRESET_META = {
   balanced: {
@@ -24,18 +30,17 @@ export function getClientPresetMeta(presetId) {
   )
 }
 
-export function resolveDefaultModelPreset(modeKey, allowedPresets = []) {
-  const preferredPreset =
-    modeKey === 'enhance_quality'
-      ? ENHANCE_QUALITY_DEFAULT_MODEL_PRESET
-      : DEFAULT_MODEL_PRESET
-
-  if (allowedPresets.includes(preferredPreset)) {
-    return preferredPreset
-  }
-
+export function resolveDefaultModelPreset(
+  _modeKey,
+  allowedPresets = [],
+  _productKey = 'ready_template',
+) {
   if (allowedPresets.includes(DEFAULT_MODEL_PRESET)) {
     return DEFAULT_MODEL_PRESET
+  }
+
+  if (allowedPresets.includes(BALANCED_MODEL_PRESET)) {
+    return BALANCED_MODEL_PRESET
   }
 
   return allowedPresets[0] || DEFAULT_MODEL_PRESET

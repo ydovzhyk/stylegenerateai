@@ -18,8 +18,6 @@ export const PHOTO_LAB_MODES = [
     accent: 'from-primary/30 to-cyan-400/20',
     promptPlaceholder:
       'Example: straight hair, light sun tan, soft smile.',
-    promptHint:
-      'Optional. This mode already applies a professional portrait look — add only small tweaks here.',
     uploadHint: 'Upload a clear face or upper-body photo.',
   },
   {
@@ -32,8 +30,6 @@ export const PHOTO_LAB_MODES = [
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
       'Example: warmer skin tones, cleaner scratches, softer faded edges.',
-    promptHint:
-      'Optional. Restore and colorize behavior is already built in — add only small refinements here.',
     uploadHint: 'Upload an old, blurry, damaged, or black-and-white photo.',
   },
   {
@@ -46,8 +42,6 @@ export const PHOTO_LAB_MODES = [
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
       'Example: navy blazer instead of gray, warmer office lighting.',
-    promptHint:
-      'Optional. Describe only the change you want on top of the uploaded photo.',
     uploadHint:
       'Upload 1 image for simple edits. Multiple images can come later.',
   },
@@ -61,24 +55,20 @@ export const PHOTO_LAB_MODES = [
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
       'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...',
-    promptHint:
-      'Paint a mask, enter a prompt, or both. Required if no mask is painted.',
     uploadHint:
       'Upload a photo, then paint a mask and/or describe what to remove.',
   },
   {
     id: 'enhance_quality',
     title: 'Enhance Quality',
-    label: 'Sharpen / upscale',
+    label: 'Clarity cleanup',
     description:
-      'Improve low-quality, compressed, blurry, or dark photos with AI enhancement.',
+      'Clean noise, compression, blur, and dark or hazy photos while keeping the same shot, pose, and scene.',
     icon: ImagePlus,
     accent: 'from-emerald-300/20 to-cyan-400/20',
     promptPlaceholder:
       'Example: slightly brighter face, reduce noise in shadows.',
-    promptHint:
-      'Optional. Enhancement is already applied by the mode — add only small tweaks here.',
-    uploadHint: 'Upload a low-quality or blurry image.',
+    uploadHint: 'Upload a dark, blurry, noisy, or compressed photo.',
   },
   {
     id: 'creative_retouch',
@@ -90,8 +80,6 @@ export const PHOTO_LAB_MODES = [
     accent: 'from-fuchsia-400/20 to-primary/25',
     promptPlaceholder:
       'Example: warmer cinematic tones, softer skin, light film grain.',
-    promptHint:
-      'Optional. The retouch style is already built in — add only small refinements here.',
     uploadHint: 'Upload a portrait, lifestyle, or social media photo.',
   },
 ]

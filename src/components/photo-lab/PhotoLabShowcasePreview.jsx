@@ -75,8 +75,9 @@ const SHOWCASE_MODE_ITEMS = [
   {
     id: 'enhance_quality',
     afterLabel: 'Enhanced',
-    title: 'Sharpen blurry photos',
-    description: 'Improve lighting, clarity, texture, and details.',
+    title: 'Enhance photo quality',
+    description:
+      'Reduce noise, compression, and murky shadows — same photo, better readability.',
   },
   {
     id: 'creative_retouch',

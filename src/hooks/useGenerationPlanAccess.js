@@ -175,6 +175,7 @@ export default function useGenerationPlanAccess({
   const defaultModelPreset = resolveDefaultModelPreset(
     modeKey,
     allowedModelPresets,
+    productKey,
   )
 
   const [selectedOutputFormat, setSelectedOutputFormat] = useState(

@@ -93,7 +93,6 @@ function buildPhotoLabWorkspaceTemplate(
     beforePreviewLabel: labels.before,
     afterPreviewLabel: labels.after,
     promptPlaceholder: mode.promptPlaceholder,
-    promptHint: mode.promptHint,
   }
 }
 

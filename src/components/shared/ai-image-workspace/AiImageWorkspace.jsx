@@ -18,7 +18,7 @@ import RestoreStyleToolbar from '@/components/photo-lab/RestoreStyleToolbar'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
-import { DEFAULT_MODEL_PRESET } from '@/constants/model-presets'
+import { BALANCED_MODEL_PRESET, DEFAULT_MODEL_PRESET } from '@/constants/model-presets'
 import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restore-styles'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import { resolveGallerySourceType } from '@/constants/gallery-sections'
@@ -566,7 +566,7 @@ export default function AiImageWorkspace({
 
   const shouldOfferCloserPreset =
     Boolean(generatedPreview) &&
-    modelPreset === DEFAULT_MODEL_PRESET &&
+    modelPreset === BALANCED_MODEL_PRESET &&
     showModelPreset &&
     isModelPresetAllowed('identity') &&
     closerPresetCreditDelta > 0
@@ -590,7 +590,7 @@ export default function AiImageWorkspace({
 
   const handleCloserPresetDecline = () => {
     setCloserPresetModalOpen(false)
-    runGeneration(DEFAULT_MODEL_PRESET)
+    runGeneration(BALANCED_MODEL_PRESET)
   }
 
   const downloadGeneratedImage = (
@@ -915,8 +915,8 @@ export default function AiImageWorkspace({
     ? "Optional with a mask. Or prompt-only: remove the seagulls near the man's feet..."
     : template?.promptPlaceholder || promptPlaceholder
 
-  const resolvedPromptHint = isRemoveObjectsMode
-    ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
+  const resolvedPromptHint = isPhotoLab
+    ? ''
     : template?.promptHint || promptHint
 
   const resolvedWorkspaceDescription = isRemoveObjectsMode
