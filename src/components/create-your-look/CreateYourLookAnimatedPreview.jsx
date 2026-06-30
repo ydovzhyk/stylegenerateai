@@ -163,19 +163,19 @@ function PreviewImageCard({
             key={imageKey || src}
             src={src}
             alt={alt}
-            className="absolute inset-0 h-full w-full object-cover object-[50%_5%]"
+            className="absolute left-1/2 top-1/2 h-[103%] w-[103%] -translate-x-1/2 -translate-y-1/2 object-cover object-[50%_5%]"
             initial={
               reducedMotion
                 ? { opacity: 0 }
-                : { opacity: 0, scale: 1.03, filter: 'blur(2px)' }
+                : { opacity: 0, filter: 'blur(2px)' }
             }
             animate={
               reducedMotion
                 ? { opacity: 1 }
-                : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+                : { opacity: 1, filter: 'blur(0px)' }
             }
             exit={{ opacity: 0 }}
-            whileHover={reducedMotion ? undefined : { scale: 1.045 }}
+            whileHover={reducedMotion ? undefined : { scale: 1.02 }}
             transition={{
               duration: reducedMotion ? 0.1 : 0.95,
               ease: [0.22, 1, 0.36, 1],
