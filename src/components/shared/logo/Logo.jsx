@@ -17,7 +17,7 @@ export default function Logo({
       <div style={{ height: size, width: size }} className="relative shrink-0">
         <Image
           src="/images/logo.png"
-          alt="Style Generate AI logo"
+          alt="AI Style Generator logo"
           fill
           sizes={`${size}px`}
           priority
@@ -34,7 +34,7 @@ export default function Logo({
               fontSize: size * 0.42, // адаптивно від іконки
             }}
           >
-            Style Generate AI
+            AI Style Generator
           </p>
 
           <p

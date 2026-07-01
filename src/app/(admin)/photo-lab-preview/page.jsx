@@ -2,7 +2,7 @@ import Text from '@/components/shared/text/Text'
 import PhotoLabPreviewTester from '@/components/admin/photo-lab-admin/PhotoLabPreviewTester'
 
 export const metadata = {
-  title: 'Photo Lab Preview | Style Generate AI',
+  title: 'Photo Lab Preview | AI Style Generator',
   description: 'Test Photo Lab AI models and generate preview examples',
 }
 

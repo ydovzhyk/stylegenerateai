@@ -2,7 +2,7 @@ import ReadyTemplateForm from '@/components/ready-template/ReadyTemplateForm'
 import Text from '@/components/shared/text/Text'
 
 export const metadata = {
-  title: 'Ready Template | Style Generate AI',
+  title: 'Ready Template | AI Style Generator',
   description: 'Create and manage ready-made image templates',
 }
 

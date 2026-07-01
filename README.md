@@ -1,6 +1,6 @@
-🖼️ Style Generate AI
+🖼️ AI Style Generator
 
-AI-powered platform for generating artistic images and interior visualizations.
+AI-powered platform for generating personalized looks and enhanced photos.
 
 The project allows users to create unique AI-generated visuals, explore ready-made templates, and manage personalized content through a modern web interface.
 

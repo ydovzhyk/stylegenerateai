@@ -16,7 +16,7 @@ const nunitoSans = Nunito_Sans({
 })
 
 export const metadata = {
-  title: 'Style Generate AI',
+  title: 'AI Style Generator',
   description: 'AI painting and interior visualization platform',
 }
 

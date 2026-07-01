@@ -28,7 +28,7 @@ function escapeHtml(value) {
 
 function buildTelegramMessage({ name, email, message }) {
   return [
-    'New message from Style Generate AI',
+    'New message from AI Style Generator',
     '',
     `Name: ${name}`,
     `Email: ${email}`,
@@ -47,7 +47,7 @@ function buildEmailHtml({ name, email, message }) {
     <div style="font-family: Arial, sans-serif; color: #f8fafc; padding: 24px; background-color: #06070a;">
       <div style="max-width: 640px; margin: 0 auto; background: #11131a; border: 1px solid rgba(255,255,255,0.12); padding: 24px; border-radius: 18px;">
         <p style="margin: 0 0 12px; color: #9ca3af; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;">
-          Style Generate AI
+          AI Style Generator
         </p>
 
         <h2 style="margin: 0 0 20px; color: #ffffff; font-size: 24px;">
@@ -110,7 +110,7 @@ async function sendEmail(payload, textMessage) {
   })
 
   await transporter.sendMail({
-    from: `Style Generate AI <${emailAddress}>`,
+    from: `AI Style Generator <${emailAddress}>`,
     to: emailAddress,
     subject: `New message from ${payload.name}`,
     text: textMessage,
