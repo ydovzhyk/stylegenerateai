@@ -28,6 +28,12 @@ import {
   PHOTO_LAB_DEFAULT_MODEL_PRESET,
 } from '@/constants/model-presets'
 import {
+  AI_MODEL_IDS,
+  AI_MODEL_META,
+  DEFAULT_AI_MODEL,
+  isNewestAiModel,
+} from '@/constants/ai-models'
+import {
   DEFAULT_RESTORE_STYLE,
   RESTORE_COLORIZE_MODE,
   RESTORE_STYLE_IDS,
@@ -58,6 +64,12 @@ const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
   label: CLIENT_MODEL_PRESET_META[id].label,
   description: CLIENT_MODEL_PRESET_META[id].description,
+}))
+
+const AI_MODELS = AI_MODEL_IDS.map((id) => ({
+  id,
+  label: AI_MODEL_META[id].label,
+  description: AI_MODEL_META[id].description,
 }))
 
 const RESTORE_STYLES = RESTORE_STYLE_IDS.map((id) => ({
@@ -159,6 +171,7 @@ export default function PhotoLabPreviewTester() {
     PHOTO_LAB_TEST_MODES[0].id,
   )
   const [modelPreset, setModelPreset] = useState(PHOTO_LAB_DEFAULT_MODEL_PRESET)
+  const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL)
   const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
 
@@ -475,6 +488,7 @@ export default function PhotoLabPreviewTester() {
 
       formData.append('mode', selectedMode.id)
       formData.append('modelPreset', modelPreset)
+      formData.append('aiModel', aiModel)
       formData.append('photoQuality', selectedPhotoQuality.id)
       formData.append('additionalPrompt', normalizedAdditionalPrompt)
 
@@ -661,6 +675,69 @@ export default function PhotoLabPreviewTester() {
               caseMode="sentence"
               className="mb-3 uppercase tracking-[0.18em]"
             >
+              AI model
+            </Text>
+
+            <div className="flex flex-col gap-3">
+              {AI_MODELS.map((model) => {
+                const active = aiModel === model.id
+
+                return (
+                  <label
+                    key={model.id}
+                    className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${
+                      active
+                        ? 'border-cyan-300/35 bg-cyan-300/10'
+                        : 'border-white/10 bg-background-soft/70'
+                    }`}
+                  >
+                    <span className="flex items-start gap-3">
+                      <input
+                        type="radio"
+                        name="aiModel"
+                        value={model.id}
+                        checked={active}
+                        onChange={() => setAiModel(model.id)}
+                        disabled={isGenerating || isSavingTemplate}
+                        className="mt-1 h-4 w-4 accent-[var(--primary)]"
+                      />
+
+                      <span>
+                        <Text
+                          as="span"
+                          variant="body-sm"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {model.label}
+                        </Text>
+
+                        <Text
+                          as="span"
+                          variant="caption"
+                          color="muted"
+                          caseMode="sentence"
+                          className="mt-1 block"
+                        >
+                          {model.description}
+                        </Text>
+                      </span>
+                    </span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+
+          {!isNewestAiModel(aiModel) ? (
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <Text
+              as="p"
+              variant="caption"
+              color="faint"
+              caseMode="sentence"
+              className="mb-3 uppercase tracking-[0.18em]"
+            >
               Photo likeness
             </Text>
 
@@ -714,6 +791,7 @@ export default function PhotoLabPreviewTester() {
               })}
             </div>
           </div>
+          ) : null}
 
           {isRestoreColorizeMode ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">

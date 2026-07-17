@@ -38,6 +38,7 @@ export default function Select({
   isSearchable = false,
   isClearable = false,
   isDisabled = false,
+  isOptionDisabled,
   required = false,
   menuPlacement = 'bottom',
   hideHelp = false,
@@ -168,16 +169,20 @@ export default function Select({
         borderRadius: '0.875rem',
         padding: '0.75rem 0.875rem',
         fontSize: '0.95rem',
-        cursor: 'pointer',
-        color: 'var(--text)',
-        background: state.isSelected
-          ? 'rgba(124, 92, 255, 0.16)'
-          : state.isFocused
-            ? 'rgba(255, 255, 255, 0.06)'
-            : 'transparent',
+        cursor: state.isDisabled ? 'not-allowed' : 'pointer',
+        color: state.isDisabled ? 'rgba(255, 255, 255, 0.38)' : 'var(--text)',
+        background: state.isDisabled
+          ? 'transparent'
+          : state.isSelected
+            ? 'rgba(124, 92, 255, 0.16)'
+            : state.isFocused
+              ? 'rgba(255, 255, 255, 0.06)'
+              : 'transparent',
         transition: 'all 0.16s ease',
         ':active': {
-          background: 'rgba(124, 92, 255, 0.18)',
+          background: state.isDisabled
+            ? 'transparent'
+            : 'rgba(124, 92, 255, 0.18)',
         },
       }),
 
@@ -215,6 +220,7 @@ export default function Select({
         isSearchable={isSearchable}
         isClearable={isClearable}
         isDisabled={isDisabled}
+        isOptionDisabled={isOptionDisabled}
         aria-invalid={Boolean(error)}
         aria-describedby={describedById}
         menuPortalTarget={

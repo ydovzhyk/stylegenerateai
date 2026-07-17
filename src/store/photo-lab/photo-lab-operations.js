@@ -6,6 +6,7 @@ import {
   axiosGetPhotoLabTemplates,
   axiosDeletePhotoLabTemplate,
 } from '@/services/api/photo-lab'
+import { getGenerationUsage } from '../generation-usage/generation-usage-operations'
 
 const toReject = (error, rejectWithValue) => {
   const status = error?.response?.status || 0
@@ -18,9 +19,11 @@ const toReject = (error, rejectWithValue) => {
 
 export const generatePhotoLabAdminPreview = createAsyncThunk(
   'photo-lab/generate-admin-preview',
-  async (formData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue, dispatch }) => {
     try {
-      return await axiosGeneratePhotoLabAdminPreview(formData)
+      const data = await axiosGeneratePhotoLabAdminPreview(formData)
+      dispatch(getGenerationUsage())
+      return data
     } catch (e) {
       return toReject(e, rejectWithValue)
     }

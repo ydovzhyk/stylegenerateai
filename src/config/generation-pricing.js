@@ -44,11 +44,21 @@ function normalizeSelections(planConfig, selections = {}) {
   const fixedSelections = pricing.fixedSelections || {}
   const forcedSelections = pricing.forcedSelections || {}
 
-  return {
+  const merged = {
     ...selections,
     ...fixedSelections,
     ...forcedSelections,
   }
+
+  const aiModel = String(merged.aiModel || 'classic').trim() || 'classic'
+  merged.aiModel = aiModel
+
+  // Newest always bills and behaves as max likeness (identity).
+  if (aiModel === 'newest') {
+    merged.modelPreset = 'identity'
+  }
+
+  return merged
 }
 
 function getOptionEntry(planConfig, groupKey, optionId) {

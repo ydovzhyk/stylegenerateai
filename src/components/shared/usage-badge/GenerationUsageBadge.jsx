@@ -18,9 +18,12 @@ function getCreditsValues(usage) {
 
 function getUsageLabel(usage) {
   if (usage?.isUnlimited) {
+    const daily = Number(usage?.usedDaily ?? 0)
+    const monthly = Number(usage?.usedMonthly ?? 0)
+
     return (
       <Text as="span" variant="caption" color="white" caseMode="sentence">
-        Unlimited
+        {daily} today · {monthly} month
       </Text>
     )
   }
@@ -28,6 +31,18 @@ function getUsageLabel(usage) {
   const { remaining, total } = getCreditsValues(usage)
 
   return `${remaining}/${total}`
+}
+
+function getUsageTitle(usage) {
+  if (!usage?.isUnlimited) {
+    const { remaining, total } = getCreditsValues(usage)
+    return `${remaining} credits available. Used: ${usage?.usedCredits || 0}.`
+  }
+
+  const daily = Number(usage?.usedDaily ?? 0)
+  const monthly = Number(usage?.usedMonthly ?? 0)
+
+  return `Unlimited credits. Admin generations: ${daily} today, ${monthly} this month.`
 }
 
 function getPlanLabel(planKey = '') {
@@ -73,11 +88,7 @@ export default function GenerationUsageBadge({ compact = false, className }) {
         isLow ? 'border-amber-300/30' : 'border-white/10',
         className,
       )}
-      title={
-        usage?.isUnlimited
-          ? 'Unlimited credits'
-          : `${remaining} credits available. Used: ${usage?.usedCredits || 0}.`
-      }
+      title={getUsageTitle(usage)}
     >
       <span
         className={clsx(
@@ -103,6 +114,13 @@ export default function GenerationUsageBadge({ compact = false, className }) {
         <span className="block whitespace-nowrap text-sm font-semibold leading-tight text-white md:text-base">
           {compact ? (
             getUsageLabel(usage)
+          ) : usage?.isUnlimited ? (
+            <>
+              {getUsageLabel(usage)}{' '}
+              <Text as="span" variant="caption" color="white" caseMode="lower">
+                gens
+              </Text>
+            </>
           ) : (
             <>
               {getUsageLabel(usage)}{' '}

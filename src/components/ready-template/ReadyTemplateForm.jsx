@@ -351,6 +351,7 @@ export default function ReadyTemplateForm() {
     prototype,
     output,
     photoQuality,
+    aiModel,
     modelPreset,
   }) => {
     const safePrompt = String(prompt || '').trim()
@@ -387,6 +388,10 @@ export default function ReadyTemplateForm() {
 
     if (photoQuality?.id) {
       formData.append('photoQualityId', photoQuality.id)
+    }
+
+    if (aiModel) {
+      formData.append('aiModel', aiModel)
     }
 
     if (modelPreset) {

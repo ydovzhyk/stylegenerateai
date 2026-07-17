@@ -1,9 +1,11 @@
 'use client'
 
-import { Download, Info, RotateCcw, Sparkles } from 'lucide-react'
+import { useMemo } from 'react'
+import { Download, Info, Lock, RotateCcw, Sparkles } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Select from '@/components/shared/select/Select'
 import { useTranslate } from '@/utils/translate/translate'
 
 const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
@@ -18,6 +20,20 @@ function HoverHint({ text, children, className = '' }) {
         {translatedText}
       </span>
     </div>
+  )
+}
+
+function formatFileFormatOption(option) {
+  return (
+    <span className="flex w-full items-center justify-between gap-3">
+      <span className="flex min-w-0 flex-col text-left">
+        <span className="font-medium">{option.label}</span>
+        {option.description ? (
+          <span className="mt-0.5 text-xs text-white/55">{option.description}</span>
+        ) : null}
+      </span>
+      {option.isLocked ? <Lock size={14} className="shrink-0 opacity-70" /> : null}
+    </span>
   )
 }
 
@@ -80,6 +96,30 @@ export default function GenerationActionCard({
     hasUnlockedFileFormats &&
     generatedImageFormats.length > 1 &&
     !isPrintExport
+
+  const fileFormatOptions = useMemo(
+    () =>
+      generatedImageFormats.map((format) => {
+        const locked = isGeneratedImageFormatAllowed
+          ? !isGeneratedImageFormatAllowed(format.id)
+          : false
+
+        return {
+          value: format.id,
+          label: format.label,
+          description: format.description,
+          isLocked: locked,
+          isDisabled: locked,
+        }
+      }),
+    [generatedImageFormats, isGeneratedImageFormatAllowed],
+  )
+
+  const selectedFileFormat =
+    fileFormatOptions.find((option) => option.value === generatedImageFormat) ||
+    null
+
+  const hasLockedFileFormats = fileFormatOptions.some((option) => option.isLocked)
 
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[26px] border border-white/10 bg-white/[0.025] p-5 text-center">
@@ -149,67 +189,24 @@ export default function GenerationActionCard({
           {isLogin ? (
             <div className="mt-[-10px]">
               {canChooseFileFormat ? (
-                <div className="mb-4 rounded-2xl border border-white/10 bg-black/10 p-3">
-                  <Text
-                    as="p"
-                    variant="sub-block-label"
-                    color="white"
-                    caseMode="sentence"
-                    className="mb-2"
-                  >
-                    Save file format
-                  </Text>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {generatedImageFormats.map((format) => {
-                      const isLocked = isGeneratedImageFormatAllowed
-                        ? !isGeneratedImageFormatAllowed(format.id)
-                        : false
-
-                      const isActive = generatedImageFormat === format.id
-
-                      return (
-                        <label
-                          key={format.id}
-                          className={`group/file-format relative cursor-pointer rounded-xl border px-2 py-2 text-center transition ${
-                            isActive
-                              ? 'border-primary/60 bg-primary/20 text-white'
-                              : 'border-white/10 bg-white/[0.02] text-muted hover:border-white/20 hover:text-white'
-                          } ${
-                            isLocked
-                              ? 'cursor-not-allowed opacity-45 hover:border-white/10 hover:text-muted'
-                              : ''
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="generated-image-format"
-                            value={format.id}
-                            checked={isActive}
-                            disabled={isLocked}
-                            onChange={() =>
-                              setGeneratedImageFormat?.(format.id)
-                            }
-                            className="sr-only"
-                          />
-
-                          <span className="block text-xs font-semibold">
-                            {format.label}
-                          </span>
-
-                          <span className="mt-1 block text-[10px] leading-none opacity-70">
-                            {format.description}
-                          </span>
-
-                          {isLocked ? (
-                            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-[190px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-xs leading-relaxed text-cyan-300 opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/file-format:opacity-100">
-                              {formatLockedText}
-                            </span>
-                          ) : null}
-                        </label>
-                      )
-                    })}
-                  </div>
+                <div className="mb-4">
+                  <Select
+                    id="generated-image-format"
+                    label="Save file format"
+                    labelClassName={SUB_BLOCK_LABEL_CLASS}
+                    options={fileFormatOptions}
+                    value={selectedFileFormat}
+                    onChange={(option) => {
+                      if (!option?.value || option.isLocked) return
+                      setGeneratedImageFormat?.(option.value)
+                    }}
+                    isOptionDisabled={(option) => Boolean(option.isLocked)}
+                    formatOptionLabel={formatFileFormatOption}
+                    placeholder="Select file format"
+                    hideHelp={!hasLockedFileFormats}
+                    hint={hasLockedFileFormats ? formatLockedText : undefined}
+                    menuPlacement="top"
+                  />
                 </div>
               ) : null}
 

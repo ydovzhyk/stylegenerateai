@@ -1,14 +1,14 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Lock } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Input from '@/components/shared/input/Input'
+import Select from '@/components/shared/select/Select'
 import { useTranslate } from '@/utils/translate/translate'
 
 const SECTION_TITLE_LABEL_CLASS =
   'text-lg font-semibold text-white md:text-xl'
-
-const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
 
 function LockedHint({ text }) {
   const translatedText = useTranslate(text, { caseMode: 'sentence' })
@@ -19,6 +19,28 @@ function LockedHint({ text }) {
       <span className="absolute bottom-full right-0 mb-3 w-[210px] rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-cyan-300 text-xs leading-relaxed opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/option:opacity-100">
         {translatedText}
       </span>
+    </span>
+  )
+}
+
+function buildSelectOptions(items = [], isAllowed) {
+  return items.map((item) => {
+    const locked = typeof isAllowed === 'function' ? !isAllowed(item.id) : false
+
+    return {
+      value: item.id,
+      label: item.label,
+      isLocked: locked,
+      isDisabled: locked,
+    }
+  })
+}
+
+function formatLockedOptionLabel(option) {
+  return (
+    <span className="flex w-full items-center justify-between gap-3">
+      <span>{option.label}</span>
+      {option.isLocked ? <Lock size={14} className="shrink-0 opacity-70" /> : null}
     </span>
   )
 }
@@ -42,6 +64,11 @@ export default function GenerationOptionsPanel({
   showPrompt = true,
   showOutputFormat = true,
   showPhotoQuality = true,
+  showAiModel = false,
+  aiModel,
+  setAiModel,
+  aiModels = [],
+  isAiModelAllowed,
   showModelPreset = false,
   modelPreset,
   setModelPreset,
@@ -53,6 +80,24 @@ export default function GenerationOptionsPanel({
 }) {
   const columns =
     showOutputFormat && showPhotoQuality ? 'md:grid-cols-2' : 'md:grid-cols-1'
+
+  const hasUpperSections = showPrompt || showOutputFormat || showPhotoQuality
+
+  const outputFormatOptions = useMemo(
+    () => buildSelectOptions(outputFormats, isFormatAllowed),
+    [outputFormats, isFormatAllowed],
+  )
+
+  const photoQualityOptions = useMemo(
+    () => buildSelectOptions(photoQualities, isQualityAllowed),
+    [photoQualities, isQualityAllowed],
+  )
+
+  const selectedOutputFormat =
+    outputFormatOptions.find((option) => option.value === outputFormat) || null
+
+  const selectedPhotoQuality =
+    photoQualityOptions.find((option) => option.value === photoQuality) || null
 
   return (
     <div className="rounded-[26px] border border-white/10 bg-white/[0.025] p-5">
@@ -77,85 +122,107 @@ export default function GenerationOptionsPanel({
           }
         >
           {showOutputFormat ? (
-            <div>
-              <Text variant="section-title" color="white" className="mb-2">
-                Output format
-              </Text>
-
-              <div className="grid gap-2">
-                {outputFormats.map((format) => {
-                  const isLocked = !isFormatAllowed(format.id)
-                  const isActive = outputFormat === format.id
-
-                  return (
-                    <button
-                      key={format.id}
-                      type="button"
-                      disabled={isLocked}
-                      onClick={() => setOutputFormat(format.id)}
-                      className={`group/option relative flex w-full items-center justify-between rounded-xl border px-3 py-2 pr-9 ${
-                        isActive
-                          ? 'border-primary/50 bg-primary/20'
-                          : 'border-white/10'
-                      } ${
-                        isLocked
-                          ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
-                          : 'text-white'
-                      }`}
-                    >
-                      <Text as="span" variant="caption" caseMode="title">
-                        {format.label}
-                      </Text>
-                      {isLocked ? <LockedHint text={lockedText} /> : null}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <Select
+              id="generation-output-format"
+              label="Output format"
+              labelClassName={SECTION_TITLE_LABEL_CLASS}
+              options={outputFormatOptions}
+              value={selectedOutputFormat}
+              onChange={(option) => {
+                if (!option?.value || option.isLocked) return
+                setOutputFormat?.(option.value)
+              }}
+              isOptionDisabled={(option) => Boolean(option.isLocked)}
+              formatOptionLabel={formatLockedOptionLabel}
+              placeholder="Select format"
+              hideHelp
+              hint={lockedText}
+            />
           ) : null}
 
           {showPhotoQuality ? (
-            <div>
-              <Text variant="section-title" color="white" className="mb-2">
-                {photoQualityLabel}
-              </Text>
-
-              <div className="grid gap-2">
-                {photoQualities.map((quality) => {
-                  const isLocked = !isQualityAllowed(quality.id)
-                  const isActive = photoQuality === quality.id
-
-                  return (
-                    <button
-                      key={quality.id}
-                      type="button"
-                      disabled={isLocked}
-                      onClick={() => setPhotoQuality(quality.id)}
-                      className={`group/option relative flex w-full items-center justify-between rounded-xl border px-3 py-2 pr-9 ${
-                        isActive
-                          ? 'border-primary/50 bg-primary/20'
-                          : 'border-white/10'
-                      } ${
-                        isLocked
-                          ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
-                          : 'text-white'
-                      }`}
-                    >
-                      <Text as="span" variant="caption" caseMode="title">
-                        {quality.label}
-                      </Text>
-                      {isLocked ? <LockedHint text={lockedText} /> : null}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
+            <Select
+              id="generation-export-size"
+              label={photoQualityLabel}
+              labelClassName={SECTION_TITLE_LABEL_CLASS}
+              options={photoQualityOptions}
+              value={selectedPhotoQuality}
+              onChange={(option) => {
+                if (!option?.value || option.isLocked) return
+                setPhotoQuality?.(option.value)
+              }}
+              isOptionDisabled={(option) => Boolean(option.isLocked)}
+              formatOptionLabel={formatLockedOptionLabel}
+              placeholder="Select export size"
+              hideHelp
+              hint={lockedText}
+            />
           ) : null}
         </div>
       ) : null}
 
+      {showAiModel && aiModels.length ? (
+        <div className={hasUpperSections ? 'mt-4' : ''}>
+          <Text variant="section-title" color="white" className="mb-2">
+            AI model
+          </Text>
+
+          <div className="grid gap-2">
+            {aiModels.map((model) => {
+              const isLocked = !isAiModelAllowed?.(model.id)
+              const isActive = aiModel === model.id
+
+              return (
+                <button
+                  key={model.id}
+                  type="button"
+                  disabled={isLocked}
+                  onClick={() => setAiModel?.(model.id)}
+                  className={`group/option relative flex w-full flex-col items-start rounded-xl border px-3 py-2 pr-9 text-left ${
+                    isActive
+                      ? 'border-primary/50 bg-primary/20'
+                      : 'border-white/10'
+                  } ${
+                    isLocked
+                      ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
+                      : 'text-white'
+                  }`}
+                >
+                  <Text
+                    as="span"
+                    variant="sub-block-label"
+                    color="white"
+                    caseMode="title"
+                  >
+                    {model.label}
+                  </Text>
+
+                  {model.description ? (
+                    <Text
+                      as="span"
+                      variant="caption"
+                      color="muted"
+                      caseMode="sentence"
+                      className="mt-1.5 text-sm leading-5"
+                    >
+                      {model.description}
+                    </Text>
+                  ) : null}
+
+                  {isLocked ? <LockedHint text={lockedText} /> : null}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
+
       {showModelPreset && modelPresets.length ? (
-        <div className={showPrompt || showOutputFormat || showPhotoQuality ? 'mt-4' : ''}>
+        <div
+          className={
+            hasUpperSections || (showAiModel && aiModels.length) ? 'mt-4' : ''
+          }
+        >
           <Text variant="section-title" color="white" className="mb-2">
             Photo likeness
           </Text>
@@ -181,7 +248,12 @@ export default function GenerationOptionsPanel({
                       : 'text-white'
                   }`}
                 >
-                  <Text as="span" variant="sub-block-label" color="white" caseMode="title">
+                  <Text
+                    as="span"
+                    variant="sub-block-label"
+                    color="white"
+                    caseMode="title"
+                  >
                     {preset.label}
                   </Text>
 

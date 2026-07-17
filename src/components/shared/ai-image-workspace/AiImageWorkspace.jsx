@@ -157,6 +157,11 @@ export default function AiImageWorkspace({
     modelPresets,
     showModelPreset,
     isModelPresetAllowed,
+    aiModel,
+    setAiModel,
+    aiModels,
+    showAiModel,
+    isAiModelAllowed,
     closerPresetCreditDelta,
     generatedImageFormat,
     setGeneratedImageFormat,
@@ -482,6 +487,7 @@ export default function AiImageWorkspace({
           formData.append('outputFormat', outputFormat)
         }
         formData.append('modelPreset', activePreset)
+        formData.append('aiModel', aiModel || 'classic')
         formData.append('isRegeneration', generatedPreview ? 'true' : 'false')
 
         if (
@@ -536,6 +542,7 @@ export default function AiImageWorkspace({
       formData.append('outputFormat', outputFormat)
       formData.append('photoQuality', photoQuality)
       formData.append('modelPreset', activePreset)
+      formData.append('aiModel', aiModel || 'classic')
       formData.append('isRegeneration', generatedPreview ? 'true' : 'false')
 
       if (!isLogin && visitorId) {
@@ -1446,6 +1453,11 @@ export default function AiImageWorkspace({
             lockedText={lockedText}
             showPrompt={false}
             showOutputFormat={showOutputFormat}
+            showAiModel={showAiModel}
+            aiModel={aiModel}
+            setAiModel={setAiModel}
+            aiModels={aiModels}
+            isAiModelAllowed={isAiModelAllowed}
             showModelPreset={showModelPreset}
             modelPreset={modelPreset}
             setModelPreset={setModelPreset}

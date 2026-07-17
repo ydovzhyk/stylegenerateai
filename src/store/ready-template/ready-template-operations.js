@@ -12,6 +12,7 @@ import {
   axiosGenerateYourLookClientImage,
 } from '@/services/api/ready-template'
 import { axiosAutogenerateReadyTemplates } from '../../services/api/autogenerate'
+import { getGenerationUsage } from '../generation-usage/generation-usage-operations'
 
 const toReject = (error, rejectWithValue) => {
   const status = error?.response?.status || 0
@@ -47,9 +48,10 @@ export const resolvePromptMetadata = createAsyncThunk(
 
 export const generateReadyTemplatePreview = createAsyncThunk(
   'ready-templates/generatePreview',
-  async (formData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue, dispatch }) => {
     try {
       const data = await axiosGenerateReadyTemplatePreview(formData)
+      dispatch(getGenerationUsage())
       return data
     } catch (e) {
       return toReject(e, rejectWithValue)

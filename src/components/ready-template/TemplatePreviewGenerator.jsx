@@ -13,6 +13,12 @@ import {
   DEFAULT_MODEL_PRESET,
 } from '@/constants/model-presets'
 import {
+  AI_MODEL_IDS,
+  AI_MODEL_META,
+  DEFAULT_AI_MODEL,
+  isNewestAiModel,
+} from '@/constants/ai-models'
+import {
   OUTPUT_FORMATS,
   getOutputFormat,
   DEFAULT_OUTPUT_FORMAT,
@@ -27,6 +33,12 @@ const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
   label: CLIENT_MODEL_PRESET_META[id].label,
   description: CLIENT_MODEL_PRESET_META[id].description,
+}))
+
+const AI_MODELS = AI_MODEL_IDS.map((id) => ({
+  id,
+  label: AI_MODEL_META[id].label,
+  description: AI_MODEL_META[id].description,
 }))
 
 const RACE_OPTIONS = [
@@ -87,6 +99,7 @@ export default function TemplatePreviewGenerator({
   const [generationPrompt, setGenerationPrompt] = useState('')
   const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
+  const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL)
   const [modelPreset, setModelPreset] = useState(DEFAULT_MODEL_PRESET)
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [generatedFile, setGeneratedFile] = useState(null)
@@ -148,6 +161,7 @@ export default function TemplatePreviewGenerator({
     setGenerationPrompt('')
     setOutputFormat(DEFAULT_OUTPUT_FORMAT)
     setPhotoQuality(DEFAULT_PHOTO_QUALITY)
+    setAiModel(DEFAULT_AI_MODEL)
     setModelPreset(DEFAULT_MODEL_PRESET)
     setGeneratedPreview('')
     setGeneratedFile(null)
@@ -200,6 +214,7 @@ export default function TemplatePreviewGenerator({
           },
           output: selectedOutputFormat,
           photoQuality: selectedPhotoQuality,
+          aiModel,
           modelPreset,
         })
 
@@ -230,7 +245,11 @@ export default function TemplatePreviewGenerator({
         }
       }
     } catch (error) {
-      setGenerationError(error?.message || 'Failed to generate preview result')
+      setGenerationError(
+        error?.data?.message ||
+          error?.message ||
+          'Failed to generate preview result',
+      )
     } finally {
       setIsGenerating(false)
     }
@@ -640,21 +659,21 @@ export default function TemplatePreviewGenerator({
                 caseMode="sentence"
                 className="text-foreground-soft mb-2"
               >
-                Photo likeness
+                AI model
               </Text>
 
               <div className="flex flex-col gap-3">
-                {MODEL_PRESETS.map((preset) => (
+                {AI_MODELS.map((model) => (
                   <label
-                    key={preset.id}
+                    key={model.id}
                     className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-background-soft/70 px-4 py-3"
                   >
                     <input
                       type="radio"
-                      name="model-preset"
-                      value={preset.id}
-                      checked={modelPreset === preset.id}
-                      onChange={() => setModelPreset(preset.id)}
+                      name="ai-model"
+                      value={model.id}
+                      checked={aiModel === model.id}
+                      onChange={() => setAiModel(model.id)}
                       disabled={disabled || isGenerating}
                       className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
                     />
@@ -666,7 +685,7 @@ export default function TemplatePreviewGenerator({
                         color="soft"
                         caseMode="sentence"
                       >
-                        {preset.label}
+                        {model.label}
                       </Text>
 
                       <Text
@@ -676,13 +695,66 @@ export default function TemplatePreviewGenerator({
                         caseMode="sentence"
                         className="mt-1"
                       >
-                        {preset.description}
+                        {model.description}
                       </Text>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
+
+            {!isNewestAiModel(aiModel) ? (
+              <div className="mt-4">
+                <Text
+                  as="p"
+                  variant="caption"
+                  caseMode="sentence"
+                  className="text-foreground-soft mb-2"
+                >
+                  Photo likeness
+                </Text>
+
+                <div className="flex flex-col gap-3">
+                  {MODEL_PRESETS.map((preset) => (
+                    <label
+                      key={preset.id}
+                      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-background-soft/70 px-4 py-3"
+                    >
+                      <input
+                        type="radio"
+                        name="model-preset"
+                        value={preset.id}
+                        checked={modelPreset === preset.id}
+                        onChange={() => setModelPreset(preset.id)}
+                        disabled={disabled || isGenerating}
+                        className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
+                      />
+
+                      <div className="flex flex-col">
+                        <Text
+                          as="span"
+                          variant="caption"
+                          color="soft"
+                          caseMode="sentence"
+                        >
+                          {preset.label}
+                        </Text>
+
+                        <Text
+                          as="span"
+                          variant="caption"
+                          color="muted"
+                          caseMode="sentence"
+                          className="mt-1"
+                        >
+                          {preset.description}
+                        </Text>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Button
