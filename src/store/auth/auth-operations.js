@@ -42,7 +42,6 @@ export const login = createAsyncThunk(
     dispatch(resetVisitor())
     dispatch(resetGenerationUsage())
     dispatch(getGenerationUsage())
-
     return data
   } catch (e) {
     return toReject(e, rejectWithValue)
