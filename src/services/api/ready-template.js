@@ -1,4 +1,5 @@
 import { instance } from './instance'
+import { resolveGenerationResponse } from './generation-job'
 
 export const axiosGetCategories = async (params = {}) => {
   const { data } = await instance.get('/ready-templates/categories', {
@@ -64,7 +65,7 @@ export const axiosGenerateYourLookClientImage = async (formData) => {
     '/ready-templates/generate-your-look',
     formData,
   )
-  return data
+  return resolveGenerationResponse(data, formData)
 }
 
 export const axiosEditReadyTemplate = async (id, payload) => {
