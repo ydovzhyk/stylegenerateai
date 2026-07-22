@@ -33,6 +33,7 @@ const initialState = {
     smart_edit: [],
     remove_objects: [],
     enhance_quality: [],
+    creative_retouch: [],
   },
   templatesLoading: false,
 }
@@ -115,6 +116,7 @@ const photoLabSlice = createSlice({
           smart_edit: [],
           remove_objects: [],
           enhance_quality: [],
+          creative_retouch: [],
         }
       })
       .addCase(getPhotoLabTemplates.rejected, (state, { payload }) => {

@@ -21,21 +21,21 @@ import { getUser } from '@/store/auth/auth-selectors'
 const CARD_ROTATE_MS = 8200
 
 const MODE_PREVIEW_LABELS = {
-  professional_portrait: { before: 'Before', after: 'After' },
+  professional_portrait: { before: 'Casual', after: 'LinkedIn-ready' },
   restore_colorize: { before: 'Old photo', after: 'Restored' },
   smart_edit: { before: 'Original', after: 'Edited' },
   remove_objects: { before: 'Distracting', after: 'Clean' },
-  enhance_quality: { before: 'Low quality', after: 'Enhanced' },
-  creative_retouch: { before: 'Flat', after: 'Cinematic' },
+  enhance_quality: { before: 'Soft', after: 'Clearer' },
+  creative_retouch: { before: 'Everyday', after: 'Instagram-ready' },
 }
 
 const MODE_SOURCE_BADGE_LABELS = {
-  professional_portrait: 'LinkedIn / CV photo',
+  professional_portrait: 'Casual photo',
   restore_colorize: 'Old photo',
   smart_edit: 'Original',
   remove_objects: 'Distracting',
-  enhance_quality: 'Low quality',
-  creative_retouch: 'Flat',
+  enhance_quality: 'Soft',
+  creative_retouch: 'Everyday',
 }
 
 function getSourceBadgeLabel(modeId = '') {
@@ -49,16 +49,17 @@ function getSourceBadgeLabel(modeId = '') {
 const SHOWCASE_MODE_ITEMS = [
   {
     id: 'professional_portrait',
-    afterLabel: 'Professional',
+    afterLabel: 'LinkedIn-ready',
     title: 'LinkedIn-ready portrait',
     description:
-      'Clean studio light, better outfit, polished background.',
+      'Same you in a clean business look — professional outfit and a modern office setting.',
   },
   {
     id: 'restore_colorize',
     afterLabel: 'Restored',
     title: 'Restore family memories',
-    description: 'Repair damage, improve details, and add natural color.',
+    description:
+      'Repair damage and fading — keep the original look, or add natural color.',
   },
   {
     id: 'smart_edit',
@@ -70,20 +71,22 @@ const SHOWCASE_MODE_ITEMS = [
     id: 'remove_objects',
     afterLabel: 'Clean',
     title: 'Remove unwanted objects',
-    description: 'Clean visual noise and keep the photo natural.',
+    description:
+      'Clear out distractions — keep the rest of the shot exactly as it was.',
   },
   {
     id: 'enhance_quality',
-    afterLabel: 'Enhanced',
-    title: 'Enhance photo quality',
+    afterLabel: 'Clearer',
+    title: 'Sharper photo quality',
     description:
-      'Reduce noise, compression, and murky shadows — same photo, better readability.',
+      'Recover detail and cut haze or compression — same photo, easier to read.',
   },
   {
     id: 'creative_retouch',
-    afterLabel: 'Cinematic',
-    title: 'Creative retouch',
-    description: 'Add premium color grading and a polished visual mood.',
+    afterLabel: 'Instagram-ready',
+    title: 'Premium Instagram polish',
+    description:
+      'Same shot, cleaner finish: polished skin, even tone, and a premium look.',
   },
 ]
 

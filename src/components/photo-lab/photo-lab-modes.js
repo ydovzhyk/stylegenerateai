@@ -13,11 +13,11 @@ export const PHOTO_LAB_MODES = [
     title: 'Professional Portrait',
     label: 'LinkedIn / CV photo',
     description:
-      'Create a polished business portrait for LinkedIn, resumes, profiles, and professional platforms.',
+      'Turn a casual photo into a LinkedIn-ready headshot — same person, professional outfit, and a modern office look.',
     icon: BriefcaseBusiness,
     accent: 'from-primary/30 to-cyan-400/20',
     promptPlaceholder:
-      'Example: straight hair, light sun tan, soft smile.',
+      'Example: soft smile, light blazer, natural office background.',
     uploadHint: 'Upload a clear face or upper-body photo.',
   },
   {
@@ -25,11 +25,11 @@ export const PHOTO_LAB_MODES = [
     title: 'Restore & Colorize',
     label: 'Old photo repair',
     description:
-      'Restore damaged, blurry, or black-and-white photos and bring old memories back to life.',
+      'Bring old photos back — repair damage and fading, and optionally add natural color. Same photo, clearer memory.',
     icon: Sparkles,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
-      'Example: warmer skin tones, cleaner scratches, softer faded edges.',
+      'Example: softer faded edges, cleaner scratches, warmer natural tones.',
     uploadHint: 'Upload an old, blurry, damaged, or black-and-white photo.',
   },
   {
@@ -41,45 +41,45 @@ export const PHOTO_LAB_MODES = [
     icon: WandSparkles,
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: navy blazer instead of gray, warmer office lighting.',
+      'Example: camera on a tripod in front of me on the table; I am wearing the hoodie from reference photo 1.',
     uploadHint:
-      'Upload 1 image for simple edits. Multiple images can come later.',
+      'Upload your main photo, optionally add up to 5 reference photos, then describe the edit.',
   },
   {
     id: 'remove_objects',
     title: 'Remove Objects',
     label: 'Clean distractions',
     description:
-      'Remove unwanted objects or distractions. Paint a mask, describe what to remove, or both.',
+      'Remove unwanted people, objects, or clutter — same photo, everything else stays as it was.',
     icon: Eraser,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
-      'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...',
+      'Example: remove the seagulls near the man\'s feet...',
     uploadHint:
-      'Upload a photo, then paint a mask and/or describe what to remove.',
+      'Upload a photo, then paint what to remove and/or describe it.',
   },
   {
     id: 'enhance_quality',
     title: 'Enhance Quality',
-    label: 'Clarity cleanup',
+    label: 'Sharper & clearer',
     description:
-      'Clean noise, compression, blur, and dark or hazy photos while keeping the same shot, pose, and scene.',
+      'Make soft, noisy, or hazy photos sharper and clearer — same shot, same person, same scene.',
     icon: ImagePlus,
     accent: 'from-emerald-300/20 to-cyan-400/20',
     promptPlaceholder:
-      'Example: slightly brighter face, reduce noise in shadows.',
-    uploadHint: 'Upload a dark, blurry, noisy, or compressed photo.',
+      'Example: clearer background details, less noise in shadows.',
+    uploadHint: 'Upload a soft, noisy, compressed, or hazy photo.',
   },
   {
     id: 'creative_retouch',
     title: 'Creative Retouch',
-    label: 'Style polish',
+    label: 'Instagram polish',
     description:
-      'Add cinematic lighting, premium color grading, clean skin tones, and a more polished look.',
+      'Keep the same photo — cleaner skin, even tone, and a premium Instagram-ready finish.',
     icon: Paintbrush,
     accent: 'from-fuchsia-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: warmer cinematic tones, softer skin, light film grain.',
+      'Example: softer skin on arms, cleaner shirt, warmer evening tones.',
     uploadHint: 'Upload a portrait, lifestyle, or social media photo.',
   },
 ]

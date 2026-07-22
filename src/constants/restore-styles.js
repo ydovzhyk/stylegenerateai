@@ -8,16 +8,16 @@ export const RESTORE_STYLE_META = {
   restore_only: {
     label: 'Restore only',
     shortLabel: 'Restore only',
-    description: 'Repair damage and improve clarity without adding new color.',
+    description: 'Repair damage and improve clarity — keep the original tones.',
     modalDescription:
-      'Repair scratches, fading, and damage while keeping the original black-and-white, sepia, or faded color look.',
+      'Fix scratches, stains, and fading while keeping black-and-white, sepia, or faded color as it was.',
   },
   restore_and_colorize: {
     label: 'Restore & colorize',
     shortLabel: 'Restore & colorize',
-    description: 'Repair damage and add natural, believable color when appropriate.',
+    description: 'Repair damage and add natural color when it fits.',
     modalDescription:
-      'Repair the photo and add natural, historically believable color for black-and-white or faded images.',
+      'Repair the photo and bring black-and-white or faded images back with natural, believable color.',
   },
 }
 

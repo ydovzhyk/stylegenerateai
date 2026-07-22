@@ -42,7 +42,7 @@ import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
 import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 import { translateTextTo } from '@/utils/translate/translate'
-import { ImagePlus, Maximize2, Sparkles } from 'lucide-react'
+import { ImagePlus, Maximize2, Sparkles, X } from 'lucide-react'
 import clsx from 'clsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -50,9 +50,17 @@ import { useDispatch, useSelector } from 'react-redux'
 const DEFAULT_ACTION_CARD_LABELS = {}
 const REMOVE_OBJECTS_MODE = 'remove_objects'
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
+const SMART_EDIT_MODE = 'smart_edit'
+const SMART_EDIT_MAX_REFERENCE_IMAGES = 5
 const PRINT_EXPORT_POLL_MS = 3_000
 const WORKSPACE_PREVIEW_FRAME_CLASS =
   'group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5]'
+
+function revokePreviewUrls(urls = []) {
+  urls.forEach((url) => {
+    if (url) URL.revokeObjectURL(url)
+  })
+}
 
 export default function AiImageWorkspace({
   template,
@@ -73,6 +81,7 @@ export default function AiImageWorkspace({
 }) {
   const isPhotoLab = productKey === 'photo_lab'
   const inputRef = useRef(null)
+  const referenceInputRef = useRef(null)
   const resultRef = useRef(null)
   const maskEditorRef = useRef(null)
   const previousTemplateIdRef = useRef(null)
@@ -84,6 +93,8 @@ export default function AiImageWorkspace({
 
   const [clientFile, setClientFile] = useState(null)
   const [clientPreview, setClientPreview] = useState('')
+  const [referenceFiles, setReferenceFiles] = useState([])
+  const [referencePreviews, setReferencePreviews] = useState([])
   const [extraPrompt, setExtraPrompt] = useState('')
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [generatedFile, setGeneratedFile] = useState(null)
@@ -119,6 +130,7 @@ export default function AiImageWorkspace({
     isPhotoLab && activeModeId === ENHANCE_QUALITY_MODE
   const isRestoreColorizeMode =
     isPhotoLab && activeModeId === RESTORE_COLORIZE_MODE
+  const isSmartEditMode = isPhotoLab && activeModeId === SMART_EDIT_MODE
 
   const resetMaskState = () => {
     setMaskTool('brush')
@@ -368,11 +380,33 @@ export default function AiImageWorkspace({
       if (prev) URL.revokeObjectURL(prev)
       return ''
     })
+    setReferenceFiles([])
+    setReferencePreviews((prev) => {
+      revokePreviewUrls(prev)
+      return []
+    })
 
     if (inputRef.current) {
       inputRef.current.value = ''
     }
+    if (referenceInputRef.current) {
+      referenceInputRef.current.value = ''
+    }
   }, [template?.id])
+
+  useEffect(() => {
+    if (isSmartEditMode) return
+
+    setReferenceFiles([])
+    setReferencePreviews((prev) => {
+      revokePreviewUrls(prev)
+      return []
+    })
+
+    if (referenceInputRef.current) {
+      referenceInputRef.current.value = ''
+    }
+  }, [isSmartEditMode])
 
   const selectionComparison = useMemo(() => {
     if (!template) return null
@@ -440,13 +474,63 @@ export default function AiImageWorkspace({
     e.target.value = ''
   }
 
+  const handleReferenceFilesChange = (e) => {
+    const incoming = Array.from(e.target.files || [])
+    if (!incoming.length) return
+
+    setReferenceFiles((prev) => {
+      const remaining = SMART_EDIT_MAX_REFERENCE_IMAGES - prev.length
+      if (remaining <= 0) return prev
+      return [...prev, ...incoming.slice(0, remaining)]
+    })
+
+    setReferencePreviews((prev) => {
+      const remaining = SMART_EDIT_MAX_REFERENCE_IMAGES - prev.length
+      if (remaining <= 0) return prev
+      return [
+        ...prev,
+        ...incoming
+          .slice(0, remaining)
+          .map((file) => URL.createObjectURL(file)),
+      ]
+    })
+
+    e.target.value = ''
+  }
+
+  const removeReferenceFile = (index) => {
+    setReferenceFiles((prev) => prev.filter((_, i) => i !== index))
+    setReferencePreviews((prev) => {
+      const next = [...prev]
+      const [removed] = next.splice(index, 1)
+      if (removed) URL.revokeObjectURL(removed)
+      return next
+    })
+  }
+
+  const clearReferenceFiles = () => {
+    setReferenceFiles([])
+    setReferencePreviews((prev) => {
+      revokePreviewUrls(prev)
+      return []
+    })
+    if (referenceInputRef.current) {
+      referenceInputRef.current.value = ''
+    }
+  }
+
   const trimmedExtraPrompt = String(extraPrompt || '').trim()
   const canRunRemoveObjects = hasRemovalMask || Boolean(trimmedExtraPrompt)
+  const canRunSmartEdit = Boolean(trimmedExtraPrompt)
 
   const runGeneration = async (presetOverride) => {
     if (!clientFile || !template?.id) return
 
     if (isRemoveObjectsMode && !canRunRemoveObjects) {
+      return
+    }
+
+    if (isSmartEditMode && !canRunSmartEdit) {
       return
     }
 
@@ -466,7 +550,15 @@ export default function AiImageWorkspace({
         const formData = new FormData()
 
         formData.append('mode', template.id)
-        formData.append('photo', clientFile)
+
+        if (isSmartEditMode) {
+          formData.append('photos', clientFile)
+          referenceFiles.forEach((file) => {
+            formData.append('photos', file)
+          })
+        } else {
+          formData.append('photo', clientFile)
+        }
 
         let normalizedExtraPrompt = String(extraPrompt || '').trim()
 
@@ -581,6 +673,7 @@ export default function AiImageWorkspace({
   const handleGenerateClick = () => {
     if (!clientFile || !template?.id) return
     if (isRemoveObjectsMode && !canRunRemoveObjects) return
+    if (isSmartEditMode && !canRunSmartEdit) return
 
     if (shouldOfferCloserPreset) {
       setCloserPresetModalOpen(true)
@@ -916,7 +1009,9 @@ export default function AiImageWorkspace({
 
   const resolvedPromptLabel = isRemoveObjectsMode
     ? 'Additional prompt'
-    : promptLabel
+    : isSmartEditMode
+      ? 'Edit prompt'
+      : promptLabel
 
   const resolvedPromptPlaceholder = isRemoveObjectsMode
     ? "Optional with a mask. Or prompt-only: remove the seagulls near the man's feet..."
@@ -930,10 +1025,14 @@ export default function AiImageWorkspace({
     ? 'Upload your photo, paint a mask, describe what to remove, or both — then generate.'
     : isEnhanceQualityMode
       ? 'Upload your photo, choose likeness and export size, then generate a cleaner version of the same photo.'
-      : workspaceDescription
+      : isSmartEditMode
+        ? 'Upload your main photo, optionally add up to 5 reference photos, describe the edit, then generate.'
+        : workspaceDescription
 
   const isGenerateDisabled =
-    !clientFile || (isRemoveObjectsMode && !canRunRemoveObjects)
+    !clientFile ||
+    (isRemoveObjectsMode && !canRunRemoveObjects) ||
+    (isSmartEditMode && !canRunSmartEdit)
 
   const resolvedActionCardLabels = {
     ...actionCardLabels,
@@ -941,7 +1040,11 @@ export default function AiImageWorkspace({
       ? !clientFile
         ? 'Upload your photo first to continue.'
         : 'Paint a removal mask, add a prompt, or both before generating.'
-      : actionCardLabels.descriptionDisabled,
+      : isSmartEditMode
+        ? !clientFile
+          ? 'Upload your main photo first to continue.'
+          : 'Add a short edit prompt before generating.'
+        : actionCardLabels.descriptionDisabled,
   }
 
   const showSelectionPreview = Boolean(
@@ -1198,11 +1301,104 @@ export default function AiImageWorkspace({
             caseMode="sentence"
             className="mt-2 max-w-[230px]"
           >
-            Choose a clear portrait photo for the best result.
+            {isSmartEditMode
+              ? 'Main photo to edit. Add reference photos below if needed.'
+              : 'Choose a clear portrait photo for the best result.'}
           </Text>
         </button>
       ),
     })
+  }
+
+  const renderSmartEditReferences = () => {
+    if (!isSmartEditMode) return null
+
+    const canAddMore =
+      referenceFiles.length < SMART_EDIT_MAX_REFERENCE_IMAGES
+
+    return (
+      <div className="mb-5 rounded-[26px] border border-white/10 bg-white/[0.025] p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <Text as="p" variant="body" color="white" caseMode="sentence">
+              Reference photos
+            </Text>
+            <Text
+              as="p"
+              variant="caption"
+              color="muted"
+              caseMode="sentence"
+              className="mt-1"
+            >
+              Optional. Up to {SMART_EDIT_MAX_REFERENCE_IMAGES} photos for
+              clothes, objects, or style —{' '}
+              {referenceFiles.length} / {SMART_EDIT_MAX_REFERENCE_IMAGES}{' '}
+              added.
+            </Text>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {referenceFiles.length ? (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={clearReferenceFiles}
+                disabled={loading}
+                className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-4 hover:bg-white/[0.12]"
+              >
+                Clear
+              </Button>
+            ) : null}
+
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => referenceInputRef.current?.click()}
+              disabled={loading || !canAddMore || !clientFile}
+              className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-4 hover:bg-white/[0.12]"
+            >
+              {canAddMore ? 'Add reference' : 'Limit reached'}
+            </Button>
+          </div>
+        </div>
+
+        {referencePreviews.length ? (
+          <div className="mt-4 flex flex-wrap gap-3">
+            {referencePreviews.map((src, index) => (
+              <div
+                key={`${src}-${index}`}
+                className="relative h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-black/20"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`Reference ${index + 1}`}
+                  className="h-full w-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeReferenceFile(index)}
+                  disabled={loading}
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/90 transition hover:bg-black/75"
+                  aria-label={`Remove reference ${index + 1}`}
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        <input
+          ref={referenceInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleReferenceFilesChange}
+        />
+      </div>
+    )
   }
 
   const renderRemoveObjectsResultPreview = () =>
@@ -1419,6 +1615,8 @@ export default function AiImageWorkspace({
           onChange={handleFileChange}
         />
       </div>
+
+      {renderSmartEditReferences()}
 
       <div className="grid items-stretch gap-5 lg:grid-cols-3">
         <div className="flex h-full min-h-[360px] flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5">

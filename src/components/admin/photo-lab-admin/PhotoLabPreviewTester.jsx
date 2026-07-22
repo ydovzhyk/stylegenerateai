@@ -59,6 +59,9 @@ import {
 
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const REMOVE_OBJECTS_MODE = 'remove_objects'
+const SMART_EDIT_MODE = 'smart_edit'
+const SMART_EDIT_MAX_REFERENCE_IMAGES = 5
+const SMART_EDIT_MAX_TOTAL_IMAGES = 1 + SMART_EDIT_MAX_REFERENCE_IMAGES
 
 const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
@@ -106,13 +109,13 @@ const PHOTO_LAB_TEST_MODES = [
   {
     id: 'enhance_quality',
     title: 'Enhance Quality',
-    label: 'Clarity cleanup',
+    label: 'Sharper & clearer',
     icon: ImagePlus,
   },
   {
     id: 'creative_retouch',
     title: 'Creative Retouch',
-    label: 'Style polish',
+    label: 'Instagram polish',
     icon: Paintbrush,
   },
 ]
@@ -217,6 +220,7 @@ export default function PhotoLabPreviewTester() {
   const isEnhanceQualityMode = selectedModeId === ENHANCE_QUALITY_MODE
   const isRestoreColorizeMode = selectedModeId === RESTORE_COLORIZE_MODE
   const isRemoveObjectsMode = selectedModeId === REMOVE_OBJECTS_MODE
+  const isSmartEditMode = selectedModeId === SMART_EDIT_MODE
   const canUsePrototypeSource =
     !isEnhanceQualityMode && !isRemoveObjectsMode
   const requiresUploadedSource =
@@ -366,7 +370,10 @@ export default function PhotoLabPreviewTester() {
     }
 
     if (mainSourceFile) {
-      return [mainSourceFile, ...referenceSourceFiles].slice(0, 3)
+      return [mainSourceFile, ...referenceSourceFiles].slice(
+        0,
+        SMART_EDIT_MAX_TOTAL_IMAGES,
+      )
     }
 
     const prototypeFile = await srcToFile(
@@ -476,6 +483,11 @@ export default function PhotoLabPreviewTester() {
         )
         return
       }
+    }
+
+    if (isSmartEditMode && !normalizedAdditionalPrompt) {
+      setError('Smart Edit requires a short edit prompt')
+      return
     }
 
     setError('')
@@ -1211,7 +1223,7 @@ export default function PhotoLabPreviewTester() {
                     isRestoreColorizeMode ||
                     isRemoveObjectsMode
                       ? `Selected: ${mainSourceFile?.name || 'Not selected'}`
-                      : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / 2`}
+                      : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / ${SMART_EDIT_MAX_REFERENCE_IMAGES}`}
                   </Text>
 
                   <Button
@@ -1346,7 +1358,7 @@ export default function PhotoLabPreviewTester() {
                         ? 'Upload one dark, blurry, noisy, compressed, or hazy photo to test clarity cleanup.'
                         : isRestoreColorizeMode
                           ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
-                          : 'The main photo will always be sent first. You can add up to two supporting reference photos after it.'}
+                          : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
                     </Text>
                   </div>
                 )}
@@ -1381,7 +1393,10 @@ export default function PhotoLabPreviewTester() {
                 multiple
                 className="hidden"
                 onChange={(e) => {
-                  const files = Array.from(e.target.files || []).slice(0, 2)
+                  const files = Array.from(e.target.files || []).slice(
+                    0,
+                    SMART_EDIT_MAX_REFERENCE_IMAGES,
+                  )
                   setReferenceSourceFiles(files)
                   setResultPreview('')
                   setError('')
@@ -1596,7 +1611,8 @@ export default function PhotoLabPreviewTester() {
                   (requiresUploadedSource && !mainSourceFile) ||
                   (isRemoveObjectsMode &&
                     !hasRemovalMask &&
-                    !String(additionalPrompt || '').trim())
+                    !String(additionalPrompt || '').trim()) ||
+                  (isSmartEditMode && !String(additionalPrompt || '').trim())
                 }
                 fullWidth
                 className="w-auto"
