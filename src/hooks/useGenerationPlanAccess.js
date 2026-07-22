@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { getLogin, getUser } from '@/store/auth/auth-selectors'
 
@@ -28,7 +28,6 @@ import {
 
 import {
   CLIENT_MODEL_PRESET_IDS,
-  DEFAULT_MODEL_PRESET,
   getClientPresetMeta,
   resolveDefaultModelPreset,
 } from '@/constants/model-presets'
@@ -222,20 +221,14 @@ export default function useGenerationPlanAccess({
     defaultModelPreset,
   )
   const [selectedAiModel, setSelectedAiModel] = useState(defaultAiModel)
+  const defaultGeneratedImageFormat =
+    allowedGeneratedImageFormats.includes(DEFAULT_GENERATED_IMAGE_FORMAT)
+      ? DEFAULT_GENERATED_IMAGE_FORMAT
+      : allowedGeneratedImageFormats[0] || DEFAULT_GENERATED_IMAGE_FORMAT
   const [selectedGeneratedImageFormat, setSelectedGeneratedImageFormat] =
-    useState(DEFAULT_GENERATED_IMAGE_FORMAT)
+    useState(defaultGeneratedImageFormat)
 
-  useEffect(() => {
-    setSelectedPhotoQuality(defaultPhotoQuality)
-    setSelectedOutputFormat(defaultOutputFormat)
-    setSelectedModelPreset(defaultModelPreset)
-    setSelectedAiModel(defaultAiModel)
-    setSelectedGeneratedImageFormat(
-      allowedGeneratedImageFormats.includes(DEFAULT_GENERATED_IMAGE_FORMAT)
-        ? DEFAULT_GENERATED_IMAGE_FORMAT
-        : allowedGeneratedImageFormats[0] || DEFAULT_GENERATED_IMAGE_FORMAT,
-    )
-  }, [
+  const selectionResetKey = [
     resetKey,
     productKey,
     modeKey,
@@ -244,8 +237,20 @@ export default function useGenerationPlanAccess({
     defaultOutputFormat,
     defaultModelPreset,
     defaultAiModel,
-    allowedGeneratedImageFormats,
-  ])
+    defaultGeneratedImageFormat,
+  ].join('|')
+
+  const [prevSelectionResetKey, setPrevSelectionResetKey] =
+    useState(selectionResetKey)
+
+  if (selectionResetKey !== prevSelectionResetKey) {
+    setPrevSelectionResetKey(selectionResetKey)
+    setSelectedPhotoQuality(defaultPhotoQuality)
+    setSelectedOutputFormat(defaultOutputFormat)
+    setSelectedModelPreset(defaultModelPreset)
+    setSelectedAiModel(defaultAiModel)
+    setSelectedGeneratedImageFormat(defaultGeneratedImageFormat)
+  }
 
   const outputFormat = useMemo(() => {
     return resolveAllowedValue(
@@ -295,9 +300,13 @@ export default function useGenerationPlanAccess({
     return resolveAllowedValue(
       selectedGeneratedImageFormat,
       allowedGeneratedImageFormats,
-      DEFAULT_GENERATED_IMAGE_FORMAT,
+      defaultGeneratedImageFormat,
     )
-  }, [selectedGeneratedImageFormat, allowedGeneratedImageFormats])
+  }, [
+    selectedGeneratedImageFormat,
+    allowedGeneratedImageFormats,
+    defaultGeneratedImageFormat,
+  ])
 
   const generationQuote = useMemo(() => {
     const selections = {
