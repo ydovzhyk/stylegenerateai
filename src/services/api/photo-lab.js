@@ -1,14 +1,13 @@
 import { instance } from './instance'
-import { resolveGenerationResponse } from './generation-job'
 
 export const axiosGeneratePhotoLabAdminPreview = async (formData) => {
   const { data } = await instance.post('/photo-lab/preview', formData)
-  return resolveGenerationResponse(data, formData)
+  return data
 }
 
 export const axiosGeneratePhotoLabClientImage = async (formData) => {
   const { data } = await instance.post('/photo-lab/generate', formData)
-  return resolveGenerationResponse(data, formData)
+  return data
 }
 
 export const axiosCreatePhotoLabTemplate = async (formData) => {
