@@ -13,7 +13,7 @@ export const axiosResolvePromptMetadata = async (payload) => {
     '/ready-templates/resolve-prompt-metadata',
     payload,
   )
-  return data
+  return resolveGenerationResponse(data, payload)
 }
 
 export const axiosGenerateReadyTemplatePreview = async (formData) => {

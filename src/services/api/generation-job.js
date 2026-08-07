@@ -2,15 +2,31 @@ import { instance } from './instance'
 
 const DEFAULT_POLL_MS = 2000
 const MAX_POLL_MS = 5000
-const MAX_WAIT_MS = 10 * 60 * 1000
+const DEFAULT_MAX_WAIT_MS = 10 * 60 * 1000
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function resolveVisitorIdFromFormData(formData) {
-  if (!formData || typeof formData.get !== 'function') return ''
-  return String(formData.get('visitorId') || '').trim()
+function resolvePollContext(context) {
+  if (!context) {
+    return { visitorId: '', maxWaitMs: DEFAULT_MAX_WAIT_MS }
+  }
+
+  if (typeof context.get === 'function') {
+    return {
+      visitorId: String(context.get('visitorId') || '').trim(),
+      maxWaitMs: DEFAULT_MAX_WAIT_MS,
+    }
+  }
+
+  return {
+    visitorId: String(context.visitorId || '').trim(),
+    maxWaitMs:
+      Number.isFinite(Number(context.maxWaitMs)) && Number(context.maxWaitMs) > 0
+        ? Number(context.maxWaitMs)
+        : DEFAULT_MAX_WAIT_MS,
+  }
 }
 
 export const axiosGetGenerationJob = async (jobId, visitorId) => {
@@ -33,14 +49,18 @@ export const axiosGetGenerationJob = async (jobId, visitorId) => {
   return data
 }
 
-export async function waitForGenerationJob(jobId, visitorId = '') {
+export async function waitForGenerationJob(
+  jobId,
+  visitorId = '',
+  maxWaitMs = DEFAULT_MAX_WAIT_MS,
+) {
   const startedAt = Date.now()
   let delayMs = DEFAULT_POLL_MS
 
-  while (Date.now() - startedAt < MAX_WAIT_MS) {
+  while (Date.now() - startedAt < maxWaitMs) {
     const status = await axiosGetGenerationJob(jobId, visitorId)
 
-    if (status?.status === 'ready' && status?.previewUrl) {
+    if (status?.status === 'ready') {
       return status
     }
 
@@ -80,12 +100,12 @@ export async function waitForGenerationJob(jobId, visitorId = '') {
   throw timeoutError
 }
 
-export async function resolveGenerationResponse(data, formData) {
+export async function resolveGenerationResponse(data, context) {
   if (!data?.jobId) {
     return data
   }
 
-  if (data?.status === 'ready' && data?.previewUrl) {
+  if (data?.status === 'ready') {
     return data
   }
 
@@ -93,6 +113,6 @@ export async function resolveGenerationResponse(data, formData) {
     return data
   }
 
-  const visitorId = resolveVisitorIdFromFormData(formData)
-  return waitForGenerationJob(data.jobId, visitorId)
+  const { visitorId, maxWaitMs } = resolvePollContext(context)
+  return waitForGenerationJob(data.jobId, visitorId, maxWaitMs)
 }
