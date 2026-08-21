@@ -54,14 +54,17 @@ import {
   Loader2,
   Paintbrush,
   Sparkles,
+  UserRound,
   WandSparkles,
 } from 'lucide-react'
 
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const REMOVE_OBJECTS_MODE = 'remove_objects'
 const SMART_EDIT_MODE = 'smart_edit'
+const IDENTITY_TRANSFER_MODE = 'identity_transfer'
 const SMART_EDIT_MAX_REFERENCE_IMAGES = 5
 const SMART_EDIT_MAX_TOTAL_IMAGES = 1 + SMART_EDIT_MAX_REFERENCE_IMAGES
+const IDENTITY_TRANSFER_REQUIRED_IMAGES = 2
 
 const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
   id,
@@ -99,6 +102,12 @@ const PHOTO_LAB_TEST_MODES = [
     title: 'Smart Edit',
     label: 'Prompt edit',
     icon: WandSparkles,
+  },
+  {
+    id: 'identity_transfer',
+    title: 'Identity Transfer',
+    label: 'Same shot, your face',
+    icon: UserRound,
   },
   {
     id: 'remove_objects',
@@ -221,10 +230,13 @@ export default function PhotoLabPreviewTester() {
   const isRestoreColorizeMode = selectedModeId === RESTORE_COLORIZE_MODE
   const isRemoveObjectsMode = selectedModeId === REMOVE_OBJECTS_MODE
   const isSmartEditMode = selectedModeId === SMART_EDIT_MODE
+  const isIdentityTransferMode = selectedModeId === IDENTITY_TRANSFER_MODE
   const canUsePrototypeSource =
-    !isEnhanceQualityMode && !isRemoveObjectsMode
+    !isEnhanceQualityMode &&
+    !isRemoveObjectsMode &&
+    !isIdentityTransferMode
   const requiresUploadedSource =
-    isEnhanceQualityMode || isRemoveObjectsMode
+    isEnhanceQualityMode || isRemoveObjectsMode || isIdentityTransferMode
 
   const selectedPhotoQuality = useMemo(() => {
     return getPhotoQuality(photoQuality)
@@ -353,6 +365,16 @@ export default function PhotoLabPreviewTester() {
       }
 
       return [mainSourceFile]
+    }
+
+    if (isIdentityTransferMode) {
+      if (!mainSourceFile || referenceSourceFiles.length !== 1) {
+        throw new Error(
+          'Identity Transfer requires Reference photo and Photo with your face',
+        )
+      }
+
+      return [mainSourceFile, referenceSourceFiles[0]]
     }
 
     if (isRestoreColorizeMode) {
@@ -487,6 +509,16 @@ export default function PhotoLabPreviewTester() {
 
     if (isSmartEditMode && !normalizedAdditionalPrompt) {
       setError('Smart Edit requires a short edit prompt')
+      return
+    }
+
+    if (
+      isIdentityTransferMode &&
+      (!mainSourceFile || referenceSourceFiles.length !== 1)
+    ) {
+      setError(
+        'Identity Transfer requires Reference photo and Photo with your face',
+      )
       return
     }
 
@@ -975,7 +1007,9 @@ export default function PhotoLabPreviewTester() {
                   isRestoreColorizeMode ||
                   isRemoveObjectsMode
                     ? 'Upload photo'
-                    : 'Upload main photo'}
+                    : isIdentityTransferMode
+                      ? 'Upload Reference photo'
+                      : 'Upload main photo'}
                 </Button>
 
                 {!isEnhanceQualityMode &&
@@ -990,7 +1024,9 @@ export default function PhotoLabPreviewTester() {
                     }
                     className="w-full"
                   >
-                    Upload references
+                    {isIdentityTransferMode
+                      ? 'Upload Photo with your face'
+                      : 'Upload references'}
                   </Button>
                 ) : null}
               </div>
@@ -1209,7 +1245,9 @@ export default function PhotoLabPreviewTester() {
                         ? 'This uploaded old photo will be restored and used as the before image when saving a showcase template.'
                         : isRemoveObjectsMode
                           ? 'Paint over the object or distraction you want removed. The red overlay is only a guide; the server receives a precise PNG mask. You can also skip the mask and describe what to remove in the prompt below.'
-                          : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
+                          : isIdentityTransferMode
+                            ? 'Showcase template will save three images: Reference (before), Photo with your face (inset), and the generated result (after).'
+                            : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
                   </Text>
 
                   <Text
@@ -1344,7 +1382,9 @@ export default function PhotoLabPreviewTester() {
                         ? 'Upload a source photo'
                         : isRestoreColorizeMode
                           ? 'Pick a restored preset or upload a photo'
-                          : 'Upload main source photo'}
+                          : isIdentityTransferMode
+                            ? 'Upload Reference + Your face'
+                            : 'Upload main source photo'}
                     </Text>
 
                     <Text
@@ -1358,7 +1398,9 @@ export default function PhotoLabPreviewTester() {
                         ? 'Upload one dark, blurry, noisy, compressed, or hazy photo to test clarity cleanup.'
                         : isRestoreColorizeMode
                           ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
-                          : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
+                          : isIdentityTransferMode
+                            ? 'Image 1 = Reference photo (composition). Image 2 = Photo with your face (identity).'
+                            : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
                     </Text>
                   </div>
                 )}
@@ -1390,13 +1432,13 @@ export default function PhotoLabPreviewTester() {
                 ref={referenceInputRef}
                 type="file"
                 accept="image/*"
-                multiple
+                multiple={!isIdentityTransferMode}
                 className="hidden"
                 onChange={(e) => {
-                  const files = Array.from(e.target.files || []).slice(
-                    0,
-                    SMART_EDIT_MAX_REFERENCE_IMAGES,
-                  )
+                  const maxFiles = isIdentityTransferMode
+                    ? 1
+                    : SMART_EDIT_MAX_REFERENCE_IMAGES
+                  const files = Array.from(e.target.files || []).slice(0, maxFiles)
                   setReferenceSourceFiles(files)
                   setResultPreview('')
                   setError('')
@@ -1488,12 +1530,16 @@ export default function PhotoLabPreviewTester() {
                   ? 'Optional: reduce noise in shadows, preserve face identity, keep the same lighting...'
                   : isRemoveObjectsMode
                     ? 'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...'
-                    : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
+                    : isIdentityTransferMode
+                      ? 'Example: Keep my hairstyle from Image 2 (cut, length, shape). Use Image 1 only for pose, clothes, and scene.'
+                      : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
               }
               hint={
                 isRemoveObjectsMode
                   ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
-                  : 'Optional. This will be combined with the server-side Photo Lab prompt.'
+                  : isIdentityTransferMode
+                    ? 'Optional. Server prefixes IMPORTANT. Default hairstyle is from Reference; override here to keep hairstyle from the face photo.'
+                    : 'Optional. This will be combined with the server-side Photo Lab prompt.'
               }
               caseMode="sentence"
               value={additionalPrompt}
@@ -1612,7 +1658,9 @@ export default function PhotoLabPreviewTester() {
                   (isRemoveObjectsMode &&
                     !hasRemovalMask &&
                     !String(additionalPrompt || '').trim()) ||
-                  (isSmartEditMode && !String(additionalPrompt || '').trim())
+                  (isSmartEditMode && !String(additionalPrompt || '').trim()) ||
+                  (isIdentityTransferMode &&
+                    (!mainSourceFile || referenceSourceFiles.length !== 1))
                 }
                 fullWidth
                 className="w-auto"

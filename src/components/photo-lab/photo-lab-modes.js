@@ -4,6 +4,7 @@ import {
   ImagePlus,
   Paintbrush,
   Sparkles,
+  UserRound,
   WandSparkles,
 } from 'lucide-react'
 
@@ -46,6 +47,19 @@ export const PHOTO_LAB_MODES = [
       'Upload your main photo, optionally add up to 5 reference photos, then describe the edit.',
   },
   {
+    id: 'identity_transfer',
+    title: 'Identity Transfer',
+    label: 'Same shot, your face',
+    description:
+      'Keep a reference photo 1:1 — pose, clothes, and scene stay the same — and put your face into it.',
+    icon: UserRound,
+    accent: 'from-violet-400/20 to-primary/25',
+    promptPlaceholder:
+      'Example: Keep my hairstyle from Image 2 (cut, length, shape). Use Image 1 only for pose, clothes, and scene.',
+    uploadHint:
+      'Upload a Reference photo first, then a clear Photo with your face.',
+  },
+  {
     id: 'remove_objects',
     title: 'Remove Objects',
     label: 'Clean distractions',
@@ -54,7 +68,7 @@ export const PHOTO_LAB_MODES = [
     icon: Eraser,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: remove the seagulls near the man\'s feet...',
+      "Example: remove the seagulls near the man's feet...",
     uploadHint:
       'Upload a photo, then paint what to remove and/or describe it.',
   },

@@ -2,14 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import Image from 'next/image'
 import clsx from 'clsx'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Trash2, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
+import {
+  collectRotationPreloadUrls,
+  usePreloadImages,
+} from '@/utils/preload-images'
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
 import { getPhotoLabTemplates, deletePhotoLabTemplate } from '@/store/photo-lab/photo-lab-operations'
 import {
@@ -24,6 +30,7 @@ const MODE_PREVIEW_LABELS = {
   professional_portrait: { before: 'Casual', after: 'LinkedIn-ready' },
   restore_colorize: { before: 'Old photo', after: 'Restored' },
   smart_edit: { before: 'Original', after: 'Edited' },
+  identity_transfer: { before: 'Reference', after: 'Your face' },
   remove_objects: { before: 'Distracting', after: 'Clean' },
   enhance_quality: { before: 'Soft', after: 'Clearer' },
   creative_retouch: { before: 'Everyday', after: 'Instagram-ready' },
@@ -33,6 +40,7 @@ const MODE_SOURCE_BADGE_LABELS = {
   professional_portrait: 'Casual photo',
   restore_colorize: 'Old photo',
   smart_edit: 'Original',
+  identity_transfer: 'Reference',
   remove_objects: 'Distracting',
   enhance_quality: 'Soft',
   creative_retouch: 'Everyday',
@@ -66,6 +74,13 @@ const SHOWCASE_MODE_ITEMS = [
     afterLabel: 'Edited',
     title: 'Change outfit or scene',
     description: 'Modify clothing, objects, lighting, and background.',
+  },
+  {
+    id: 'identity_transfer',
+    afterLabel: 'Your face',
+    title: 'Same shot, your face',
+    description:
+      'Keep the reference pose, clothes, and scene — transfer your face into that photo.',
   },
   {
     id: 'remove_objects',
@@ -117,6 +132,7 @@ function mapTemplateToShowcaseItem(template) {
     subjectGender: String(template?.subjectGender || '').trim(),
     beforeSrc: String(template?.sourceImageUrl || '').trim(),
     afterSrc: String(template?.resultImageUrl || '').trim(),
+    faceSrc: String(template?.faceImageUrl || '').trim(),
     beforeLabel: labels.before,
     afterLabel: labels.after,
     category: modeMeta?.label || modeMeta?.title || modeId,
@@ -206,12 +222,17 @@ function PreviewImageCard({
   imageKey,
   shineSeed,
   showMeta = false,
+  insetSrc = '',
+  insetAlt = '',
+  insetLabel = '',
+  priority = false,
   onOpenPreview,
   openPreviewAriaLabel,
 }) {
   const reducedMotion = useReducedMotion()
   const { accentBorder, accentText, hoverBorder } = getAccentClasses(accent)
   const hasImage = Boolean(src)
+  const hasInset = Boolean(insetSrc)
   const isPreviewable = hasImage && typeof onOpenPreview === 'function'
 
   return (
@@ -235,27 +256,12 @@ function PreviewImageCard({
         ) : null}
         {hasImage ? (
           <AnimatePresence initial={false}>
-            <motion.img
+            <ShowcasePreviewImage
               key={imageKey || src}
               src={src}
               alt={alt}
-              className="absolute inset-0 h-full w-full object-cover object-[50%_5%]"
-              initial={
-                reducedMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, scale: 1.03, filter: 'blur(2px)' }
-              }
-              animate={
-                reducedMotion
-                  ? { opacity: 1 }
-                  : { opacity: 1, scale: 1, filter: 'blur(0px)' }
-              }
-              exit={{ opacity: 0 }}
-              whileHover={reducedMotion ? undefined : { scale: 1.045 }}
-              transition={{
-                duration: reducedMotion ? 0.1 : 0.95,
-                ease: [0.22, 1, 0.36, 1],
-              }}
+              imageKey={imageKey || src}
+              priority={priority}
             />
           </AnimatePresence>
         ) : (
@@ -274,7 +280,32 @@ function PreviewImageCard({
           </div>
         ) : null}
 
-        <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
+        {hasInset ? (
+          <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[30%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4">
+            <div className="relative aspect-[4/5] w-full">
+              <Image
+                src={insetSrc}
+                alt={insetAlt || insetLabel || 'Face photo'}
+                fill
+                sizes="120px"
+                priority={priority}
+                unoptimized
+                className="object-cover object-[center_18%]"
+              />
+              {insetLabel ? (
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
+                  <span className="block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
+                    {insetLabel}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          className={`absolute z-[2] p-4 ${hasInset ? 'inset-x-0 bottom-0 sm:right-[34%] sm:left-0' : 'inset-x-0 bottom-0'}`}
+        >
           {labelType === 'after' ? (
             <ShinyBadge
               shineSeed={`${labelType}-${shineSeed}`}
@@ -293,7 +324,13 @@ function PreviewImageCard({
   )
 }
 
-function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
+function PreviewPair({
+  item,
+  accent = 'cyan',
+  contentKey,
+  onOpenPreview,
+  priority = false,
+}) {
   const beforeLabel = useTranslate(item?.beforeLabel || 'Before', {
     caseMode: 'title',
   })
@@ -302,11 +339,14 @@ function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
   })
   const beforeAltText = useTranslate('before', { caseMode: 'lower' })
   const afterAltText = useTranslate('after', { caseMode: 'lower' })
+  const faceInsetLabel = useTranslate('Face', { caseMode: 'title' })
   const openPreviewText = useTranslate('Open image preview', {
     caseMode: 'sentence',
   })
 
   if (!item) return null
+
+  const faceSrc = String(item.faceSrc || '').trim()
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
@@ -318,6 +358,10 @@ function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
         accent={accent}
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
         shineSeed={`before-${contentKey}`}
+        insetSrc={faceSrc}
+        insetAlt={`${item.title} face`}
+        insetLabel={faceSrc ? faceInsetLabel : ''}
+        priority={priority}
         openPreviewAriaLabel={`${openPreviewText}: ${beforeLabel}`}
         onOpenPreview={
           onOpenPreview
@@ -339,6 +383,7 @@ function PreviewPair({ item, accent = 'cyan', contentKey, onOpenPreview }) {
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
         shineSeed={`after-${contentKey}`}
+        priority={priority}
         openPreviewAriaLabel={`${openPreviewText}: ${afterLabel}`}
         onOpenPreview={
           onOpenPreview
@@ -362,6 +407,7 @@ function PreviewGroupCard({
   onOpenPreview,
   isAdmin = false,
   onRequestDelete,
+  priority = false,
 }) {
   const { accentBorder, accentText } = getAccentClasses(accent)
   const aiTransformationText = useTranslate('AI transformation', {
@@ -411,6 +457,7 @@ function PreviewGroupCard({
         accent={accent}
         contentKey={contentKey}
         onOpenPreview={onOpenPreview}
+        priority={priority}
       />
     </div>
   )
@@ -477,6 +524,12 @@ export default function PhotoLabShowcasePreview() {
     rotationResetKey,
   )
 
+  const preloadUrls = useMemo(
+    () => collectRotationPreloadUrls(showcaseItems, activeIndex, 2),
+    [showcaseItems, activeIndex],
+  )
+  usePreloadImages(preloadUrls)
+
   const activeItem = showcaseItems[activeIndex] || null
 
   const highlightedModeId =
@@ -541,41 +594,43 @@ export default function PhotoLabShowcasePreview() {
 
   return (
     <section className="gradient-border-card overflow-hidden p-4 sm:p-5 lg:p-6">
-      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-        <div className="p-2 sm:p-3">
-          <Text
-            as="p"
-            variant="caption"
-            color="soft"
-            caseMode="sentence"
-            className="mb-2 uppercase tracking-[0.22em]"
-          >
-            live preview
-          </Text>
-
-          {templatesLoading && !activeItem ? (
-            <Text as="h2" variant="h2" color="white" caseMode="sentence">
-              Loading examples...
+      <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
+        <div className="flex h-full flex-col p-2 sm:p-3">
+          <div className="flex flex-1 flex-col justify-center">
+            <Text
+              as="p"
+              variant="caption"
+              color="soft"
+              caseMode="sentence"
+              className="mb-2 uppercase tracking-[0.22em]"
+            >
+              live preview
             </Text>
-          ) : (
-            <>
+
+            {templatesLoading && !activeItem ? (
               <Text as="h2" variant="h2" color="white" caseMode="sentence">
-                {activeShowcaseMode.title}
+                Loading examples...
               </Text>
+            ) : (
+              <>
+                <Text as="h2" variant="h2" color="white" caseMode="sentence">
+                  {activeShowcaseMode.title}
+                </Text>
 
-              <Text
-                as="p"
-                variant="body-sm"
-                color="muted"
-                caseMode="sentence"
-                className="mt-3 max-w-xl leading-6"
-              >
-                {activeShowcaseMode.description}
-              </Text>
-            </>
-          )}
+                <Text
+                  as="p"
+                  variant="body-sm"
+                  color="muted"
+                  caseMode="sentence"
+                  className="mt-3 max-w-xl leading-6"
+                >
+                  {activeShowcaseMode.description}
+                </Text>
+              </>
+            )}
+          </div>
 
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-5 flex flex-wrap gap-2 lg:mt-0 lg:pt-5">
             {SHOWCASE_MODE_ITEMS.map((modeItem) => (
               <ShowcaseModeChip
                 key={modeItem.id}
@@ -597,6 +652,7 @@ export default function PhotoLabShowcasePreview() {
               onOpenPreview={openImagePreview}
               isAdmin={isAdmin}
               onRequestDelete={setTemplateToDelete}
+              priority={activeIndex === 0}
             />
           ) : (
             <PreviewGroupCard

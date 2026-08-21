@@ -1927,6 +1927,349 @@
             }
           }
         },
+        "identity_transfer": {
+          "title": "Identity Transfer",
+          "modeKey": "identity_transfer",
+          "usesSourceDimensions": true,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "aiModel",
+                  "modelPreset"
+                ],
+                "fixedSelections": {
+                  "photoQuality": "draft"
+                }
+              },
+              "options": {
+                "aiModel": {
+                  "classic": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Classic",
+                    "description": "Proven model with Photo likeness control (balanced or closer to original)."
+                  },
+                  "newest": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Newest",
+                    "description": "Latest OpenAI image model. Always uses maximum photo likeness automatically."
+                  }
+                },
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Lightweight export preview for quick checks.",
+                    "includedInPresetPrice": true
+                  },
+                  "standard": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Standard"
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Maximum likeness to your uploaded photo."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "aiModel",
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "aiModel": {
+                  "classic": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Classic",
+                    "description": "Proven model with Photo likeness control (balanced or closer to original)."
+                  },
+                  "newest": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Newest",
+                    "description": "Latest OpenAI image model. Always uses maximum photo likeness automatically."
+                  }
+                },
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Lightweight export preview for quick checks."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Standard",
+                    "description": "Everyday export at your photo size."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Maximum likeness to your uploaded photo."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "aiModel",
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "aiModel": {
+                  "classic": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Classic",
+                    "description": "Proven model with Photo likeness control (balanced or closer to original)."
+                  },
+                  "newest": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Newest",
+                    "description": "Latest OpenAI image model. Always uses maximum photo likeness automatically."
+                  }
+                },
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Lightweight export preview for quick checks."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Standard",
+                    "description": "Everyday export at your photo size."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Premium"
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_pro_required",
+                    "label": "Print"
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Maximum likeness to your uploaded photo."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "aiModel",
+                  "photoQuality",
+                  "modelPreset"
+                ],
+                "baseCredits": 1
+              },
+              "options": {
+                "aiModel": {
+                  "classic": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Classic",
+                    "description": "Proven model with Photo likeness control (balanced or closer to original)."
+                  },
+                  "newest": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Newest",
+                    "description": "Latest OpenAI image model. Always uses maximum photo likeness automatically."
+                  }
+                },
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Lightweight export preview for quick checks."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Standard",
+                    "description": "Everyday export at your photo size."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Premium",
+                    "description": "High-quality export for saving and editing."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Print",
+                    "description": "2× upscale to PNG for large prints and archive use."
+                  }
+                },
+                "modelPreset": {
+                  "balanced": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "More enhancement",
+                    "description": "Stronger cleanup; small scene or face details may shift slightly."
+                  },
+                  "identity": {
+                    "available": true,
+                    "credits": 3,
+                    "label": "Closer to original",
+                    "description": "Maximum likeness to your uploaded photo."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        },
         "smart_edit": {
           "title": "Smart Edit",
           "modeKey": "smart_edit",

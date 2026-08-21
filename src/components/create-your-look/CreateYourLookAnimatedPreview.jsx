@@ -5,11 +5,16 @@ import { useDispatch, useSelector } from 'react-redux'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Trash2, X } from 'lucide-react'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
+import {
+  collectRotationPreloadUrls,
+  usePreloadImages,
+} from '@/utils/preload-images'
 import {
   getYourLookPreviewTemplates as getYourLookPreviewTemplatesOperation,
   hideReadyTemplateFromCreateYourLook,
@@ -131,6 +136,7 @@ function PreviewImageCard({
   imageKey,
   shineSeed,
   showMeta = false,
+  priority = false,
   onOpenPreview,
 }) {
   const reducedMotion = useReducedMotion()
@@ -159,27 +165,15 @@ function PreviewImageCard({
         ) : null}
 
         <AnimatePresence initial={false}>
-          <motion.img
+          <ShowcasePreviewImage
             key={imageKey || src}
             src={src}
             alt={alt}
-            className="absolute left-1/2 top-1/2 h-[103%] w-[103%] -translate-x-1/2 -translate-y-1/2 object-cover object-[50%_5%]"
-            initial={
-              reducedMotion
-                ? { opacity: 0 }
-                : { opacity: 0, filter: 'blur(2px)' }
-            }
-            animate={
-              reducedMotion
-                ? { opacity: 1 }
-                : { opacity: 1, filter: 'blur(0px)' }
-            }
-            exit={{ opacity: 0 }}
-            whileHover={reducedMotion ? undefined : { scale: 1.02 }}
-            transition={{
-              duration: reducedMotion ? 0.1 : 0.95,
-              ease: [0.22, 1, 0.36, 1],
-            }}
+            imageKey={imageKey || src}
+            priority={priority}
+            hoverScale={1.02}
+            withEntranceScale={false}
+            wrapperClassName="absolute left-1/2 top-1/2 h-[103%] w-[103%] -translate-x-1/2 -translate-y-1/2"
           />
         </AnimatePresence>
 
@@ -216,7 +210,13 @@ function PreviewImageCard({
   )
 }
 
-function PreviewPair({ item, accent = 'primary', contentKey, onOpenPreview }) {
+function PreviewPair({
+  item,
+  accent = 'primary',
+  contentKey,
+  onOpenPreview,
+  priority = false,
+}) {
   const beforeText = useTranslate('Before', { caseMode: 'title' })
   const afterText = useTranslate('After', { caseMode: 'title' })
   const beforeAltText = useTranslate('before', { caseMode: 'lower' })
@@ -236,6 +236,7 @@ function PreviewPair({ item, accent = 'primary', contentKey, onOpenPreview }) {
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
         shineSeed={`before-${contentKey}`}
         showMeta
+        priority={priority}
         onOpenPreview={
           onOpenPreview
             ? () =>
@@ -256,6 +257,7 @@ function PreviewPair({ item, accent = 'primary', contentKey, onOpenPreview }) {
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
         shineSeed={`after-${contentKey}`}
+        priority={priority}
         onOpenPreview={
           onOpenPreview
             ? () =>
@@ -278,6 +280,7 @@ function PreviewGroupCard({
   onOpenPreview,
   isAdmin = false,
   onRequestDelete,
+  priority = false,
 }) {
   const { accentBorder, accentText } = getAccentClasses(accent)
 
@@ -328,6 +331,7 @@ function PreviewGroupCard({
         accent={accent}
         contentKey={contentKey}
         onOpenPreview={onOpenPreview}
+        priority={priority}
       />
     </div>
   )
@@ -427,6 +431,22 @@ export default function CreateYourLookAnimatedPreview() {
   const desktopIndex = useRotatingIndex(desktopPairsLength, CARD_ROTATE_MS)
   const mobileIndex = useRotatingIndex(mobileItems.length, CARD_ROTATE_MS)
 
+  const desktopPreloadUrls = useMemo(() => {
+    const urls = [
+      ...collectRotationPreloadUrls(manItems, desktopIndex, 2),
+      ...collectRotationPreloadUrls(womanItems, desktopIndex, 2),
+    ]
+    return [...new Set(urls)]
+  }, [manItems, womanItems, desktopIndex])
+
+  const mobilePreloadUrls = useMemo(
+    () => collectRotationPreloadUrls(mobileItems, mobileIndex, 2),
+    [mobileItems, mobileIndex],
+  )
+
+  usePreloadImages(desktopPreloadUrls)
+  usePreloadImages(mobilePreloadUrls)
+
   const activeMan = manItems[desktopIndex] || null
   const activeWoman = womanItems[desktopIndex] || null
   const activeMobile = mobileItems[mobileIndex] || null
@@ -488,6 +508,7 @@ export default function CreateYourLookAnimatedPreview() {
           onOpenPreview={openImagePreview}
           isAdmin={isAdmin}
           onRequestDelete={setTemplateToDelete}
+          priority={mobileIndex === 0}
         />
       </div>
 
@@ -499,6 +520,7 @@ export default function CreateYourLookAnimatedPreview() {
           onOpenPreview={openImagePreview}
           isAdmin={isAdmin}
           onRequestDelete={setTemplateToDelete}
+          priority={desktopIndex === 0}
         />
 
         <PreviewGroupCard
@@ -508,6 +530,7 @@ export default function CreateYourLookAnimatedPreview() {
           onOpenPreview={openImagePreview}
           isAdmin={isAdmin}
           onRequestDelete={setTemplateToDelete}
+          priority={desktopIndex === 0}
         />
       </div>
 
