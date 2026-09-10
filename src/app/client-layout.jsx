@@ -6,6 +6,7 @@ import GenerationUsageBadge from '@/components/shared/usage-badge/GenerationUsag
 import Button from '@/components/shared/button/Button'
 import ScrollToTopButton from '@/components/shared/scroll-to-top-btn/ScrollToTopBtn'
 import ScrollToTopOnRouteChange from '@/components/shared/scroll-to-top-on-route-change/ScrollToTopOnRouteChange'
+import AssistantWidget from '@/components/assistant/AssistantWidget'
 import { getLogin, getUser } from '@/store/auth/auth-selectors'
 import TranslateMe from '@/utils/translate/translate'
 import Link from 'next/link'
@@ -71,6 +72,7 @@ const ClientLayout = ({ children }) => {
       </main>
 
       <ScrollToTopButton />
+      <AssistantWidget />
     </div>
   )
 }

@@ -110,6 +110,16 @@
   --accent-violet: #8b5cf6;
   --accent-cyan: #22d3ee;
 
+  --assistant-edge: 1.5rem;
+  --assistant-right: 1.25rem;
+  --assistant-fab-size: 56px;
+  --assistant-fab-gap: 3rem;
+  --assistant-stack-gap: 0.75rem;
+  --assistant-panel-h: 80dvh;
+  --assistant-fab-bottom: calc(
+    var(--assistant-edge) + var(--assistant-fab-size) + var(--assistant-fab-gap)
+  );
+
   --radius-sm: 14px;
   --radius-md: 20px;
   --radius-lg: 28px;
@@ -628,6 +638,94 @@ a {
 
 .animate-premium-shine-sweep {
   animation: premium-shine-sweep 950ms ease-out 1;
+}
+
+@keyframes assistant-message-shake {
+  0%,
+  33.33%,
+  100% {
+    transform: rotate(0deg);
+  }
+  1.4% {
+    transform: rotate(-5deg);
+  }
+  2.8% {
+    transform: rotate(5deg);
+  }
+  4.2% {
+    transform: rotate(-4deg);
+  }
+  5.6% {
+    transform: rotate(4deg);
+  }
+  7% {
+    transform: rotate(-5deg);
+  }
+  8.4% {
+    transform: rotate(5deg);
+  }
+  9.8% {
+    transform: rotate(-4deg);
+  }
+  11.2% {
+    transform: rotate(4deg);
+  }
+  12.6% {
+    transform: rotate(-5deg);
+  }
+  14% {
+    transform: rotate(5deg);
+  }
+  15.4% {
+    transform: rotate(-4deg);
+  }
+  16.8% {
+    transform: rotate(4deg);
+  }
+  18.2% {
+    transform: rotate(-5deg);
+  }
+  19.6% {
+    transform: rotate(5deg);
+  }
+  21% {
+    transform: rotate(-4deg);
+  }
+  22.4% {
+    transform: rotate(4deg);
+  }
+  23.8% {
+    transform: rotate(-5deg);
+  }
+  25.2% {
+    transform: rotate(5deg);
+  }
+  26.6% {
+    transform: rotate(-4deg);
+  }
+  28% {
+    transform: rotate(4deg);
+  }
+  29.4% {
+    transform: rotate(-3deg);
+  }
+  30.8% {
+    transform: rotate(2deg);
+  }
+  32.2% {
+    transform: rotate(-1deg);
+  }
+}
+
+.animate-assistant-message-shake {
+  animation: assistant-message-shake 15s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-assistant-message-shake {
+    animation: none;
+  }
 }
 
 .plan-badge-text-silver {

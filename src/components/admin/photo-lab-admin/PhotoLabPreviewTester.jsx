@@ -1531,14 +1531,14 @@ export default function PhotoLabPreviewTester() {
                   : isRemoveObjectsMode
                     ? 'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...'
                     : isIdentityTransferMode
-                      ? 'Example: Keep my hairstyle from Image 2 (cut, length, shape). Use Image 1 only for pose, clothes, and scene.'
+                      ? 'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
                       : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
               }
               hint={
                 isRemoveObjectsMode
                   ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
                   : isIdentityTransferMode
-                    ? 'Optional. Server prefixes IMPORTANT. Default hairstyle is from Reference; override here to keep hairstyle from the face photo.'
+                    ? 'Optional. Default hairstyle is from Reference; write “Keep my hairstyle” to use the face photo. Other edits can be added in the same prompt.'
                     : 'Optional. This will be combined with the server-side Photo Lab prompt.'
               }
               caseMode="sentence"

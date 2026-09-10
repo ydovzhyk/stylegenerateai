@@ -1083,12 +1083,12 @@ export default function AiImageWorkspace({
     ? "Optional with a mask. Or prompt-only: remove the seagulls near the man's feet..."
     : isIdentityTransferMode
       ? template?.promptPlaceholder ||
-        'Example: Keep my hairstyle from Image 2 (cut, length, shape). Use Image 1 only for pose, clothes, and scene.'
+        'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
       : template?.promptPlaceholder || promptPlaceholder
 
   const resolvedPromptHint = isPhotoLab
     ? isIdentityTransferMode
-      ? 'Default: hairstyle from Reference. To keep your own hairstyle, say so here (e.g. keep hairstyle from Image 2).'
+      ? 'Default: hairstyle from the Reference photo. To use your face-photo hairstyle, write “Keep my hairstyle”. You can add other edits too.'
       : ''
     : template?.promptHint || promptHint
 

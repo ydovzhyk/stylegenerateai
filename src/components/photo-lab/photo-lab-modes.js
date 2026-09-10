@@ -55,7 +55,7 @@ export const PHOTO_LAB_MODES = [
     icon: UserRound,
     accent: 'from-violet-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: Keep my hairstyle from Image 2 (cut, length, shape). Use Image 1 only for pose, clothes, and scene.',
+      'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.',
     uploadHint:
       'Upload a Reference photo first, then a clear Photo with your face.',
   },

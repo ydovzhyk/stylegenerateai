@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import clsx from 'clsx'
+import { useSelector } from 'react-redux'
+import { getAssistantIsOpen } from '@/store/assistant/assistant-selectors'
 
 export default function ScrollToTopButton() {
   const [isVisible, setIsVisible] = useState(false)
+  const isAssistantOpen = useSelector(getAssistantIsOpen)
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -33,9 +36,12 @@ export default function ScrollToTopButton() {
       onClick={scrollToTop}
       aria-label="Scroll to top"
       className={clsx(
-        'group fixed bottom-6 right-5 z-50 rounded-full p-[1px] transition-all duration-300 ease-out',
+        'group fixed right-[var(--assistant-right)] z-[70] rounded-full p-[1px] transition-all duration-300 ease-out',
         'bg-[linear-gradient(135deg,rgba(124,92,255,0.95),rgba(0,213,255,0.8))]',
         'shadow-[0_10px_30px_rgba(124,92,255,0.28),0_0_24px_rgba(0,213,255,0.12)]',
+        isAssistantOpen
+          ? 'bottom-[calc(var(--assistant-panel-h)+var(--assistant-edge))] md:bottom-[var(--assistant-edge)]'
+          : 'bottom-[var(--assistant-edge)]',
         isVisible
           ? 'pointer-events-auto translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-3 opacity-0',

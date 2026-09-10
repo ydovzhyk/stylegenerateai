@@ -3,8 +3,7 @@
 
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 import PhotoLabHero from '@/components/photo-lab/PhotoLabHero'
 
@@ -30,6 +29,7 @@ import {
 
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { getPhotoLabTemplatesState } from '@/store/photo-lab/photo-lab-selectors'
+import { setAssistantPhotoLabMode } from '@/store/assistant/assistant-slice'
 
 import { Sparkles } from 'lucide-react'
 
@@ -99,6 +99,7 @@ function buildPhotoLabWorkspaceTemplate(
 
 
 export default function PhotoLabPage() {
+  const dispatch = useDispatch()
 
   const [selectedModeId, setSelectedModeId] = useState(null)
 
@@ -109,6 +110,12 @@ export default function PhotoLabPage() {
   const workspaceRef = useRef(null)
 
   const templatesByMode = useSelector(getPhotoLabTemplatesState)
+
+  useEffect(() => {
+    return () => {
+      dispatch(setAssistantPhotoLabMode(null))
+    }
+  }, [dispatch])
 
 
 
@@ -167,6 +174,7 @@ export default function PhotoLabPage() {
 
   const handleSelectMode = (modeId) => {
     setSelectedModeId(modeId)
+    dispatch(setAssistantPhotoLabMode(modeId))
 
     setSelectedModePreview(
       pickRandomTemplatePreviewPair(modeId, templatesByMode),

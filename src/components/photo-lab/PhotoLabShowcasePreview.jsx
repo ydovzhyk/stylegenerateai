@@ -597,15 +597,15 @@ export default function PhotoLabShowcasePreview() {
       <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:items-stretch">
         <div className="flex h-full flex-col p-2 sm:p-3">
           <div className="flex flex-1 flex-col justify-center">
-            <Text
-              as="p"
-              variant="caption"
-              color="soft"
-              caseMode="sentence"
-              className="mb-2 uppercase tracking-[0.22em]"
-            >
-              live preview
-            </Text>
+          <Text
+            as="p"
+            variant="caption"
+            color="soft"
+            caseMode="sentence"
+            className="mb-2 uppercase tracking-[0.22em]"
+          >
+            live preview
+          </Text>
 
             {templatesLoading && !activeItem ? (
               <Text as="h2" variant="h2" color="white" caseMode="sentence">
@@ -613,19 +613,19 @@ export default function PhotoLabShowcasePreview() {
               </Text>
             ) : (
               <>
-                <Text as="h2" variant="h2" color="white" caseMode="sentence">
+          <Text as="h2" variant="h2" color="white" caseMode="sentence">
                   {activeShowcaseMode.title}
-                </Text>
+          </Text>
 
-                <Text
-                  as="p"
-                  variant="body-sm"
-                  color="muted"
-                  caseMode="sentence"
-                  className="mt-3 max-w-xl leading-6"
-                >
+          <Text
+            as="p"
+            variant="body-sm"
+            color="muted"
+            caseMode="sentence"
+            className="mt-3 max-w-xl leading-6"
+          >
                   {activeShowcaseMode.description}
-                </Text>
+          </Text>
               </>
             )}
           </div>
@@ -687,16 +687,16 @@ export default function PhotoLabShowcasePreview() {
         <div className={MODAL_OVERLAY_CLASS}>
           <div className="w-full max-w-[420px] rounded-[24px] border border-white/10 bg-[#10121a] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.45)]">
             <div className="mb-4 flex items-start justify-between gap-4">
-              <div>
+        <div>
                 <Text as="h3" variant="h3" color="white" caseMode="sentence">
                   Delete template?
-                </Text>
+          </Text>
 
-                <Text
-                  as="p"
+          <Text
+            as="p"
                   variant="body-sm"
-                  color="muted"
-                  caseMode="sentence"
+            color="muted"
+            caseMode="sentence"
                   className="mt-2"
                 >
                   This action cannot be undone.
@@ -716,8 +716,8 @@ export default function PhotoLabShowcasePreview() {
             <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
               <Text as="p" variant="body-sm" color="white" caseMode="sentence">
                 {templateToDelete.title || 'Selected template'}
-              </Text>
-            </div>
+          </Text>
+        </div>
 
             <div className="mt-5 flex justify-end gap-3">
               <Button
@@ -737,9 +737,9 @@ export default function PhotoLabShowcasePreview() {
               >
                 Delete
               </Button>
-            </div>
-          </div>
         </div>
+      </div>
+    </div>
       ) : null}
     </section>
   )

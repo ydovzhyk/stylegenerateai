@@ -180,10 +180,13 @@ export async function translateTextTo(text = '', to = 'en', from = '') {
   if (_cache.has(key)) return _cache.get(key)
 
   try {
+    const payload = { text: str, to }
+    if (from) payload.from = from
+
     const res = await fetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: str, to, from }),
+      body: JSON.stringify(payload),
     })
 
     if (!res.ok) return str
