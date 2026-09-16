@@ -77,6 +77,17 @@ const errMsg = (payload) =>
   payload?.message ||
   'Could not send the message. Please try again.'
 
+function resetAssistantForAuthChange(state) {
+  state.isOpen = false
+  state.messages = []
+  state.sending = false
+  state.error = null
+  state.proactive = null
+  state.hasOpenedChat = false
+  state.hasSentMessage = false
+  state.lastGenerationAt = null
+}
+
 const assistantSlice = createSlice({
   name: 'assistant',
   initialState,
@@ -185,6 +196,13 @@ const assistantSlice = createSlice({
       .addCase(generateYourLookClientImage.fulfilled, (state) => {
         state.lastGenerationAt = Date.now()
       })
+      .addMatcher(
+        (action) =>
+          action.type === 'auth/clearUser' ||
+          action.type === 'auth/login/fulfilled' ||
+          action.type === 'auth/register/fulfilled',
+        resetAssistantForAuthChange,
+      )
   },
 })
 

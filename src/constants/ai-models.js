@@ -7,7 +7,7 @@ export const DEFAULT_AI_MODEL = CLASSIC_AI_MODEL
 
 export const OPENAI_IMAGE_MODEL_BY_AI_MODEL = {
   classic: 'gpt-image-1.5',
-  newest: 'gpt-image-2',
+  newest: 'gpt-image-2.5-flare',
 }
 
 export const AI_MODEL_META = {

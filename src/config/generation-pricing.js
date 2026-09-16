@@ -286,4 +286,122 @@ export function listPlanOptions({ productKey, modeKey = null, planKey }) {
   }
 }
 
+const ASSISTANT_OPTION_GROUP_LABELS = {
+  aiModel: 'AI model',
+  photoQuality: 'Export size',
+  outputFormat: 'Output format',
+  modelPreset: 'Photo likeness',
+}
+
+export function buildAssistantPricingContext({
+  planKey,
+  productKey = 'ready_template',
+  modeKey = null,
+}) {
+  const plan = getPlanDefinition(planKey)
+
+  if (planKey === 'admin' || plan.unlimited) {
+    return {
+      planKey: 'admin',
+      planTitle: plan.title || 'Admin',
+      isUnlimited: true,
+      baseCredits: 0,
+      groups: [],
+    }
+  }
+
+  if (productKey === 'photo_lab' && !modeKey) {
+    return {
+      planKey,
+      planTitle: plan.title,
+      isUnlimited: false,
+      pendingMode: true,
+      baseCredits: 0,
+      groups: [],
+    }
+  }
+
+  try {
+    const { modeAccess, pricing, options } = listPlanOptions({
+      productKey,
+      modeKey,
+      planKey,
+    })
+
+    const groups = (pricing.components || []).map((groupKey) => {
+      const group = options?.[groupKey] || {}
+
+      return {
+        key: groupKey,
+        label: ASSISTANT_OPTION_GROUP_LABELS[groupKey] || groupKey,
+        items: Object.entries(group).map(([id, option]) => ({
+          id,
+          label: option?.label || id,
+          available: Boolean(option?.available),
+          credits: option?.available ? Number(option.credits || 0) : null,
+        })),
+      }
+    })
+
+    return {
+      planKey,
+      planTitle: plan.title,
+      isUnlimited: false,
+      modeAvailable: modeAccess?.available !== false,
+      baseCredits: Number(pricing.baseCredits || 0),
+      groups,
+    }
+  } catch {
+    return null
+  }
+}
+
+function formatCreditAmount(credits) {
+  const amount = Number(credits || 0)
+  return `${amount} credit${amount === 1 ? '' : 's'}`
+}
+
+export function formatAssistantPricingCopy(context) {
+  if (!context) return ''
+
+  if (context.isUnlimited) {
+    return 'Your admin account does not spend credits on generations.'
+  }
+
+  if (context.pendingMode) {
+    return `You are on the **${context.planTitle}** plan. Photo Lab credit prices depend on the mode you pick.`
+  }
+
+  if (context.modeAvailable === false) {
+    return `This mode is not included in your **${context.planTitle}** plan.`
+  }
+
+  const lines = [`**Credits (${context.planTitle}):**`]
+  const locked = []
+
+  if (context.baseCredits) {
+    lines.push(`- Base: ${formatCreditAmount(context.baseCredits)}`)
+  }
+
+  for (const group of context.groups || []) {
+    const available = []
+    for (const item of group.items || []) {
+      if (item.available) {
+        available.push(`${item.label} ${formatCreditAmount(item.credits)}`)
+      } else {
+        locked.push(item.label)
+      }
+    }
+    if (available.length) {
+      lines.push(`- **${group.label}**: ${available.join(', ')}`)
+    }
+  }
+
+  if (locked.length) {
+    lines.push(`Not in this plan: ${locked.join(', ')}.`)
+  }
+
+  return lines.join('\n')
+}
+
 export { GENERATION_PRICING_LIBRARY }

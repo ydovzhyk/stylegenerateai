@@ -10,7 +10,13 @@ import Text from '@/components/shared/text/Text'
 import { useTranslate, translateTextTo } from '@/utils/translate/translate'
 import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 import { useLanguage } from '@/providers/languageContext'
-import { getLogin, getUser } from '@/store/auth/auth-selectors'
+import {
+  buildAssistantPricingContext,
+  formatAssistantPricingCopy,
+  resolveFrontendPlanKey,
+} from '@/config/generation-pricing'
+import { getIsAuthChecked, getLogin, getUser } from '@/store/auth/auth-selectors'
+import { getSelectedYourLookTemplate } from '@/store/ready-template/ready-template-selectors'
 import { sendAssistantMessage } from '@/store/assistant/assistant-operations'
 import {
   addAssistantLocalMessage,
@@ -40,10 +46,17 @@ import {
 } from '@/store/assistant/assistant-selectors'
 import {
   ASSISTANT_CONTENT,
+  PRODUCT_NAME,
   getDirectIntroText,
   getGreetingText,
   getIntroText,
+  getLookSettingsText,
+  getLookTemplateBubbleText,
   getPageBubbleText,
+  getPhotoLabModeBubbleText,
+  getPhotoLabModeSettingsText,
+  getGenerationSaveBubbleText,
+  getGenerationSaveSettingsText,
   detectChatLanguage,
   hasPageIntro,
   isAssistantHiddenPath,
@@ -56,6 +69,7 @@ const PAGE_HINT_DELAY_MS = 30 * 1000
 const WELCOME_VISIBLE_MS = 30 * 1000
 const SHORT_VISIBLE_MS = 10 * 1000
 const CHAT_SCRIPT_DELAY_MS = 3000
+const PRODUCT_NAME_PLACEHOLDER = 'AISGPRODUCTNAME'
 
 function getLanguageCodeByIndex(index) {
   return String(
@@ -164,8 +178,10 @@ export default function AssistantWidget() {
   const photoLabModeId = useSelector(getAssistantPhotoLabModeId)
   const lastGenerationAt = useSelector(getAssistantLastGenerationAt)
   const chatLanguage = useSelector(getAssistantChatLanguage)
+  const lookTemplate = useSelector(getSelectedYourLookTemplate)
   const user = useSelector(getUser)
   const isAuthenticated = useSelector(getLogin)
+  const isAuthChecked = useSelector(getIsAuthChecked)
 
   const [draft, setDraft] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -181,10 +197,33 @@ export default function AssistantWidget() {
   const introducedPathsRef = useRef(new Set())
   const lastOpenPathRef = useRef(pathname)
   const chatLanguageRef = useRef(chatLanguage)
+  const lastLookTemplateIdRef = useRef(null)
+  const lastPhotoLabModeIdRef = useRef(null)
+  const explainedLookSettingsRef = useRef(false)
+  const explainedPhotoLabModesRef = useRef(new Set())
+  const explainedSaveOptionsRef = useRef(false)
+  const lastGenerationAtRef = useRef(null)
+  const authSessionKeyRef = useRef(null)
 
   const hidden = isAssistantHiddenPath(pathname)
   const showBotAvatar = Boolean(proactive?.text) && !isOpen
   const hintsOn = hintsEnabled !== false
+  const planKey = resolveFrontendPlanKey(user, isAuthenticated)
+  const authSessionKey = !isAuthChecked
+    ? null
+    : isAuthenticated
+      ? String(user?._id || user?.id || user?.email || 'user')
+      : 'visitor'
+  const pricingProductKey =
+    pathname === '/photo-lab' ? 'photo_lab' : 'ready_template'
+  const pricingModeKey = pathname === '/photo-lab' ? photoLabModeId : null
+  const pricingCopy = formatAssistantPricingCopy(
+    buildAssistantPricingContext({
+      planKey,
+      productKey: pricingProductKey,
+      modeKey: pricingModeKey,
+    }),
+  )
 
   if (hydrated && !hasSentMessage) {
     chatLanguageRef.current = siteLangCode
@@ -195,7 +234,11 @@ export default function AssistantWidget() {
     const lang = String(chatLanguageRef.current || 'en').toLowerCase()
     if (!source || lang === 'en') return source
 
-    const chunks = source.split(/(\n\n+)/)
+    const protectedSource = source.replaceAll(
+      PRODUCT_NAME,
+      PRODUCT_NAME_PLACEHOLDER,
+    )
+    const chunks = protectedSource.split(/(\n\n+)/)
     const translated = []
     for (const chunk of chunks) {
       if (!chunk.trim()) {
@@ -204,7 +247,9 @@ export default function AssistantWidget() {
       }
       translated.push(await translateTextTo(chunk, lang))
     }
-    return translated.join('')
+    return translated
+      .join('')
+      .replaceAll(PRODUCT_NAME_PLACEHOLDER, PRODUCT_NAME)
   }
 
   const pushLocalMessage = async (text) => {
@@ -227,6 +272,32 @@ export default function AssistantWidget() {
   }
 
   const skipLanguagePersistRef = useRef(true)
+
+  useEffect(() => {
+    dispatch(hideProactiveHint())
+  }, [dispatch])
+
+  useEffect(() => {
+    if (!authSessionKey) return
+    if (authSessionKeyRef.current == null) {
+      authSessionKeyRef.current = authSessionKey
+      return
+    }
+    if (authSessionKeyRef.current === authSessionKey) return
+    authSessionKeyRef.current = authSessionKey
+
+    scriptTimersRef.current.forEach((id) => window.clearTimeout(id))
+    scriptTimersRef.current = []
+    setDraft('')
+    setMenuOpen(false)
+    introducedPathsRef.current = new Set()
+    explainedLookSettingsRef.current = false
+    explainedPhotoLabModesRef.current = new Set()
+    explainedSaveOptionsRef.current = false
+    lastLookTemplateIdRef.current = null
+    lastPhotoLabModeIdRef.current = null
+    lastGenerationAtRef.current = null
+  }, [authSessionKey])
 
   useEffect(() => {
     const storedHints = readAssistantHintsEnabled()
@@ -295,6 +366,8 @@ export default function AssistantWidget() {
     }
 
     if (hidden || !hintsOn || !hydrated) return undefined
+    if (pathname === '/create-your-look' && lookTemplate?.id) return undefined
+    if (pathname === '/photo-lab' && photoLabModeId) return undefined
 
     const pageText = getPageBubbleText(pathname)
     if (!pageText) return undefined
@@ -312,23 +385,121 @@ export default function AssistantWidget() {
     }, PAGE_HINT_DELAY_MS)
 
     return () => window.clearTimeout(pageTimerRef.current)
-  }, [pathname, hidden, hintsOn, hydrated, dispatch])
+  }, [
+    pathname,
+    hidden,
+    hintsOn,
+    hydrated,
+    dispatch,
+    lookTemplate?.id,
+    photoLabModeId,
+  ])
 
   useEffect(() => {
-    if (!photoLabModeId || hidden || isOpen || !hintsOn || !hydrated) return
+    if (pathname !== '/create-your-look') {
+      lastLookTemplateIdRef.current = null
+      return undefined
+    }
+
+    const templateId = String(lookTemplate?.id || '')
+    if (!templateId || hidden || !hydrated) return undefined
+    if (explainedLookSettingsRef.current) return undefined
+    if (lastLookTemplateIdRef.current === templateId) return undefined
+
+    lastLookTemplateIdRef.current = templateId
+    const settingsText = getLookSettingsText(lookTemplate?.title, pricingCopy)
+
+    if (isOpen) {
+      explainedLookSettingsRef.current = true
+      pushLocalMessage(settingsText)
+      return undefined
+    }
+
+    if (!hintsOn) return undefined
     showHintRef.current(
-      { kind: 'mode', text: ASSISTANT_CONTENT.modeBubble },
-      SHORT_VISIBLE_MS,
+      {
+        kind: 'look-template',
+        text: getLookTemplateBubbleText(lookTemplate?.title),
+        showAvatar: true,
+      },
+      WELCOME_VISIBLE_MS,
     )
-  }, [photoLabModeId, hidden, isOpen, hintsOn, hydrated])
+    return undefined
+  }, [
+    lookTemplate?.id,
+    lookTemplate?.title,
+    pathname,
+    isOpen,
+    hidden,
+    hintsOn,
+    hydrated,
+    pricingCopy,
+  ])
 
   useEffect(() => {
-    if (!lastGenerationAt || hidden || isOpen || !hintsOn || !hydrated) return
+    if (!photoLabModeId) {
+      lastPhotoLabModeIdRef.current = null
+      return undefined
+    }
+
+    if (hidden || !hydrated) return undefined
+    if (explainedPhotoLabModesRef.current.has(photoLabModeId)) return undefined
+    if (lastPhotoLabModeIdRef.current === photoLabModeId) return undefined
+
+    lastPhotoLabModeIdRef.current = photoLabModeId
+    const settingsText = getPhotoLabModeSettingsText(photoLabModeId, pricingCopy)
+
+    if (isOpen) {
+      explainedPhotoLabModesRef.current.add(photoLabModeId)
+      pushLocalMessage(settingsText)
+      return undefined
+    }
+
+    if (!hintsOn) return undefined
     showHintRef.current(
-      { kind: 'generation', text: ASSISTANT_CONTENT.generationBubble },
-      SHORT_VISIBLE_MS,
+      {
+        kind: 'mode',
+        text: getPhotoLabModeBubbleText(photoLabModeId),
+        showAvatar: true,
+      },
+      WELCOME_VISIBLE_MS,
     )
-  }, [lastGenerationAt, hidden, isOpen, hintsOn, hydrated])
+    return undefined
+  }, [photoLabModeId, isOpen, hidden, hintsOn, hydrated, pricingCopy])
+
+  useEffect(() => {
+    if (!lastGenerationAt) {
+      lastGenerationAtRef.current = null
+      return undefined
+    }
+
+    if (hidden || !hydrated) return undefined
+    if (explainedSaveOptionsRef.current) return undefined
+    if (lastGenerationAtRef.current === lastGenerationAt) return undefined
+
+    lastGenerationAtRef.current = lastGenerationAt
+    const saveText = getGenerationSaveSettingsText({
+      isLogin: isAuthenticated,
+      pathname,
+    })
+
+    if (isOpen) {
+      explainedSaveOptionsRef.current = true
+      pushLocalMessage(saveText)
+      return undefined
+    }
+
+    if (!hintsOn) return undefined
+    showHintRef.current(
+      {
+        kind: 'generation',
+        text: getGenerationSaveBubbleText(),
+        showAvatar: true,
+      },
+      WELCOME_VISIBLE_MS,
+    )
+    return undefined
+  }, [lastGenerationAt, isOpen, hidden, hintsOn, hydrated, isAuthenticated])
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -423,7 +594,45 @@ export default function AssistantWidget() {
   }
 
   const openWithGreeting = () => {
-    const openedFromBubble = Boolean(proactive?.text)
+    const bubbleKind = proactive?.kind
+    const bubbleText = proactive?.text
+    const openedFromBubble = Boolean(bubbleText)
+    const isSaveBubble = bubbleKind === 'generation'
+    const isSettingsBubble =
+      bubbleKind === 'look-template' ||
+      bubbleKind === 'mode' ||
+      isSaveBubble
+    const saveSettingsText =
+      lastGenerationAt && !explainedSaveOptionsRef.current
+        ? getGenerationSaveSettingsText({
+            isLogin: isAuthenticated,
+            pathname,
+          })
+        : null
+    const lookSettingsText =
+      !saveSettingsText &&
+      pathname === '/create-your-look' &&
+      lookTemplate?.id &&
+      !explainedLookSettingsRef.current
+        ? getLookSettingsText(lookTemplate?.title, pricingCopy)
+        : null
+    const modeSettingsText =
+      !saveSettingsText &&
+      pathname === '/photo-lab' &&
+      photoLabModeId &&
+      !explainedPhotoLabModesRef.current.has(photoLabModeId)
+        ? getPhotoLabModeSettingsText(photoLabModeId, pricingCopy)
+        : null
+    const settingsText =
+      saveSettingsText || lookSettingsText || modeSettingsText
+
+    const markSettingsExplained = () => {
+      if (saveSettingsText) explainedSaveOptionsRef.current = true
+      if (lookSettingsText) explainedLookSettingsRef.current = true
+      if (modeSettingsText && photoLabModeId) {
+        explainedPhotoLabModesRef.current.add(photoLabModeId)
+      }
+    }
 
     if (!isOpen && messages.length === 0) {
       introducedPathsRef.current.add(pathname)
@@ -434,17 +643,37 @@ export default function AssistantWidget() {
 
       pushLocalMessage(greeting)
 
-      if (openedFromBubble) {
-        queueChatMessages([proactive.text, intro])
+      if (settingsText) {
+        markSettingsExplained()
+        queueChatMessages([intro, settingsText])
+      } else if (openedFromBubble) {
+        queueChatMessages([bubbleText, intro])
       } else {
         queueChatMessages([intro])
       }
-    } else if (!isOpen && !introducedPathsRef.current.has(pathname)) {
-      introducedPathsRef.current.add(pathname)
-      if (openedFromBubble) {
-        queueChatMessages([proactive.text, getIntroText(pathname)])
-      } else if (hasPageIntro(pathname)) {
-        pushLocalMessage(getDirectIntroText(pathname))
+    } else if (!isOpen) {
+      const queued = []
+
+      if (!introducedPathsRef.current.has(pathname)) {
+        introducedPathsRef.current.add(pathname)
+        if (openedFromBubble && !isSettingsBubble) {
+          queued.push(bubbleText, getIntroText(pathname))
+        } else if (hasPageIntro(pathname)) {
+          queued.push(
+            openedFromBubble ? getIntroText(pathname) : getDirectIntroText(pathname),
+          )
+        }
+      }
+
+      if (settingsText) {
+        markSettingsExplained()
+        queued.push(settingsText)
+      }
+
+      if (queued.length === 1) {
+        pushLocalMessage(queued[0])
+      } else if (queued.length > 1) {
+        queueChatMessages(queued)
       }
     }
 
@@ -461,6 +690,12 @@ export default function AssistantWidget() {
     setDraft('')
     setMenuOpen(false)
     introducedPathsRef.current = new Set()
+    explainedLookSettingsRef.current = false
+    explainedPhotoLabModesRef.current = new Set()
+    explainedSaveOptionsRef.current = false
+    lastLookTemplateIdRef.current = null
+    lastPhotoLabModeIdRef.current = null
+    lastGenerationAtRef.current = null
     dispatch(clearAssistantChat())
   }
 
@@ -494,6 +729,7 @@ export default function AssistantWidget() {
         })),
         page: pathname,
         photoLabModeId,
+        lookTemplateTitle: lookTemplate?.title || null,
       }),
     )
   }
