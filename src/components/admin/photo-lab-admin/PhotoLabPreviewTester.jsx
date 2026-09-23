@@ -46,6 +46,13 @@ import {
   getRestoredPrototypeSource,
 } from '@/constants/restored-prototype-sources'
 import {
+  DEFAULT_IDENTITY_TRANSFER_PROTOTYPE_ID,
+  IDENTITY_TRANSFER_PROTOTYPE_SOURCES,
+  formatIdentityTransferSourceLabel,
+  getIdentityTransferPrototypeSource,
+  getIdentityTransferSubjectGender,
+} from '@/constants/identity-transfer-prototype-sources'
+import {
   BriefcaseBusiness,
   ChevronLeft,
   ChevronRight,
@@ -204,6 +211,8 @@ export default function PhotoLabPreviewTester() {
   const [restoredPrototypeId, setRestoredPrototypeId] = useState(
     DEFAULT_RESTORED_PROTOTYPE_ID,
   )
+  const [identityTransferPrototypeId, setIdentityTransferPrototypeId] =
+    useState(DEFAULT_IDENTITY_TRANSFER_PROTOTYPE_ID)
   const [maskTool, setMaskTool] = useState('brush')
   const [maskPaintActive, setMaskPaintActive] = useState(true)
   const [maskBrushSize, setMaskBrushSize] = useState(
@@ -232,11 +241,9 @@ export default function PhotoLabPreviewTester() {
   const isSmartEditMode = selectedModeId === SMART_EDIT_MODE
   const isIdentityTransferMode = selectedModeId === IDENTITY_TRANSFER_MODE
   const canUsePrototypeSource =
-    !isEnhanceQualityMode &&
-    !isRemoveObjectsMode &&
-    !isIdentityTransferMode
+    !isEnhanceQualityMode && !isRemoveObjectsMode
   const requiresUploadedSource =
-    isEnhanceQualityMode || isRemoveObjectsMode || isIdentityTransferMode
+    isEnhanceQualityMode || isRemoveObjectsMode
 
   const selectedPhotoQuality = useMemo(() => {
     return getPhotoQuality(photoQuality)
@@ -251,8 +258,19 @@ export default function PhotoLabPreviewTester() {
       return getRestoredPrototypeSource(restoredPrototypeId).src
     }
 
+    if (isIdentityTransferMode) {
+      return getIdentityTransferPrototypeSource(identityTransferPrototypeId)
+        .src
+    }
+
     return PROTOTYPE_MAP[previewSourceKey] || PROTOTYPE_MAP.man_front_color
-  }, [isRestoreColorizeMode, previewSourceKey, restoredPrototypeId])
+  }, [
+    identityTransferPrototypeId,
+    isIdentityTransferMode,
+    isRestoreColorizeMode,
+    previewSourceKey,
+    restoredPrototypeId,
+  ])
 
   const restoreSourceLabel = useMemo(() => {
     if (!isRestoreColorizeMode) return ''
@@ -263,6 +281,17 @@ export default function PhotoLabPreviewTester() {
 
     return getRestoredPrototypeSource(restoredPrototypeId).label
   }, [isRestoreColorizeMode, mainSourceFile, restoredPrototypeId])
+
+  const identityTransferSourceLabel = useMemo(() => {
+    if (!isIdentityTransferMode) return ''
+
+    if (mainSourceFile?.name) {
+      return formatIdentityTransferSourceLabel(mainSourceFile.name)
+    }
+
+    return getIdentityTransferPrototypeSource(identityTransferPrototypeId)
+      .label
+  }, [identityTransferPrototypeId, isIdentityTransferMode, mainSourceFile])
 
   const activeSourcePreviewItem = useMemo(() => {
     return sourceUploadPreviews[activeSourceIndex] || null
@@ -295,13 +324,37 @@ export default function PhotoLabPreviewTester() {
     if (selectedModeId === RESTORE_COLORIZE_MODE) {
       setRestoredPrototypeId(DEFAULT_RESTORED_PROTOTYPE_ID)
     }
+
+    if (selectedModeId === IDENTITY_TRANSFER_MODE) {
+      setIdentityTransferPrototypeId(DEFAULT_IDENTITY_TRANSFER_PROTOTYPE_ID)
+    }
   }, [selectedModeId])
 
   useEffect(() => {
-    if (!isRestoreColorizeMode || !restoreSourceLabel) return
+    if (isRestoreColorizeMode && restoreSourceLabel) {
+      setTemplateTitle(restoreSourceLabel)
+      return
+    }
 
-    setTemplateTitle(restoreSourceLabel)
-  }, [isRestoreColorizeMode, restoreSourceLabel])
+    if (isIdentityTransferMode && identityTransferSourceLabel) {
+      setTemplateTitle(identityTransferSourceLabel)
+    }
+  }, [
+    identityTransferSourceLabel,
+    isIdentityTransferMode,
+    isRestoreColorizeMode,
+    restoreSourceLabel,
+  ])
+
+  useEffect(() => {
+    if (!isIdentityTransferMode || mainSourceFile) return
+
+    setGender(
+      getIdentityTransferSubjectGender(identityTransferPrototypeId) === 'woman'
+        ? 'woman'
+        : 'man',
+    )
+  }, [identityTransferPrototypeId, isIdentityTransferMode, mainSourceFile])
 
   useEffect(() => {
     if (!mainSourceFile) {
@@ -331,18 +384,31 @@ export default function PhotoLabPreviewTester() {
               url: URL.createObjectURL(mainSourceFile),
             },
           ]
-        : [
-            {
-              type: 'main',
-              label: 'Main photo',
-              url: URL.createObjectURL(mainSourceFile),
-            },
-            ...referenceSourceFiles.map((file, index) => ({
-              type: 'reference',
-              label: `Reference ${index + 1}`,
-              url: URL.createObjectURL(file),
-            })),
-          ]
+        : isIdentityTransferMode
+          ? [
+              {
+                type: 'main',
+                label: 'Reference',
+                url: URL.createObjectURL(mainSourceFile),
+              },
+              ...referenceSourceFiles.map((file) => ({
+                type: 'reference',
+                label: 'Your face',
+                url: URL.createObjectURL(file),
+              })),
+            ]
+          : [
+              {
+                type: 'main',
+                label: 'Main photo',
+                url: URL.createObjectURL(mainSourceFile),
+              },
+              ...referenceSourceFiles.map((file, index) => ({
+                type: 'reference',
+                label: `Reference ${index + 1}`,
+                url: URL.createObjectURL(file),
+              })),
+            ]
 
     setSourceUploadPreviews(previewItems)
     setActiveSourceIndex(0)
@@ -352,6 +418,7 @@ export default function PhotoLabPreviewTester() {
     }
   }, [
     isEnhanceQualityMode,
+    isIdentityTransferMode,
     isRestoreColorizeMode,
     isRemoveObjectsMode,
     mainSourceFile,
@@ -368,13 +435,22 @@ export default function PhotoLabPreviewTester() {
     }
 
     if (isIdentityTransferMode) {
-      if (!mainSourceFile || referenceSourceFiles.length !== 1) {
-        throw new Error(
-          'Identity Transfer requires Reference photo and Photo with your face',
-        )
-      }
+      const referenceFile = mainSourceFile
+        ? mainSourceFile
+        : await srcToFile(
+            getIdentityTransferPrototypeSource(identityTransferPrototypeId)
+              .src,
+            `${identityTransferPrototypeId}.png`,
+          )
 
-      return [mainSourceFile, referenceSourceFiles[0]]
+      const faceFile = referenceSourceFiles[0]
+        ? referenceSourceFiles[0]
+        : await srcToFile(
+            PROTOTYPE_MAP[previewSourceKey] || PROTOTYPE_MAP.man_front_color,
+            `${previewSourceKey || 'face-prototype'}.png`,
+          )
+
+      return [referenceFile, faceFile]
     }
 
     if (isRestoreColorizeMode) {
@@ -512,16 +588,6 @@ export default function PhotoLabPreviewTester() {
       return
     }
 
-    if (
-      isIdentityTransferMode &&
-      (!mainSourceFile || referenceSourceFiles.length !== 1)
-    ) {
-      setError(
-        'Identity Transfer requires Reference photo and Photo with your face',
-      )
-      return
-    }
-
     setError('')
     setIsGenerating(true)
 
@@ -607,7 +673,9 @@ export default function PhotoLabPreviewTester() {
           ? restoreSourceLabel.toLowerCase() === 'lady'
             ? 'woman'
             : 'man'
-          : gender,
+          : isIdentityTransferMode && !mainSourceFile
+            ? getIdentityTransferSubjectGender(identityTransferPrototypeId)
+            : gender,
       )
       formData.append('generatedImageUrl', resultPreview)
 
@@ -645,7 +713,9 @@ export default function PhotoLabPreviewTester() {
             ? 'Enhance Quality uses one uploaded source photo. Test photo likeness and export size before saving showcase templates.'
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
-              : isRemoveObjectsMode
+              : isIdentityTransferMode
+                ? 'Identity Transfer uses a reference scene plus a face photo. Pick a scene preset and a face prototype, or upload your own photos.'
+                : isRemoveObjectsMode
                 ? 'Remove Objects uses one uploaded photo. Paint a mask, describe what to remove, or both — at least one is required.'
                 : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
@@ -1020,7 +1090,9 @@ export default function PhotoLabPreviewTester() {
                     variant="secondary"
                     onClick={() => referenceInputRef.current?.click()}
                     disabled={
-                      isGenerating || isSavingTemplate || !mainSourceFile
+                      isGenerating ||
+                      isSavingTemplate ||
+                      (!isIdentityTransferMode && !mainSourceFile)
                     }
                     className="w-full"
                   >
@@ -1084,7 +1156,85 @@ export default function PhotoLabPreviewTester() {
                       })}
                     </div>
                   ) : (
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <>
+                      {isIdentityTransferMode ? (
+                        <div className="mb-4">
+                          <Text
+                            as="p"
+                            variant="caption"
+                            color="muted"
+                            caseMode="sentence"
+                            className="mb-2"
+                          >
+                            Reference scene
+                          </Text>
+
+                          <div className="flex max-h-72 flex-col gap-2 overflow-y-auto pr-1">
+                            {IDENTITY_TRANSFER_PROTOTYPE_SOURCES.map(
+                              (source) => {
+                                const active =
+                                  identityTransferPrototypeId === source.id
+
+                                return (
+                                  <label
+                                    key={source.id}
+                                    className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition ${
+                                      active
+                                        ? 'border-amber-300/35 bg-amber-300/10'
+                                        : 'border-white/10 bg-white/[0.03]'
+                                    }`}
+                                  >
+                                    <input
+                                      type="radio"
+                                      name="identity-transfer-prototype"
+                                      value={source.id}
+                                      checked={active}
+                                      onChange={() => {
+                                        setIdentityTransferPrototypeId(
+                                          source.id,
+                                        )
+                                        setResultPreview('')
+                                        setError('')
+                                      }}
+                                      disabled={
+                                        isGenerating || isSavingTemplate
+                                      }
+                                      className="h-4 w-4 accent-[var(--primary)]"
+                                    />
+
+                                    <img
+                                      src={source.src}
+                                      alt={source.label}
+                                      className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                                    />
+
+                                    <Text
+                                      as="span"
+                                      variant="caption"
+                                      color="soft"
+                                      caseMode="sentence"
+                                    >
+                                      {source.label}
+                                    </Text>
+                                  </label>
+                                )
+                              },
+                            )}
+                          </div>
+
+                          <Text
+                            as="p"
+                            variant="caption"
+                            color="muted"
+                            caseMode="sentence"
+                            className="mb-2 mt-4"
+                          >
+                            Face identity
+                          </Text>
+                        </div>
+                      ) : null}
+
+                      <div className="grid gap-3 sm:grid-cols-3">
                       <div>
                         <Text
                           as="p"
@@ -1217,6 +1367,7 @@ export default function PhotoLabPreviewTester() {
                         </div>
                       </div>
                     </div>
+                    </>
                   )}
 
                   <Text
@@ -1228,7 +1379,9 @@ export default function PhotoLabPreviewTester() {
                   >
                     {isRestoreColorizeMode
                       ? `Active prototype: ${restoreSourceLabel}`
-                      : `Active prototype: ${previewSourceKey}`}
+                      : isIdentityTransferMode
+                        ? `Active: ${identityTransferSourceLabel} · face ${previewSourceKey}`
+                        : `Active prototype: ${previewSourceKey}`}
                   </Text>
                 </div>
               ) : isUsingUploadedSource ? (
@@ -1339,6 +1492,14 @@ export default function PhotoLabPreviewTester() {
                       <span className="pointer-events-none absolute left-4 top-4 z-[2] rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
                         {activeSourcePreviewItem.label}
                       </span>
+                    ) : isIdentityTransferMode ? (
+                      <span className="pointer-events-none absolute left-4 top-4 z-[2] rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
+                        {identityTransferSourceLabel}
+                      </span>
+                    ) : isRestoreColorizeMode ? (
+                      <span className="pointer-events-none absolute left-4 top-4 z-[2] rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
+                        {restoreSourceLabel}
+                      </span>
                     ) : null}
 
                     {hasMultipleSourcePhotos ? (
@@ -1383,7 +1544,7 @@ export default function PhotoLabPreviewTester() {
                         : isRestoreColorizeMode
                           ? 'Pick a restored preset or upload a photo'
                           : isIdentityTransferMode
-                            ? 'Upload Reference + Your face'
+                            ? 'Pick a scene preset or upload Reference + face'
                             : 'Upload main source photo'}
                     </Text>
 
@@ -1399,7 +1560,7 @@ export default function PhotoLabPreviewTester() {
                         : isRestoreColorizeMode
                           ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
                           : isIdentityTransferMode
-                            ? 'Image 1 = Reference photo (composition). Image 2 = Photo with your face (identity).'
+                            ? 'Image 1 = Reference scene. Image 2 = Face identity. Preset scenes are selected above by default.'
                             : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
                     </Text>
                   </div>
@@ -1593,7 +1754,8 @@ export default function PhotoLabPreviewTester() {
                   Subject
                 </Text>
 
-                {isRestoreColorizeMode ? (
+                {isRestoreColorizeMode ||
+                (isIdentityTransferMode && !mainSourceFile) ? (
                   <>
                     <Text
                       as="p"
@@ -1601,7 +1763,9 @@ export default function PhotoLabPreviewTester() {
                       color="white"
                       caseMode="sentence"
                     >
-                      {restoreSourceLabel || 'Not selected'}
+                      {(isRestoreColorizeMode
+                        ? restoreSourceLabel
+                        : identityTransferSourceLabel) || 'Not selected'}
                     </Text>
 
                     <Text
@@ -1658,9 +1822,7 @@ export default function PhotoLabPreviewTester() {
                   (isRemoveObjectsMode &&
                     !hasRemovalMask &&
                     !String(additionalPrompt || '').trim()) ||
-                  (isSmartEditMode && !String(additionalPrompt || '').trim()) ||
-                  (isIdentityTransferMode &&
-                    (!mainSourceFile || referenceSourceFiles.length !== 1))
+                  (isSmartEditMode && !String(additionalPrompt || '').trim())
                 }
                 fullWidth
                 className="w-auto"

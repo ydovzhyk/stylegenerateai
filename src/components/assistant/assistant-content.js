@@ -95,7 +95,9 @@ export const ASSISTANT_HIDDEN_PREFIXES = [
 ]
 
 export function normalizeAssistantPath(pathname) {
-  const path = String(pathname || '/').split('?')[0].split('#')[0]
+  const path = String(pathname || '/')
+    .split('?')[0]
+    .split('#')[0]
   const trimmed = path.replace(/\/+$/, '')
   return trimmed || '/'
 }
