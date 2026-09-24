@@ -2273,7 +2273,7 @@
         "smart_edit": {
           "title": "Smart Edit",
           "modeKey": "smart_edit",
-          "usesSourceDimensions": true,
+          "usesSourceDimensions": false,
           "plans": {
             "visitor": {
               "modeAccess": {
@@ -2326,6 +2326,24 @@
                     "label": "Print"
                   }
                 },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Landscape 3:2"
+                  }
+                },
                 "modelPreset": {
                   "balanced": {
                     "available": false,
@@ -2353,6 +2371,7 @@
                 "components": [
                   "aiModel",
                   "photoQuality",
+                  "outputFormat",
                   "modelPreset"
                 ],
                 "baseCredits": 1
@@ -2396,6 +2415,23 @@
                     "credits": null,
                     "lockedReason": "plan_pro_required",
                     "label": "Print"
+                  }
+                },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Landscape 3:2"
                   }
                 },
                 "modelPreset": {
@@ -2442,6 +2478,7 @@
                 "components": [
                   "aiModel",
                   "photoQuality",
+                  "outputFormat",
                   "modelPreset"
                 ],
                 "baseCredits": 1
@@ -2487,6 +2524,23 @@
                     "label": "Print"
                   }
                 },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Landscape 3:2"
+                  }
+                },
                 "modelPreset": {
                   "balanced": {
                     "available": true,
@@ -2529,6 +2583,7 @@
                 "components": [
                   "aiModel",
                   "photoQuality",
+                  "outputFormat",
                   "modelPreset"
                 ],
                 "baseCredits": 1
@@ -2572,6 +2627,23 @@
                     "credits": 2,
                     "label": "Print",
                     "description": "2× upscale to PNG for large prints and archive use."
+                  }
+                },
+                "outputFormat": {
+                  "portrait_2_3": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Portrait 2:3"
+                  },
+                  "square_1_1": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Square 1:1"
+                  },
+                  "landscape_3_2": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Landscape 3:2"
                   }
                 },
                 "modelPreset": {

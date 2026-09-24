@@ -2,6 +2,7 @@ export const OUTPUT_FORMATS = {
   portrait_2_3: {
     id: 'portrait_2_3',
     label: 'Portrait 2:3',
+    orientationLabel: 'Vertical',
     aspectRatio: '2:3',
     width: 1024,
     height: 1536,
@@ -10,6 +11,7 @@ export const OUTPUT_FORMATS = {
   square_1_1: {
     id: 'square_1_1',
     label: 'Square 1:1',
+    orientationLabel: 'Square',
     aspectRatio: '1:1',
     width: 1024,
     height: 1024,
@@ -18,6 +20,7 @@ export const OUTPUT_FORMATS = {
   landscape_3_2: {
     id: 'landscape_3_2',
     label: 'Landscape 3:2',
+    orientationLabel: 'Horizontal',
     aspectRatio: '3:2',
     width: 1536,
     height: 1024,

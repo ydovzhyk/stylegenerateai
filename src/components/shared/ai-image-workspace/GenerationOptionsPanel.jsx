@@ -23,13 +23,13 @@ function LockedHint({ text }) {
   )
 }
 
-function buildSelectOptions(items = [], isAllowed) {
+function buildSelectOptions(items = [], isAllowed, labelKey = 'label') {
   return items.map((item) => {
     const locked = typeof isAllowed === 'function' ? !isAllowed(item.id) : false
 
     return {
       value: item.id,
-      label: item.label,
+      label: item[labelKey] || item.label,
       isLocked: locked,
       isDisabled: locked,
     }
@@ -77,6 +77,8 @@ export default function GenerationOptionsPanel({
   promptLabel = 'Additional prompt',
   promptPlaceholder = 'Add small details, mood, colors, or background...',
   photoQualityLabel = 'Photo quality',
+  outputFormatLabel = 'Output format',
+  outputFormatOptionLabelKey = 'label',
 }) {
   const columns =
     showOutputFormat && showPhotoQuality ? 'md:grid-cols-2' : 'md:grid-cols-1'
@@ -84,8 +86,13 @@ export default function GenerationOptionsPanel({
   const hasUpperSections = showPrompt || showOutputFormat || showPhotoQuality
 
   const outputFormatOptions = useMemo(
-    () => buildSelectOptions(outputFormats, isFormatAllowed),
-    [outputFormats, isFormatAllowed],
+    () =>
+      buildSelectOptions(
+        outputFormats,
+        isFormatAllowed,
+        outputFormatOptionLabelKey,
+      ),
+    [outputFormats, isFormatAllowed, outputFormatOptionLabelKey],
   )
 
   const photoQualityOptions = useMemo(
@@ -124,7 +131,7 @@ export default function GenerationOptionsPanel({
           {showOutputFormat ? (
             <Select
               id="generation-output-format"
-              label="Output format"
+              label={outputFormatLabel}
               labelClassName={SECTION_TITLE_LABEL_CLASS}
               options={outputFormatOptions}
               value={selectedOutputFormat}

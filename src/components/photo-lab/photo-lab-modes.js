@@ -38,13 +38,13 @@ export const PHOTO_LAB_MODES = [
     title: 'Smart Edit',
     label: 'Prompt-based edits',
     description:
-      'Change clothes, backgrounds, lighting, objects, mood, or scene details using simple instructions.',
+      'Change clothes, backgrounds, lighting, objects, mood, or scene details using simple instructions. Choose vertical, square, or horizontal output.',
     icon: WandSparkles,
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: camera on a tripod in front of me on the table; I am wearing the hoodie from reference photo 1.',
+      'Example: on a basketball court, wear the hoodie and shorts from the references, hold the ball in my right hand.',
     uploadHint:
-      'Upload your main photo, optionally add up to 5 reference photos, then describe the edit.',
+      'Upload your main photo, optionally add up to 5 reference photos, choose orientation, then describe the edit.',
   },
   {
     id: 'identity_transfer',

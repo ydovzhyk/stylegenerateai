@@ -137,6 +137,7 @@ export default function AiImageWorkspace({
   const isSmartEditMode = isPhotoLab && activeModeId === SMART_EDIT_MODE
   const isIdentityTransferMode =
     isPhotoLab && activeModeId === IDENTITY_TRANSFER_MODE
+  const resolvedShowOutputFormat = showOutputFormat || isSmartEditMode
 
   const resetMaskState = () => {
     setMaskTool('brush')
@@ -637,7 +638,7 @@ export default function AiImageWorkspace({
 
         formData.append('extraPrompt', normalizedExtraPrompt)
         formData.append('photoQuality', photoQuality)
-        if (showOutputFormat && outputFormat) {
+        if ((resolvedShowOutputFormat || isSmartEditMode) && outputFormat) {
           formData.append('outputFormat', outputFormat)
         }
         formData.append('modelPreset', activePreset)
@@ -1097,7 +1098,7 @@ export default function AiImageWorkspace({
     : isEnhanceQualityMode
       ? 'Upload your photo, choose likeness and export size, then generate a cleaner version of the same photo.'
       : isSmartEditMode
-        ? 'Upload your main photo, optionally add up to 5 reference photos, describe the edit, then generate.'
+        ? 'Upload your main photo, optionally add up to 5 reference photos, choose output orientation, describe the edit, then generate.'
         : isIdentityTransferMode
           ? 'Upload a Reference photo, then a Photo with your face — keep the shot, transfer your identity.'
           : workspaceDescription
@@ -1835,7 +1836,7 @@ export default function AiImageWorkspace({
             isQualityAllowed={isQualityAllowed}
             lockedText={lockedText}
             showPrompt={false}
-            showOutputFormat={showOutputFormat}
+            showOutputFormat={resolvedShowOutputFormat}
             showAiModel={showAiModel}
             aiModel={aiModel}
             setAiModel={setAiModel}
@@ -1847,6 +1848,12 @@ export default function AiImageWorkspace({
             modelPresets={modelPresets}
             isModelPresetAllowed={isModelPresetAllowed}
             photoQualityLabel="Export size"
+            outputFormatLabel={
+              isSmartEditMode ? 'Output orientation' : 'Output format'
+            }
+            outputFormatOptionLabelKey={
+              isSmartEditMode ? 'orientationLabel' : 'label'
+            }
           />
         </div>
 

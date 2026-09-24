@@ -221,9 +221,11 @@ const PHOTO_LAB_MODE_GUIDES = {
 **Restore type** — **Restore only** repairs the photo and keeps the original tones. **Restore & colorize** also adds natural color.
 
 **Optional refinements** — extra wishes for tone or repair. Optional.`,
-  smart_edit: `**Your photo** — the main image to change. You can add up to 5 extra reference photos (outfit, place, object).
+  smart_edit: `**Your photo** — the main hero image to change. You can add up to 5 extra reference photos (outfit, place, object) — references are cues, not identity donors.
 
-**Edit prompt** — required. Describe what to change: clothes, background, lighting, or details.`,
+**Edit prompt** — required. Describe the scene and changes: clothes, background, lighting, or details.
+
+**Output orientation** — Vertical, Square, or Horizontal.`,
   identity_transfer: `**Photos** — upload **Reference photo** first (pose, clothes, and scene to keep 1:1), then a clear **Face photo** of you.
 
 Hairstyle comes from the reference by default. Write **Keep my hairstyle** in the prompt to keep yours.

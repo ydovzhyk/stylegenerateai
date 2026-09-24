@@ -23,6 +23,10 @@ import {
   getPhotoQuality,
 } from '@/constants/photo-quality'
 import {
+  DEFAULT_OUTPUT_FORMAT,
+  OUTPUT_FORMATS,
+} from '@/constants/output-formats'
+import {
   CLIENT_MODEL_PRESET_IDS,
   CLIENT_MODEL_PRESET_META,
   PHOTO_LAB_DEFAULT_MODEL_PRESET,
@@ -193,6 +197,7 @@ export default function PhotoLabPreviewTester() {
   const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL)
   const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
+  const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT)
 
   const [race, setRace] = useState('european')
   const [gender, setGender] = useState('man')
@@ -248,6 +253,10 @@ export default function PhotoLabPreviewTester() {
   const selectedPhotoQuality = useMemo(() => {
     return getPhotoQuality(photoQuality)
   }, [photoQuality])
+
+  const selectedOutputFormat = useMemo(() => {
+    return OUTPUT_FORMATS[outputFormat] || OUTPUT_FORMATS[DEFAULT_OUTPUT_FORMAT]
+  }, [outputFormat])
 
   const previewSourceKey = useMemo(() => {
     return makePreviewSourceKey({ race, gender, view })
@@ -601,6 +610,10 @@ export default function PhotoLabPreviewTester() {
       formData.append('aiModel', aiModel)
       formData.append('photoQuality', selectedPhotoQuality.id)
       formData.append('additionalPrompt', normalizedAdditionalPrompt)
+
+      if (isSmartEditMode) {
+        formData.append('outputFormat', selectedOutputFormat.id)
+      }
 
       if (selectedMode.id === RESTORE_COLORIZE_MODE) {
         formData.append('restoreStyle', restoreStyle)
@@ -961,6 +974,70 @@ export default function PhotoLabPreviewTester() {
                             className="mt-1 block"
                           >
                             {style.description}
+                          </Text>
+                        </span>
+                      </span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {isSmartEditMode ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <Text
+                as="p"
+                variant="caption"
+                color="faint"
+                caseMode="sentence"
+                className="mb-3 uppercase tracking-[0.18em]"
+              >
+                Output orientation
+              </Text>
+
+              <div className="flex flex-col gap-3">
+                {Object.values(OUTPUT_FORMATS).map((format) => {
+                  const active = outputFormat === format.id
+
+                  return (
+                    <label
+                      key={format.id}
+                      className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${
+                        active
+                          ? 'border-primary/35 bg-primary/10'
+                          : 'border-white/10 bg-background-soft/70'
+                      }`}
+                    >
+                      <span className="flex items-start gap-3">
+                        <input
+                          type="radio"
+                          name="output-format"
+                          value={format.id}
+                          checked={active}
+                          onChange={() => setOutputFormat(format.id)}
+                          disabled={isGenerating || isSavingTemplate}
+                          className="mt-1 h-4 w-4 accent-[var(--primary)]"
+                        />
+
+                        <span>
+                          <Text
+                            as="span"
+                            variant="body-sm"
+                            color="soft"
+                            caseMode="sentence"
+                          >
+                            {format.orientationLabel || format.label}
+                          </Text>
+
+                          <Text
+                            as="span"
+                            variant="caption"
+                            color="muted"
+                            caseMode="sentence"
+                            className="mt-1 block"
+                          >
+                            {format.label} ({format.aspectRatio})
                           </Text>
                         </span>
                       </span>
