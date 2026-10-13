@@ -3,6 +3,7 @@ export const getAssistantMessages = (state) => state.assistant.messages
 export const getAssistantSending = (state) => state.assistant.sending
 export const getAssistantError = (state) => state.assistant.error
 export const getAssistantProactive = (state) => state.assistant.proactive
+export const getAssistantNotice = (state) => state.assistant.notice
 export const getAssistantHintsEnabled = (state) =>
   state.assistant.hintsEnabled !== false
 export const getAssistantHasOpenedChat = (state) => state.assistant.hasOpenedChat

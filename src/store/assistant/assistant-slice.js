@@ -63,6 +63,7 @@ const initialState = {
   sending: false,
   error: null,
   proactive: null,
+  notice: null,
   hintsEnabled: true,
   hasOpenedChat: false,
   hasSentMessage: false,
@@ -83,6 +84,7 @@ function resetAssistantForAuthChange(state) {
   state.sending = false
   state.error = null
   state.proactive = null
+  state.notice = null
   state.hasOpenedChat = false
   state.hasSentMessage = false
   state.lastGenerationAt = null
@@ -118,21 +120,42 @@ const assistantSlice = createSlice({
       })
     },
     showProactiveHint: (state, action) => {
-      if (state.isOpen || state.hintsEnabled === false) return
+      const force = Boolean(action.payload?.force)
+      if (state.isOpen) return
+      if (
+        state.proactive?.kind === 'notice' &&
+        action.payload?.kind !== 'notice'
+      ) {
+        return
+      }
+      if (!force && state.hintsEnabled === false) return
       state.proactive = {
         id: makeId(),
         kind: action.payload?.kind || 'page',
         text: action.payload?.text || '',
+        detail: action.payload?.detail || '',
+        guidance: action.payload?.guidance || '',
         showAvatar: Boolean(action.payload?.showAvatar),
       }
       state.lastProactiveAt = Date.now()
+    },
+    queueAssistantNotice: (state, action) => {
+      const message = String(action.payload?.message || '').trim()
+      if (!message) return
+      state.notice = {
+        id: makeId(),
+        message,
+      }
+    },
+    consumeAssistantNotice: (state) => {
+      state.notice = null
     },
     hideProactiveHint: (state) => {
       state.proactive = null
     },
     setAssistantHintsEnabled: (state, action) => {
       state.hintsEnabled = Boolean(action.payload)
-      if (!state.hintsEnabled) {
+      if (!state.hintsEnabled && state.proactive?.kind !== 'notice') {
         state.proactive = null
       }
     },
@@ -211,6 +234,8 @@ export const {
   toggleAssistantOpen,
   addAssistantLocalMessage,
   showProactiveHint,
+  queueAssistantNotice,
+  consumeAssistantNotice,
   hideProactiveHint,
   setAssistantHintsEnabled,
   setAssistantPhotoLabMode,

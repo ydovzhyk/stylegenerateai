@@ -26,19 +26,6 @@ import {
   resolveFrontendPlanKey,
 } from '@/config/generation-pricing'
 
-import {
-  CLIENT_MODEL_PRESET_IDS,
-  getClientPresetMeta,
-  resolveDefaultModelPreset,
-} from '@/constants/model-presets'
-
-import {
-  AI_MODEL_IDS,
-  DEFAULT_AI_MODEL,
-  getAiModelMeta,
-  isNewestAiModel,
-} from '@/constants/ai-models'
-
 export function getLockedText({ planKey, isLogin, lockedReason }) {
   if (lockedReason === 'sign_in_required' || (!isLogin && planKey === 'visitor')) {
     return 'Sign in to unlock this option.'
@@ -86,42 +73,6 @@ function resolveAllowedValue(value, allowedValues = [], fallbackValue) {
   return allowedValues[0] || fallbackValue
 }
 
-function buildPresetOptions(planOptions = {}) {
-  const presets = planOptions.modelPreset || {}
-
-  return CLIENT_MODEL_PRESET_IDS.filter((id) => presets[id]).map((id) => {
-    const option = presets[id] || {}
-    const clientMeta = getClientPresetMeta(id)
-
-    return {
-      id,
-      label: clientMeta.label,
-      description: clientMeta.description,
-      credits: option.available ? Number(option.credits || 0) : null,
-      available: Boolean(option.available),
-      lockedReason: option.lockedReason || null,
-    }
-  })
-}
-
-function buildAiModelOptions(planOptions = {}) {
-  const models = planOptions.aiModel || {}
-
-  return AI_MODEL_IDS.filter((id) => models[id]).map((id) => {
-    const option = models[id] || {}
-    const meta = getAiModelMeta(id)
-
-    return {
-      id,
-      label: meta.label,
-      description: meta.description,
-      credits: option.available ? Number(option.credits || 0) : null,
-      available: Boolean(option.available),
-      lockedReason: option.lockedReason || null,
-    }
-  })
-}
-
 export default function useGenerationPlanAccess({
   productKey = 'ready_template',
   modeKey = null,
@@ -159,16 +110,6 @@ export default function useGenerationPlanAccess({
     [planOptions.options],
   )
 
-  const allowedModelPresets = useMemo(
-    () => getAvailableOptionIds(planOptions.options, 'modelPreset'),
-    [planOptions.options],
-  )
-
-  const allowedAiModels = useMemo(
-    () => getAvailableOptionIds(planOptions.options, 'aiModel'),
-    [planOptions.options],
-  )
-
   const allowedGeneratedImageFormats = useMemo(() => {
     const fromLibrary = getAvailableOptionIds(
       planOptions.options,
@@ -201,26 +142,12 @@ export default function useGenerationPlanAccess({
     ? DEFAULT_OUTPUT_FORMAT
     : allowedFormats[0] || DEFAULT_OUTPUT_FORMAT
 
-  const defaultModelPreset = resolveDefaultModelPreset(
-    modeKey,
-    allowedModelPresets,
-    productKey,
-  )
-
-  const defaultAiModel = allowedAiModels.includes(DEFAULT_AI_MODEL)
-    ? DEFAULT_AI_MODEL
-    : allowedAiModels[0] || DEFAULT_AI_MODEL
-
   const [selectedOutputFormat, setSelectedOutputFormat] = useState(
     defaultOutputFormat,
   )
   const [selectedPhotoQuality, setSelectedPhotoQuality] = useState(
     defaultPhotoQuality,
   )
-  const [selectedModelPreset, setSelectedModelPreset] = useState(
-    defaultModelPreset,
-  )
-  const [selectedAiModel, setSelectedAiModel] = useState(defaultAiModel)
   const defaultGeneratedImageFormat =
     allowedGeneratedImageFormats.includes(DEFAULT_GENERATED_IMAGE_FORMAT)
       ? DEFAULT_GENERATED_IMAGE_FORMAT
@@ -235,8 +162,6 @@ export default function useGenerationPlanAccess({
     planKey,
     defaultPhotoQuality,
     defaultOutputFormat,
-    defaultModelPreset,
-    defaultAiModel,
     defaultGeneratedImageFormat,
   ].join('|')
 
@@ -247,8 +172,6 @@ export default function useGenerationPlanAccess({
     setPrevSelectionResetKey(selectionResetKey)
     setSelectedPhotoQuality(defaultPhotoQuality)
     setSelectedOutputFormat(defaultOutputFormat)
-    setSelectedModelPreset(defaultModelPreset)
-    setSelectedAiModel(defaultAiModel)
     setSelectedGeneratedImageFormat(defaultGeneratedImageFormat)
   }
 
@@ -276,26 +199,6 @@ export default function useGenerationPlanAccess({
     defaultPhotoQuality,
   ])
 
-  const modelPreset = useMemo(() => {
-    return resolveAllowedValue(
-      selectedModelPreset,
-      allowedModelPresets,
-      defaultModelPreset,
-    )
-  }, [
-    selectedModelPreset,
-    allowedModelPresets,
-    defaultModelPreset,
-  ])
-
-  const aiModel = useMemo(() => {
-    return resolveAllowedValue(
-      selectedAiModel,
-      allowedAiModels,
-      defaultAiModel,
-    )
-  }, [selectedAiModel, allowedAiModels, defaultAiModel])
-
   const generatedImageFormat = useMemo(() => {
     return resolveAllowedValue(
       selectedGeneratedImageFormat,
@@ -310,10 +213,8 @@ export default function useGenerationPlanAccess({
 
   const generationQuote = useMemo(() => {
     const selections = {
-      aiModel,
       photoQuality,
       outputFormat,
-      modelPreset,
     }
 
     return quoteGeneration({
@@ -323,59 +224,6 @@ export default function useGenerationPlanAccess({
       selections,
     })
   }, [
-    planKey,
-    productKey,
-    modeKey,
-    aiModel,
-    photoQuality,
-    outputFormat,
-    modelPreset,
-  ])
-
-  const closerPresetCreditDelta = useMemo(() => {
-    if (
-      isNewestAiModel(aiModel) ||
-      !allowedModelPresets.includes('balanced') ||
-      !allowedModelPresets.includes('identity')
-    ) {
-      return 0
-    }
-
-    const baseSelections = {
-      aiModel,
-      photoQuality,
-      outputFormat,
-      modelPreset: 'balanced',
-    }
-
-    const closerSelections = {
-      aiModel,
-      photoQuality,
-      outputFormat,
-      modelPreset: 'identity',
-    }
-
-    const defaultQuote = quoteGeneration({
-      planKey,
-      productKey,
-      modeKey,
-      selections: baseSelections,
-    })
-
-    const closerQuote = quoteGeneration({
-      planKey,
-      productKey,
-      modeKey,
-      selections: closerSelections,
-    })
-
-    return Math.max(
-      (closerQuote.totalCredits || 0) - (defaultQuote.totalCredits || 0),
-      0,
-    )
-  }, [
-    aiModel,
-    allowedModelPresets,
     planKey,
     productKey,
     modeKey,
@@ -398,16 +246,6 @@ export default function useGenerationPlanAccess({
   const isQualityAllowed = useCallback(
     (id) => allowedQualities.includes(id),
     [allowedQualities],
-  )
-
-  const isModelPresetAllowed = useCallback(
-    (id) => allowedModelPresets.includes(id),
-    [allowedModelPresets],
-  )
-
-  const isAiModelAllowed = useCallback(
-    (id) => allowedAiModels.includes(id),
-    [allowedAiModels],
   )
 
   const isGeneratedImageFormatAllowed = useCallback(
@@ -439,18 +277,6 @@ export default function useGenerationPlanAccess({
     [planKey, productKey, modeKey],
   )
 
-  const getPresetCredits = useCallback(
-    (id) =>
-      getOptionCredits({
-        planKey,
-        productKey,
-        modeKey,
-        groupKey: 'modelPreset',
-        optionId: id,
-      }),
-    [planKey, productKey, modeKey],
-  )
-
   const setOutputFormat = useCallback(
     (id) => {
       if (!allowedFormats.includes(id)) return
@@ -465,22 +291,6 @@ export default function useGenerationPlanAccess({
       setSelectedPhotoQuality(id)
     },
     [allowedQualities],
-  )
-
-  const setModelPreset = useCallback(
-    (id) => {
-      if (!allowedModelPresets.includes(id)) return
-      setSelectedModelPreset(id)
-    },
-    [allowedModelPresets],
-  )
-
-  const setAiModel = useCallback(
-    (id) => {
-      if (!allowedAiModels.includes(id)) return
-      setSelectedAiModel(id)
-    },
-    [allowedAiModels],
   )
 
   const setGeneratedImageFormat = useCallback(
@@ -508,18 +318,6 @@ export default function useGenerationPlanAccess({
     setPhotoQuality,
     photoQualities: Object.values(PHOTO_QUALITIES),
 
-    modelPreset,
-    setModelPreset,
-    modelPresets: buildPresetOptions(planOptions.options),
-    showModelPreset:
-      allowedModelPresets.length > 0 && !isNewestAiModel(aiModel),
-
-    aiModel,
-    setAiModel,
-    aiModels: buildAiModelOptions(planOptions.options),
-    showAiModel: allowedAiModels.length > 0,
-    isAiModelAllowed,
-
     generatedImageFormat,
     setGeneratedImageFormat,
     generatedImageFormats: Object.values(GENERATED_IMAGE_FORMATS),
@@ -527,7 +325,6 @@ export default function useGenerationPlanAccess({
     creditCost: generationQuote.totalCredits,
     creditBreakdown: generationQuote.breakdown,
     generationQuote,
-    closerPresetCreditDelta,
     canGenerate: generationQuote.allowed === true,
 
     lockedText: getLockedText({ planKey, isLogin }),
@@ -539,11 +336,9 @@ export default function useGenerationPlanAccess({
 
     isFormatAllowed,
     isQualityAllowed,
-    isModelPresetAllowed,
     isGeneratedImageFormatAllowed,
     getOptionLockedReason,
     getQualityCredits,
     getFormatCredits,
-    getPresetCredits,
   }
 }

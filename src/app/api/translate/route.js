@@ -1,4 +1,5 @@
 import translate from 'translate'
+import { reportClientError } from '@/utils/error-log/report-client-error'
 
 translate.key = process.env.TRANSLATE_API_KEY
 
@@ -50,6 +51,14 @@ export async function POST(req) {
       if (official) return Response.json({ result: official })
     } catch (error) {
       console.error('TRANSLATE_CLOUD_FAILED', error?.message || error)
+      reportClientError({
+        source: 'next-api',
+        method: 'POST',
+        path: '/api/translate',
+        status: 502,
+        code: 'TRANSLATE_CLOUD_FAILED',
+        message: error?.message || 'Google Cloud Translate failed',
+      })
     }
 
     const options = source ? { from: source, to: target } : { to: target }
@@ -57,6 +66,14 @@ export async function POST(req) {
     return Response.json({ result })
   } catch (error) {
     console.error('TRANSLATE_FAILED', error?.message || error)
+    reportClientError({
+      source: 'next-api',
+      method: 'POST',
+      path: '/api/translate',
+      status: 500,
+      code: 'TRANSLATE_FAILED',
+      message: error?.message || 'Translate failed',
+    })
     return Response.json(
       { result: null, error: 'TRANSLATE_FAILED' },
       { status: 500 },

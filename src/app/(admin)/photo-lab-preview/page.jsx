@@ -3,7 +3,7 @@ import PhotoLabPreviewTester from '@/components/admin/photo-lab-admin/PhotoLabPr
 
 export const metadata = {
   title: 'Photo Lab Preview | AI Style Generator',
-  description: 'Test Photo Lab AI models and generate preview examples',
+  description: 'Test Photo Lab modes and generate preview examples',
 }
 
 export default function PhotoLabPreviewPage() {

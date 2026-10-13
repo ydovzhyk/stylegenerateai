@@ -50,14 +50,6 @@ function normalizeSelections(planConfig, selections = {}) {
     ...forcedSelections,
   }
 
-  const aiModel = String(merged.aiModel || 'classic').trim() || 'classic'
-  merged.aiModel = aiModel
-
-  // Newest always bills and behaves as max likeness (identity).
-  if (aiModel === 'newest') {
-    merged.modelPreset = 'identity'
-  }
-
   return merged
 }
 
@@ -287,10 +279,8 @@ export function listPlanOptions({ productKey, modeKey = null, planKey }) {
 }
 
 const ASSISTANT_OPTION_GROUP_LABELS = {
-  aiModel: 'AI model',
   photoQuality: 'Export size',
   outputFormat: 'Output format',
-  modelPreset: 'Photo likeness',
 }
 
 export function buildAssistantPricingContext({

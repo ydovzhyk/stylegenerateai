@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer'
 import { NextResponse } from 'next/server'
+import { reportClientError } from '@/utils/error-log/report-client-error'
 
 export const runtime = 'nodejs'
 
@@ -171,6 +172,14 @@ export async function POST(request) {
     )
   } catch (error) {
     console.error('Contact API error:', error)
+    reportClientError({
+      source: 'next-api',
+      method: 'POST',
+      path: '/api/contact',
+      status: 500,
+      code: 'CONTACT_FAILED',
+      message: error?.message || 'Contact request failed',
+    })
 
     return NextResponse.json(
       { success: false, message: 'Server error occurred.' },

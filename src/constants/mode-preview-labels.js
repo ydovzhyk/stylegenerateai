@@ -6,6 +6,7 @@ export const MODE_PREVIEW_LABELS = {
   remove_objects: { before: 'Distracting', after: 'Clean' },
   enhance_quality: { before: 'Soft', after: 'Clearer' },
   creative_retouch: { before: 'Everyday', after: 'Instagram-ready' },
+  photo_styles: { before: 'Your photo', after: 'Restyled' },
 }
 
 export function getModePreviewLabels(modeId = '') {

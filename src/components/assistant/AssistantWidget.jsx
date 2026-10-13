@@ -21,6 +21,7 @@ import { sendAssistantMessage } from '@/store/assistant/assistant-operations'
 import {
   addAssistantLocalMessage,
   clearAssistantChat,
+  consumeAssistantNotice,
   hideProactiveHint,
   readAssistantHintsEnabled,
   setAssistantHintsEnabled,
@@ -39,11 +40,13 @@ import {
   getAssistantIsOpen,
   getAssistantLastGenerationAt,
   getAssistantMessages,
+  getAssistantNotice,
   getAssistantPhotoLabModeId,
   getAssistantProactive,
   getAssistantChatLanguage,
   getAssistantSending,
 } from '@/store/assistant/assistant-selectors'
+import { explainAssistantNotice } from '@/components/assistant/assistant-notices'
 import {
   ASSISTANT_CONTENT,
   PRODUCT_NAME,
@@ -68,6 +71,7 @@ const WELCOME_DELAY_MS = 2 * 60 * 1000
 const PAGE_HINT_DELAY_MS = 30 * 1000
 const WELCOME_VISIBLE_MS = 30 * 1000
 const SHORT_VISIBLE_MS = 10 * 1000
+const NOTICE_VISIBLE_MS = 30 * 1000
 const CHAT_SCRIPT_DELAY_MS = 3000
 const PRODUCT_NAME_PLACEHOLDER = 'AISGPRODUCTNAME'
 
@@ -75,6 +79,16 @@ function getLanguageCodeByIndex(index) {
   return String(
     languagesAndCodes?.languages?.[index]?.code || 'en',
   ).toLowerCase()
+}
+
+function formatAssistantMessageTime(createdAt) {
+  const date = new Date(Number(createdAt))
+  if (!Number.isFinite(date.getTime())) return ''
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(date)
 }
 
 function AssistantBubble({ text, onClick }) {
@@ -172,6 +186,7 @@ export default function AssistantWidget() {
   const sending = useSelector(getAssistantSending)
   const error = useSelector(getAssistantError)
   const proactive = useSelector(getAssistantProactive)
+  const notice = useSelector(getAssistantNotice)
   const hintsEnabled = useSelector(getAssistantHintsEnabled)
   const hasOpenedChat = useSelector(getAssistantHasOpenedChat)
   const hasSentMessage = useSelector(getAssistantHasSentMessage)
@@ -204,6 +219,11 @@ export default function AssistantWidget() {
   const explainedSaveOptionsRef = useRef(false)
   const lastGenerationAtRef = useRef(null)
   const authSessionKeyRef = useRef(null)
+  const handledNoticeIdRef = useRef(null)
+  const isOpenRef = useRef(isOpen)
+  const proactiveRef = useRef(proactive)
+  isOpenRef.current = isOpen
+  proactiveRef.current = proactive
 
   const hidden = isAssistantHiddenPath(pathname)
   const showBotAvatar = Boolean(proactive?.text) && !isOpen
@@ -261,8 +281,10 @@ export default function AssistantWidget() {
   const showHintRef = useRef(() => {})
   showHintRef.current = (payload, visibleMs) => {
     if (hidden || isOpen || !hintsOn) return
+    if (proactiveRef.current?.kind === 'notice') return
     localizeText(payload?.text).then((text) => {
       if (!text) return
+      if (proactiveRef.current?.kind === 'notice') return
       dispatch(showProactiveHint({ ...payload, text }))
       window.clearTimeout(hideTimerRef.current)
       hideTimerRef.current = window.setTimeout(() => {
@@ -276,6 +298,55 @@ export default function AssistantWidget() {
   useEffect(() => {
     dispatch(hideProactiveHint())
   }, [dispatch])
+
+  useEffect(() => {
+    if (!notice?.id || !notice.message || hidden) return undefined
+    if (handledNoticeIdRef.current === notice.id) return undefined
+
+    handledNoticeIdRef.current = notice.id
+    const noticeId = notice.id
+    const explained = explainAssistantNotice(notice.message)
+    let cancelled = false
+
+    ;(async () => {
+      const detail = await localizeText(explained.detail)
+      const guidance = await localizeText(explained.guidance)
+      const bubble = await localizeText(explained.bubble)
+      if (cancelled) return
+
+      if (isOpenRef.current) {
+        if (detail) dispatch(addAssistantLocalMessage(detail))
+        if (guidance) dispatch(addAssistantLocalMessage(guidance))
+      } else if (bubble) {
+        if (detail) dispatch(addAssistantLocalMessage(detail))
+        if (guidance) dispatch(addAssistantLocalMessage(guidance))
+        introducedPathsRef.current.add(pathname)
+        dispatch(
+          showProactiveHint({
+            force: true,
+            kind: 'notice',
+            text: bubble,
+            detail,
+            guidance,
+            showAvatar: true,
+          }),
+        )
+        window.clearTimeout(hideTimerRef.current)
+        hideTimerRef.current = window.setTimeout(() => {
+          dispatch(hideProactiveHint())
+        }, NOTICE_VISIBLE_MS)
+      }
+
+      dispatch(consumeAssistantNotice())
+    })()
+
+    return () => {
+      cancelled = true
+      if (handledNoticeIdRef.current === noticeId) {
+        handledNoticeIdRef.current = null
+      }
+    }
+  }, [notice, hidden, dispatch])
 
   useEffect(() => {
     if (!authSessionKey) return
@@ -596,6 +667,14 @@ export default function AssistantWidget() {
   const openWithGreeting = () => {
     const bubbleKind = proactive?.kind
     const bubbleText = proactive?.text
+
+    if (bubbleKind === 'notice') {
+      clearChatScript()
+      window.clearTimeout(hideTimerRef.current)
+      introducedPathsRef.current.add(pathname)
+      dispatch(setAssistantOpen(true))
+      return
+    }
     const openedFromBubble = Boolean(bubbleText)
     const isSaveBubble = bubbleKind === 'generation'
     const isSettingsBubble =
@@ -818,12 +897,13 @@ export default function AssistantWidget() {
           >
             {messages.map((item, index) => {
               const isLatest = index === messages.length - 1 && !sending
+              const messageTime = formatAssistantMessageTime(item.createdAt)
               return (
                 <div
                   key={item.id}
                   ref={isLatest ? lastItemRef : undefined}
                   className={clsx(
-                    'max-w-[92%] rounded-2xl px-3 py-2 text-sm leading-6',
+                    'flex max-w-[92%] flex-col rounded-2xl px-3 py-2 text-sm leading-6',
                     item.role === 'user'
                       ? 'ml-auto bg-primary/25 text-white'
                       : 'bg-white/5 text-foreground-soft',
@@ -834,6 +914,19 @@ export default function AssistantWidget() {
                   ) : (
                     item.text
                   )}
+                  {messageTime ? (
+                    <time
+                      dateTime={new Date(item.createdAt).toISOString()}
+                      className={clsx(
+                        'mt-1 self-end text-[10px] leading-none tabular-nums',
+                        item.role === 'user'
+                          ? 'text-white/55'
+                          : 'text-foreground-faint',
+                      )}
+                    >
+                      {messageTime}
+                    </time>
+                  ) : null}
                 </div>
               )
             })}

@@ -34,6 +34,7 @@ const MODE_PREVIEW_LABELS = {
   remove_objects: { before: 'Distracting', after: 'Clean' },
   enhance_quality: { before: 'Soft', after: 'Clearer' },
   creative_retouch: { before: 'Everyday', after: 'Instagram-ready' },
+  photo_styles: { before: 'Your photo', after: 'Restyled' },
 }
 
 const MODE_SOURCE_BADGE_LABELS = {
@@ -44,6 +45,7 @@ const MODE_SOURCE_BADGE_LABELS = {
   remove_objects: 'Distracting',
   enhance_quality: 'Soft',
   creative_retouch: 'Everyday',
+  photo_styles: 'Your photo',
 }
 
 function getSourceBadgeLabel(modeId = '') {
@@ -102,6 +104,13 @@ const SHOWCASE_MODE_ITEMS = [
     title: 'Premium Instagram polish',
     description:
       'Same shot, cleaner finish: polished skin, even tone, and a premium look.',
+  },
+  {
+    id: 'photo_styles',
+    afterLabel: 'Restyled',
+    title: 'Restyle your photo',
+    description:
+      'Coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.',
   },
 ]
 

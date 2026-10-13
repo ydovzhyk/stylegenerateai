@@ -35,6 +35,7 @@ const initialState = {
     remove_objects: [],
     enhance_quality: [],
     creative_retouch: [],
+    photo_styles: [],
   },
   templatesLoading: false,
 }
@@ -119,6 +120,7 @@ const photoLabSlice = createSlice({
           remove_objects: [],
           enhance_quality: [],
           creative_retouch: [],
+          photo_styles: [],
         }
       })
       .addCase(getPhotoLabTemplates.rejected, (state, { payload }) => {

@@ -16,6 +16,12 @@ import {
   createPhotoLabTemplate,
   generatePhotoLabAdminPreview,
 } from '@/store/photo-lab/photo-lab-operations'
+import {
+  PHOTO_CHECK_FAILED_MESSAGE,
+  PHOTO_FLAGGED_MESSAGE,
+  imageCheckKey,
+  moderateUploadedImage,
+} from '@/utils/moderation/moderate-image'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import {
   DEFAULT_PHOTO_QUALITY,
@@ -23,22 +29,16 @@ import {
   getPhotoQuality,
 } from '@/constants/photo-quality'
 import {
-  CLIENT_MODEL_PRESET_IDS,
-  CLIENT_MODEL_PRESET_META,
-  PHOTO_LAB_DEFAULT_MODEL_PRESET,
-} from '@/constants/model-presets'
-import {
-  AI_MODEL_IDS,
-  AI_MODEL_META,
-  DEFAULT_AI_MODEL,
-  isNewestAiModel,
-} from '@/constants/ai-models'
-import {
   DEFAULT_RESTORE_STYLE,
   RESTORE_COLORIZE_MODE,
   RESTORE_STYLE_IDS,
   getRestoreStyleMeta,
 } from '@/constants/restore-styles'
+import {
+  DEFAULT_PICTURE_STYLE,
+  PHOTO_STYLES_MODE,
+  PICTURE_STYLES,
+} from '@/constants/picture-styles'
 import {
   DEFAULT_RESTORED_PROTOTYPE_ID,
   RESTORED_PROTOTYPE_SOURCES,
@@ -60,6 +60,7 @@ import {
   ImagePlus,
   Loader2,
   Paintbrush,
+  Palette,
   Sparkles,
   UserRound,
   WandSparkles,
@@ -72,18 +73,6 @@ const IDENTITY_TRANSFER_MODE = 'identity_transfer'
 const SMART_EDIT_MAX_REFERENCE_IMAGES = 5
 const SMART_EDIT_MAX_TOTAL_IMAGES = 1 + SMART_EDIT_MAX_REFERENCE_IMAGES
 const IDENTITY_TRANSFER_REQUIRED_IMAGES = 2
-
-const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
-  id,
-  label: CLIENT_MODEL_PRESET_META[id].label,
-  description: CLIENT_MODEL_PRESET_META[id].description,
-}))
-
-const AI_MODELS = AI_MODEL_IDS.map((id) => ({
-  id,
-  label: AI_MODEL_META[id].label,
-  description: AI_MODEL_META[id].description,
-}))
 
 const RESTORE_STYLES = RESTORE_STYLE_IDS.map((id) => ({
   id,
@@ -133,6 +122,12 @@ const PHOTO_LAB_TEST_MODES = [
     title: 'Creative Retouch',
     label: 'Instagram polish',
     icon: Paintbrush,
+  },
+  {
+    id: 'photo_styles',
+    title: 'Photo Styles',
+    label: 'Restyle your photo',
+    icon: Palette,
   },
 ]
 
@@ -189,9 +184,8 @@ export default function PhotoLabPreviewTester() {
   const [selectedModeId, setSelectedModeId] = useState(
     PHOTO_LAB_TEST_MODES[0].id,
   )
-  const [modelPreset, setModelPreset] = useState(PHOTO_LAB_DEFAULT_MODEL_PRESET)
-  const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL)
   const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
+  const [pictureStyle, setPictureStyle] = useState(DEFAULT_PICTURE_STYLE)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
 
   const [race, setRace] = useState('european')
@@ -221,6 +215,8 @@ export default function PhotoLabPreviewTester() {
   const [hasRemovalMask, setHasRemovalMask] = useState(false)
   const [maskZoomState, setMaskZoomState] = useState(DEFAULT_MASK_ZOOM_STATE)
   const [error, setError] = useState('')
+  const [imageChecks, setImageChecks] = useState({})
+  const moderationSerialRef = useRef(new Map())
   const [previewModal, setPreviewModal] = useState({
     open: false,
     src: '',
@@ -240,10 +236,51 @@ export default function PhotoLabPreviewTester() {
   const isRemoveObjectsMode = selectedModeId === REMOVE_OBJECTS_MODE
   const isSmartEditMode = selectedModeId === SMART_EDIT_MODE
   const isIdentityTransferMode = selectedModeId === IDENTITY_TRANSFER_MODE
+  const isPhotoStylesMode = selectedModeId === PHOTO_STYLES_MODE
   const canUsePrototypeSource =
     !isEnhanceQualityMode && !isRemoveObjectsMode
   const requiresUploadedSource =
     isEnhanceQualityMode || isRemoveObjectsMode
+
+  const uploadedFilesForModeration = useMemo(() => {
+    const files = []
+    if (mainSourceFile) files.push(mainSourceFile)
+    referenceSourceFiles.forEach((file) => files.push(file))
+    return files
+  }, [mainSourceFile, referenceSourceFiles])
+
+  const moderationBlocksGenerate = uploadedFilesForModeration.some(
+    (file) => imageChecks[imageCheckKey(file)] !== 'clear',
+  )
+
+  const queueImageModeration = (file) => {
+    if (!file) return
+
+    const key = imageCheckKey(file)
+    const serial = (moderationSerialRef.current.get(key) || 0) + 1
+    moderationSerialRef.current.set(key, serial)
+    setImageChecks((prev) => ({ ...prev, [key]: 'pending' }))
+
+    moderateUploadedImage(file)
+      .then((result) => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({
+          ...prev,
+          [key]: result.flagged ? 'flagged' : 'clear',
+        }))
+
+        if (result.flagged) {
+          setError(PHOTO_FLAGGED_MESSAGE)
+        }
+      })
+      .catch(() => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({ ...prev, [key]: 'error' }))
+        setError(PHOTO_CHECK_FAILED_MESSAGE)
+      })
+  }
 
   const selectedPhotoQuality = useMemo(() => {
     return getPhotoQuality(photoQuality)
@@ -307,8 +344,6 @@ export default function PhotoLabPreviewTester() {
     sourceUploadPreviews.length > 1
 
   useEffect(() => {
-    setModelPreset(PHOTO_LAB_DEFAULT_MODEL_PRESET)
-
     if (
       selectedModeId === ENHANCE_QUALITY_MODE ||
       selectedModeId === RESTORE_COLORIZE_MODE ||
@@ -572,6 +607,19 @@ export default function PhotoLabPreviewTester() {
       return
     }
 
+    if (moderationBlocksGenerate) {
+      const flagged = uploadedFilesForModeration.some(
+        (file) => imageChecks[imageCheckKey(file)] === 'flagged',
+      )
+      const failed = uploadedFilesForModeration.some(
+        (file) => imageChecks[imageCheckKey(file)] === 'error',
+      )
+
+      if (flagged) setError(PHOTO_FLAGGED_MESSAGE)
+      else if (failed) setError(PHOTO_CHECK_FAILED_MESSAGE)
+      return
+    }
+
     if (isRemoveObjectsMode) {
       const maskBlob = await maskEditorRef.current?.exportMask()
 
@@ -597,13 +645,15 @@ export default function PhotoLabPreviewTester() {
       const formData = new FormData()
 
       formData.append('mode', selectedMode.id)
-      formData.append('modelPreset', modelPreset)
-      formData.append('aiModel', aiModel)
       formData.append('photoQuality', selectedPhotoQuality.id)
       formData.append('additionalPrompt', normalizedAdditionalPrompt)
 
       if (selectedMode.id === RESTORE_COLORIZE_MODE) {
         formData.append('restoreStyle', restoreStyle)
+      }
+
+      if (selectedMode.id === PHOTO_STYLES_MODE) {
+        formData.append('pictureStyle', pictureStyle)
       }
 
       resolvedSourceFiles.forEach((file) => {
@@ -699,7 +749,7 @@ export default function PhotoLabPreviewTester() {
     <div className="rounded-[24px] border border-white/10 bg-background-soft/70 p-4 sm:p-5 md:p-6">
       <div className="mb-5">
         <Text as="h3" variant="h3" color="white" caseMode="sentence">
-          AI model testing workspace
+          Photo Lab testing workspace
         </Text>
 
         <Text
@@ -710,7 +760,7 @@ export default function PhotoLabPreviewTester() {
           className="mt-2 max-w-3xl"
         >
           {isEnhanceQualityMode
-            ? 'Enhance Quality uses one uploaded source photo. Test photo likeness and export size before saving showcase templates.'
+            ? 'Enhance Quality uses one uploaded source photo. Test export size before saving showcase templates.'
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
               : isIdentityTransferMode
@@ -781,132 +831,6 @@ export default function PhotoLabPreviewTester() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <Text
-              as="p"
-              variant="caption"
-              color="faint"
-              caseMode="sentence"
-              className="mb-3 uppercase tracking-[0.18em]"
-            >
-              AI model
-            </Text>
-
-            <div className="flex flex-col gap-3">
-              {AI_MODELS.map((model) => {
-                const active = aiModel === model.id
-
-                return (
-                  <label
-                    key={model.id}
-                    className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${
-                      active
-                        ? 'border-cyan-300/35 bg-cyan-300/10'
-                        : 'border-white/10 bg-background-soft/70'
-                    }`}
-                  >
-                    <span className="flex items-start gap-3">
-                      <input
-                        type="radio"
-                        name="aiModel"
-                        value={model.id}
-                        checked={active}
-                        onChange={() => setAiModel(model.id)}
-                        disabled={isGenerating || isSavingTemplate}
-                        className="mt-1 h-4 w-4 accent-[var(--primary)]"
-                      />
-
-                      <span>
-                        <Text
-                          as="span"
-                          variant="body-sm"
-                          color="soft"
-                          caseMode="sentence"
-                        >
-                          {model.label}
-                        </Text>
-
-                        <Text
-                          as="span"
-                          variant="caption"
-                          color="muted"
-                          caseMode="sentence"
-                          className="mt-1 block"
-                        >
-                          {model.description}
-                        </Text>
-                      </span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-          </div>
-
-          {!isNewestAiModel(aiModel) ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <Text
-              as="p"
-              variant="caption"
-              color="faint"
-              caseMode="sentence"
-              className="mb-3 uppercase tracking-[0.18em]"
-            >
-              Photo likeness
-            </Text>
-
-            <div className="flex flex-col gap-3">
-              {MODEL_PRESETS.map((preset) => {
-                const active = modelPreset === preset.id
-
-                return (
-                  <label
-                    key={preset.id}
-                    className={`cursor-pointer rounded-2xl border px-4 py-3 transition ${
-                      active
-                        ? 'border-cyan-300/35 bg-cyan-300/10'
-                        : 'border-white/10 bg-background-soft/70'
-                    }`}
-                  >
-                    <span className="flex items-start gap-3">
-                      <input
-                        type="radio"
-                        name="modelPreset"
-                        value={preset.id}
-                        checked={active}
-                        onChange={() => setModelPreset(preset.id)}
-                        disabled={isGenerating || isSavingTemplate}
-                        className="mt-1 h-4 w-4 accent-[var(--primary)]"
-                      />
-
-                      <span>
-                        <Text
-                          as="span"
-                          variant="body-sm"
-                          color="soft"
-                          caseMode="sentence"
-                        >
-                          {preset.label}
-                        </Text>
-
-                        <Text
-                          as="span"
-                          variant="caption"
-                          color="muted"
-                          caseMode="sentence"
-                          className="mt-1 block"
-                        >
-                          {preset.description}
-                        </Text>
-                      </span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-          </div>
-          ) : null}
-
           {isRestoreColorizeMode ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <Text
@@ -965,6 +889,52 @@ export default function PhotoLabPreviewTester() {
                         </span>
                       </span>
                     </label>
+                  )
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {isPhotoStylesMode ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <Text
+                as="p"
+                variant="caption"
+                color="faint"
+                caseMode="sentence"
+                className="mb-3 uppercase tracking-[0.18em]"
+              >
+                Picture style
+              </Text>
+
+              <div className="grid grid-cols-2 gap-2">
+                {PICTURE_STYLES.map((style) => {
+                  const active = pictureStyle === style.id
+
+                  return (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => setPictureStyle(style.id)}
+                      disabled={isGenerating || isSavingTemplate}
+                      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
+                        active
+                          ? 'border-primary/35 bg-primary/10'
+                          : 'border-white/10 bg-background-soft/70'
+                      }`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`h-4 w-4 shrink-0 rounded-full border ${
+                          active
+                            ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                            : 'border-white/40'
+                        }`}
+                      />
+                      <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
+                        {style.shortLabel}
+                      </Text>
+                    </button>
                   )
                 })}
               </div>
@@ -1582,6 +1552,7 @@ export default function PhotoLabPreviewTester() {
                   setMaskTool('brush')
                   setResultPreview('')
                   setError('')
+                  if (file) queueImageModeration(file)
 
                   if (referenceInputRef.current) {
                     referenceInputRef.current.value = ''
@@ -1603,6 +1574,7 @@ export default function PhotoLabPreviewTester() {
                   setReferenceSourceFiles(files)
                   setResultPreview('')
                   setError('')
+                  files.forEach((file) => queueImageModeration(file))
                 }}
               />
             </div>
@@ -1818,6 +1790,7 @@ export default function PhotoLabPreviewTester() {
                 disabled={
                   isGenerating ||
                   isSavingTemplate ||
+                  moderationBlocksGenerate ||
                   (requiresUploadedSource && !mainSourceFile) ||
                   (isRemoveObjectsMode &&
                     !hasRemovalMask &&

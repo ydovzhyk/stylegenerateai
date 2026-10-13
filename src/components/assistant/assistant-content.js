@@ -59,7 +59,8 @@ Typical choices:
 - **Identity Transfer** — keep a reference shot 1:1 and put your face into it.
 - **Remove Objects** — clean people or clutter out of the frame.
 - **Enhance Quality** — sharper and clearer, same scene.
-- **Creative Retouch** — cleaner skin and a finished look, not a full remake.
+- **Creative Retouch** — even skin, cleared blemishes, and groomed hair on the same photo, not a full remake.
+- **Photo Styles** — turn one photo into a coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.
 
 Tell me which mode you picked (or want), and I will walk you through it.`,
     '/pricing': `Generations use credits, and the options you choose — quality, model, and similar — affect how much a run costs.
@@ -200,10 +201,6 @@ export function getLookSettingsText(templateTitle, pricingCopy = '') {
 
 **Export size** — Draft, Standard, Premium, or Print.
 
-**AI model** — Classic lets you choose Photo likeness. Newest always keeps maximum likeness and bills it as **Closer to original**.
-
-**Photo likeness** — Classic only. **Closer to original** keeps your face safer. **More enhancement** restyles more strongly.
-
 ${pricing}`
 }
 
@@ -221,9 +218,9 @@ const PHOTO_LAB_MODE_GUIDES = {
 **Restore type** — **Restore only** repairs the photo and keeps the original tones. **Restore & colorize** also adds natural color.
 
 **Optional refinements** — extra wishes for tone or repair. Optional.`,
-  smart_edit: `**Your photo** — the main image to change. You can add up to 5 extra reference photos (outfit, place, object).
+  smart_edit: `**Main photo** — the photo to edit. Use the buttons above it.
 
-**Edit prompt** — required. Describe what to change: clothes, background, lighting, or details.`,
+**Detail 1–5** — optional photos of clothes, objects, or a place. Add them in order, then describe the change in the edit prompt.`,
   identity_transfer: `**Photos** — upload **Reference photo** first (pose, clothes, and scene to keep 1:1), then a clear **Face photo** of you.
 
 Hairstyle comes from the reference by default. Write **Keep my hairstyle** in the prompt to keep yours.
@@ -235,17 +232,18 @@ Paint a mask over what to remove, and/or describe it in **Additional prompt**. Y
   enhance_quality: `**Your photo** — a soft, noisy, compressed, or hazy shot. The scene stays the same.
 
 **Optional refinements** — extra wishes for sharpness or haze. Optional.`,
-  creative_retouch: `**Your photo** — a portrait, lifestyle, or social photo. Same scene, cleaner finish — not a full remake.
+  creative_retouch: `**Your photo** — a portrait, lifestyle, or social photo. Same scene. The finish evens skin on the face and hands, clears blemishes, and grooms the existing hair. It is not a new face, pose, or hairstyle.
 
 **Optional refinements** — extra wishes for skin or tone. Optional.`,
+  photo_styles: `**Style** — pick one with the buttons above the photo: coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.
+
+**Your photo** — one photo of the person, animal, or object to restyle.
+
+**Optional refinements** — extra wishes. Optional.`,
 }
 
 function getSharedPhotoLabSettingsText() {
-  return `**Export size** — Draft, Standard, Premium, or Print.
-
-**AI model** — Classic lets you choose Photo likeness. Newest always keeps maximum likeness and bills it as **Closer to original**.
-
-**Photo likeness** — Classic only. **Closer to original** is safer for faces. **More enhancement** changes more.`
+  return `**Export size** — Draft, Standard, Premium, or Print.`
 }
 
 export function getPhotoLabModeSettingsText(modeId, pricingCopy = '') {
@@ -277,9 +275,6 @@ export function getGenerationSaveSettingsText({
   const retryTarget = isPhotoLab
     ? 'a short extra prompt, or another Photo Lab mode'
     : 'a short extra prompt, or another look'
-  const newestHint = isLogin
-    ? '**Newest**, if you want maximum likeness and the face should stay closer to your photo'
-    : '**Newest** after you sign in, if you want maximum likeness'
   const gallery = isLogin
     ? `**Save to gallery** — keeps the image in **My Gallery** (Looks or Photo Lab). Turn it on before **Download**: the image is saved first, then the file downloads.`
     : `**Save to gallery** — needs an account. Sign in to keep results in **My Gallery**. You can still download the file without signing in.`
@@ -289,8 +284,6 @@ export function getGenerationSaveSettingsText({
 If you are not happy with it, change **one** thing and press **Regenerate** (this uses credits again):
 
 - a clearer photo — face visible, decent light, not tiny, dark, or heavily filtered
-- on Classic, **Closer to original**, if the face drifted
-- ${newestHint}
 - ${retryTarget}
 
 When you like the result, use **Download options** next to the preview.

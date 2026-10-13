@@ -1,23 +1,18 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+import {
+  PHOTO_CHECK_FAILED_MESSAGE,
+  PHOTO_FLAGGED_MESSAGE,
+  imageCheckKey,
+  moderateUploadedImage,
+} from '@/utils/moderation/moderate-image'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
-import {
-  CLIENT_MODEL_PRESET_IDS,
-  CLIENT_MODEL_PRESET_META,
-  DEFAULT_MODEL_PRESET,
-} from '@/constants/model-presets'
-import {
-  AI_MODEL_IDS,
-  AI_MODEL_META,
-  DEFAULT_AI_MODEL,
-  isNewestAiModel,
-} from '@/constants/ai-models'
 import {
   OUTPUT_FORMATS,
   getOutputFormat,
@@ -28,18 +23,6 @@ import {
   getPhotoQuality,
   DEFAULT_PHOTO_QUALITY,
 } from '@/constants/photo-quality'
-
-const MODEL_PRESETS = CLIENT_MODEL_PRESET_IDS.map((id) => ({
-  id,
-  label: CLIENT_MODEL_PRESET_META[id].label,
-  description: CLIENT_MODEL_PRESET_META[id].description,
-}))
-
-const AI_MODELS = AI_MODEL_IDS.map((id) => ({
-  id,
-  label: AI_MODEL_META[id].label,
-  description: AI_MODEL_META[id].description,
-}))
 
 const RACE_OPTIONS = [
   { value: 'european', label: 'European' },
@@ -99,13 +82,13 @@ export default function TemplatePreviewGenerator({
   const [generationPrompt, setGenerationPrompt] = useState('')
   const [outputFormat, setOutputFormat] = useState(DEFAULT_OUTPUT_FORMAT)
   const [photoQuality, setPhotoQuality] = useState(DEFAULT_PHOTO_QUALITY)
-  const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL)
-  const [modelPreset, setModelPreset] = useState(DEFAULT_MODEL_PRESET)
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [generatedFile, setGeneratedFile] = useState(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [generationError, setGenerationError] = useState('')
   const [isGeneratedPreviewOpen, setIsGeneratedPreviewOpen] = useState(false)
+  const [imageChecks, setImageChecks] = useState({})
+  const moderationSerialRef = useRef(new Map())
 
   const previewSourceKey = useMemo(() => {
     return makePreviewSourceKey({
@@ -138,6 +121,40 @@ export default function TemplatePreviewGenerator({
   }, [selectedOutputFormat])
 
   const isUsingUploadedSource = Boolean(sourceUploadFile)
+  const sourceCheckStatus = sourceUploadFile
+    ? imageChecks[imageCheckKey(sourceUploadFile)]
+    : 'clear'
+  const sourceModerationBlocks =
+    Boolean(sourceUploadFile) && sourceCheckStatus !== 'clear'
+
+  const queueImageModeration = (file) => {
+    if (!file) return
+
+    const key = imageCheckKey(file)
+    const serial = (moderationSerialRef.current.get(key) || 0) + 1
+    moderationSerialRef.current.set(key, serial)
+    setImageChecks((prev) => ({ ...prev, [key]: 'pending' }))
+
+    moderateUploadedImage(file)
+      .then((result) => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({
+          ...prev,
+          [key]: result.flagged ? 'flagged' : 'clear',
+        }))
+
+        if (result.flagged) {
+          setGenerationError(PHOTO_FLAGGED_MESSAGE)
+        }
+      })
+      .catch(() => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({ ...prev, [key]: 'error' }))
+        setGenerationError(PHOTO_CHECK_FAILED_MESSAGE)
+      })
+  }
 
   useEffect(() => {
     if (!sourceUploadFile) {
@@ -161,8 +178,6 @@ export default function TemplatePreviewGenerator({
     setGenerationPrompt('')
     setOutputFormat(DEFAULT_OUTPUT_FORMAT)
     setPhotoQuality(DEFAULT_PHOTO_QUALITY)
-    setAiModel(DEFAULT_AI_MODEL)
-    setModelPreset(DEFAULT_MODEL_PRESET)
     setGeneratedPreview('')
     setGeneratedFile(null)
     setIsGenerating(false)
@@ -172,6 +187,8 @@ export default function TemplatePreviewGenerator({
 
   const handleSourceUpload = (file) => {
     setSourceUploadFile(file || null)
+    setGenerationError('')
+    if (file) queueImageModeration(file)
   }
 
   const resolveSourceFile = async () => {
@@ -187,6 +204,15 @@ export default function TemplatePreviewGenerator({
 
     if (!prompt) {
       setGenerationError('Generation prompt is required')
+      return
+    }
+
+    if (sourceModerationBlocks) {
+      if (sourceCheckStatus === 'flagged') {
+        setGenerationError(PHOTO_FLAGGED_MESSAGE)
+      } else if (sourceCheckStatus === 'error') {
+        setGenerationError(PHOTO_CHECK_FAILED_MESSAGE)
+      }
       return
     }
 
@@ -214,8 +240,6 @@ export default function TemplatePreviewGenerator({
           },
           output: selectedOutputFormat,
           photoQuality: selectedPhotoQuality,
-          aiModel,
-          modelPreset,
         })
 
         if (result?.previewUrl) {
@@ -652,116 +676,12 @@ export default function TemplatePreviewGenerator({
               </div>
             </div>
 
-            <div className="mt-4">
-              <Text
-                as="p"
-                variant="caption"
-                caseMode="sentence"
-                className="text-foreground-soft mb-2"
-              >
-                AI model
-              </Text>
-
-              <div className="flex flex-col gap-3">
-                {AI_MODELS.map((model) => (
-                  <label
-                    key={model.id}
-                    className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-background-soft/70 px-4 py-3"
-                  >
-                    <input
-                      type="radio"
-                      name="ai-model"
-                      value={model.id}
-                      checked={aiModel === model.id}
-                      onChange={() => setAiModel(model.id)}
-                      disabled={disabled || isGenerating}
-                      className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
-                    />
-
-                    <div className="flex flex-col">
-                      <Text
-                        as="span"
-                        variant="caption"
-                        color="soft"
-                        caseMode="sentence"
-                      >
-                        {model.label}
-                      </Text>
-
-                      <Text
-                        as="span"
-                        variant="caption"
-                        color="muted"
-                        caseMode="sentence"
-                        className="mt-1"
-                      >
-                        {model.description}
-                      </Text>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {!isNewestAiModel(aiModel) ? (
-              <div className="mt-4">
-                <Text
-                  as="p"
-                  variant="caption"
-                  caseMode="sentence"
-                  className="text-foreground-soft mb-2"
-                >
-                  Photo likeness
-                </Text>
-
-                <div className="flex flex-col gap-3">
-                  {MODEL_PRESETS.map((preset) => (
-                    <label
-                      key={preset.id}
-                      className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/10 bg-background-soft/70 px-4 py-3"
-                    >
-                      <input
-                        type="radio"
-                        name="model-preset"
-                        value={preset.id}
-                        checked={modelPreset === preset.id}
-                        onChange={() => setModelPreset(preset.id)}
-                        disabled={disabled || isGenerating}
-                        className="mt-0.5 h-4 w-4 accent-[var(--primary)]"
-                      />
-
-                      <div className="flex flex-col">
-                        <Text
-                          as="span"
-                          variant="caption"
-                          color="soft"
-                          caseMode="sentence"
-                        >
-                          {preset.label}
-                        </Text>
-
-                        <Text
-                          as="span"
-                          variant="caption"
-                          color="muted"
-                          caseMode="sentence"
-                          className="mt-1"
-                        >
-                          {preset.description}
-                        </Text>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Button
                 type="button"
                 onClick={handleGenerate}
                 loading={isGenerating}
-                disabled={disabled || isGenerating}
+                disabled={disabled || isGenerating || sourceModerationBlocks}
                 fullWidth
                 className="w-auto"
               >

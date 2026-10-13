@@ -27,6 +27,12 @@ import {
 
 } from '@/constants/restore-styles'
 
+import {
+  DEFAULT_PICTURE_STYLE,
+  PHOTO_STYLES_MODE,
+  getPictureStyleMeta,
+} from '@/constants/picture-styles'
+
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { getPhotoLabTemplatesState } from '@/store/photo-lab/photo-lab-selectors'
 import { setAssistantPhotoLabMode } from '@/store/assistant/assistant-slice'
@@ -73,13 +79,16 @@ function buildPhotoLabWorkspaceTemplate(
   mode,
   previewPair = EMPTY_MODE_PREVIEW,
   restoreStyle = null,
+  pictureStyle = null,
 ) {
   if (!mode) return null
 
   const category =
     mode.id === RESTORE_COLORIZE_MODE && restoreStyle
       ? `${mode.label} · ${getRestoreStyleMeta(restoreStyle).shortLabel}`
-      : mode.label
+      : mode.id === PHOTO_STYLES_MODE && pictureStyle
+        ? `${mode.label} · ${getPictureStyleMeta(pictureStyle).shortLabel}`
+        : mode.label
 
   const labels = getModePreviewLabels(mode.id)
 
@@ -106,6 +115,7 @@ export default function PhotoLabPage() {
   const [selectedModePreview, setSelectedModePreview] = useState(EMPTY_MODE_PREVIEW)
 
   const [restoreStyle, setRestoreStyle] = useState(DEFAULT_RESTORE_STYLE)
+  const [pictureStyle, setPictureStyle] = useState(DEFAULT_PICTURE_STYLE)
 
   const workspaceRef = useRef(null)
 
@@ -133,8 +143,9 @@ export default function PhotoLabPage() {
         selectedMode,
         selectedModePreview,
         selectedModeId === RESTORE_COLORIZE_MODE ? restoreStyle : null,
+        selectedModeId === PHOTO_STYLES_MODE ? pictureStyle : null,
       ),
-    [selectedMode, selectedModePreview, selectedModeId, restoreStyle],
+    [selectedMode, selectedModePreview, selectedModeId, restoreStyle, pictureStyle],
   )
 
   useEffect(() => {
@@ -277,6 +288,12 @@ export default function PhotoLabPage() {
 
           onRestoreStyleChange={
             selectedModeId === RESTORE_COLORIZE_MODE ? setRestoreStyle : null
+          }
+          pictureStyle={
+            selectedModeId === PHOTO_STYLES_MODE ? pictureStyle : null
+          }
+          onPictureStyleChange={
+            selectedModeId === PHOTO_STYLES_MODE ? setPictureStyle : null
           }
 
           emptyStateTitle="Edit your photo"

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { clearUser } from '@/store/auth/auth-slice'
+import { reportClientError } from '@/utils/error-log/report-client-error'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -95,6 +96,24 @@ function refreshAccessToken() {
 // INTERCEPTORS
 // =====================
 
+function reportAxiosFailure(error) {
+  const config = error?.config
+  const response = error?.response
+  const path = String(config?.url || '')
+
+  if (path.includes('/client-errors')) return
+  if (error?.code === 'ERR_CANCELED') return
+
+  reportClientError({
+    source: 'browser',
+    method: config?.method || '',
+    path,
+    status: response?.status || 0,
+    code: response?.data?.code || error?.code || '',
+    message: response?.data?.message || error?.message || 'Request failed',
+  })
+}
+
 export function setupInterceptors(store) {
   // Дозволяє побачити: чи реально відправився retry після refresh.
   instance.interceptors.request.use((config) => {
@@ -110,7 +129,10 @@ export function setupInterceptors(store) {
       const response = error?.response
 
       // Якщо axios не дав response/config — це мережа/блок/відміна
-      if (!originalRequest) return Promise.reject(error)
+      if (!originalRequest) {
+        reportAxiosFailure(error)
+        return Promise.reject(error)
+      }
 
       // Проставимо id, щоб трекати в логах
       if (!originalRequest.__reqId) originalRequest.__reqId = makeReqId()
@@ -126,7 +148,10 @@ export function setupInterceptors(store) {
       })
 
       // Якщо немає response — це не 401/403, а щось типу CORS/Network Error
-      if (!response) return Promise.reject(error)
+      if (!response) {
+        reportAxiosFailure(error)
+        return Promise.reject(error)
+      }
 
       const status = response.status
       const url = originalRequest.url || ''
@@ -141,6 +166,7 @@ export function setupInterceptors(store) {
         if (AXIOS_DEBUG)
           console.log('[AXIOS] refresh request FAILED -> clearUser()')
         store.dispatch(clearUser())
+        reportAxiosFailure(error)
         return Promise.reject(error)
       }
 
@@ -149,6 +175,7 @@ export function setupInterceptors(store) {
         if (originalRequest._retry) {
           if (AXIOS_DEBUG)
             console.log('[AXIOS] /auth/current already retried once -> stop')
+          reportAxiosFailure(error)
           return Promise.reject(error)
         }
         originalRequest._retry = true
@@ -169,6 +196,7 @@ export function setupInterceptors(store) {
               '[AXIOS] refresh failed during /auth/current flow -> clearUser()',
             )
           store.dispatch(clearUser())
+          reportAxiosFailure(e2)
           return Promise.reject(e2)
         }
       }
@@ -188,6 +216,7 @@ export function setupInterceptors(store) {
             status,
             code,
           })
+        reportAxiosFailure(error)
         return Promise.reject(error)
       }
 
@@ -202,6 +231,7 @@ export function setupInterceptors(store) {
           if (AXIOS_DEBUG)
             console.log('[AXIOS] already retried once -> clearUser()')
           store.dispatch(clearUser())
+          reportAxiosFailure(error)
           return Promise.reject(error)
         }
         originalRequest._retry = true
@@ -224,14 +254,17 @@ export function setupInterceptors(store) {
           if (AXIOS_DEBUG)
             console.log('[AXIOS] refresh failed in 401 flow -> clearUser()')
           store.dispatch(clearUser())
+          reportAxiosFailure(e2)
           return Promise.reject(e2)
         }
       }
 
       if (status === 403) {
+        reportAxiosFailure(error)
         return Promise.reject(error)
       }
 
+      reportAxiosFailure(error)
       return Promise.reject(error)
     },
   )

@@ -5,7 +5,6 @@ import BeforeAfterComparisonSlider, {
   resolveComparisonPreviewTarget,
 } from '@/components/shared/before-after-comparison/BeforeAfterComparisonSlider'
 import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
-import GenerationCloserPresetModal from '@/components/shared/ai-image-workspace/GenerationCloserPresetModal'
 import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import PhotoLabMaskEditor, {
@@ -15,11 +14,15 @@ import PhotoLabMaskToolbar, {
   DEFAULT_MASK_ZOOM_STATE,
 } from '@/components/photo-lab/PhotoLabMaskToolbar'
 import RestoreStyleToolbar from '@/components/photo-lab/RestoreStyleToolbar'
+import PictureStyleToolbar from '@/components/photo-lab/PictureStyleToolbar'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Text from '@/components/shared/text/Text'
-import { BALANCED_MODEL_PRESET, DEFAULT_MODEL_PRESET } from '@/constants/model-presets'
 import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restore-styles'
+import {
+  DEFAULT_PICTURE_STYLE,
+  PHOTO_STYLES_MODE,
+} from '@/constants/picture-styles'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import { resolveGallerySourceType } from '@/constants/gallery-sections'
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
@@ -40,9 +43,16 @@ import { generatePhotoLabClientImage } from '@/store/photo-lab/photo-lab-operati
 import { setPhotoLabError, setPhotoLabMessage } from '@/store/photo-lab/photo-lab-slice'
 import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+import {
+  PHOTO_CHECK_FAILED_MESSAGE,
+  PHOTO_CHECK_PENDING_MESSAGE,
+  PHOTO_FLAGGED_MESSAGE,
+  imageCheckKey,
+  moderateUploadedImage,
+} from '@/utils/moderation/moderate-image'
 import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 import { translateTextTo } from '@/utils/translate/translate'
-import { ImagePlus, Maximize2, Sparkles, X } from 'lucide-react'
+import { ImagePlus, Maximize2, Sparkles } from 'lucide-react'
 import clsx from 'clsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
@@ -69,6 +79,8 @@ export default function AiImageWorkspace({
   modeKey,
   restoreStyle = null,
   onRestoreStyleChange = null,
+  pictureStyle = null,
+  onPictureStyleChange = null,
   emptyStateTitle = 'Generate your image',
   emptyStateDescription = 'Choose a template above to start generating your personalized look.',
   workspaceTitle = 'Generate your image',
@@ -83,6 +95,7 @@ export default function AiImageWorkspace({
   const isPhotoLab = productKey === 'photo_lab'
   const inputRef = useRef(null)
   const referenceInputRef = useRef(null)
+  const smartEditSlotRef = useRef(0)
   const faceInputRef = useRef(null)
   const resultRef = useRef(null)
   const maskEditorRef = useRef(null)
@@ -95,6 +108,8 @@ export default function AiImageWorkspace({
 
   const [clientFile, setClientFile] = useState(null)
   const [clientPreview, setClientPreview] = useState('')
+  const [imageChecks, setImageChecks] = useState({})
+  const moderationSerialRef = useRef(new Map())
   const [faceFile, setFaceFile] = useState(null)
   const [facePreview, setFacePreview] = useState('')
   const [referenceFiles, setReferenceFiles] = useState([])
@@ -108,7 +123,6 @@ export default function AiImageWorkspace({
   const [saveToGallery, setSaveToGallery] = useState(false)
   const [imageTitle, setImageTitle] = useState('')
   const [saveLoading, setSaveLoading] = useState(false)
-  const [closerPresetModalOpen, setCloserPresetModalOpen] = useState(false)
   const [maskTool, setMaskTool] = useState('brush')
   const [maskPaintActive, setMaskPaintActive] = useState(true)
   const [maskBrushSize, setMaskBrushSize] = useState(
@@ -137,6 +151,56 @@ export default function AiImageWorkspace({
   const isSmartEditMode = isPhotoLab && activeModeId === SMART_EDIT_MODE
   const isIdentityTransferMode =
     isPhotoLab && activeModeId === IDENTITY_TRANSFER_MODE
+  const isPhotoStylesMode = isPhotoLab && activeModeId === PHOTO_STYLES_MODE
+  const resolvedPictureStyle = pictureStyle || DEFAULT_PICTURE_STYLE
+
+  const uploadsForModeration = () => {
+    const files = []
+    if (clientFile) files.push(clientFile)
+    if (isIdentityTransferMode && faceFile) files.push(faceFile)
+    if (isSmartEditMode) files.push(...referenceFiles)
+    return files
+  }
+
+  const moderationBlocksGenerate = () =>
+    uploadsForModeration().some(
+      (file) => imageChecks[imageCheckKey(file)] !== 'clear',
+    )
+
+  const reportModerationIssue = (message) => {
+    dispatch(
+      isPhotoLab ? setPhotoLabError(message) : setReadyTemplateError(message),
+    )
+  }
+
+  const queueImageModeration = (file) => {
+    if (!file) return
+
+    const key = imageCheckKey(file)
+    const serial = (moderationSerialRef.current.get(key) || 0) + 1
+    moderationSerialRef.current.set(key, serial)
+    setImageChecks((prev) => ({ ...prev, [key]: 'pending' }))
+
+    moderateUploadedImage(file)
+      .then((result) => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({
+          ...prev,
+          [key]: result.flagged ? 'flagged' : 'clear',
+        }))
+
+        if (result.flagged) {
+          reportModerationIssue(PHOTO_FLAGGED_MESSAGE)
+        }
+      })
+      .catch(() => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({ ...prev, [key]: 'error' }))
+        reportModerationIssue(PHOTO_CHECK_FAILED_MESSAGE)
+      })
+  }
 
   const resetMaskState = () => {
     setMaskTool('brush')
@@ -170,17 +234,7 @@ export default function AiImageWorkspace({
     isFormatAllowed,
     isQualityAllowed,
     creditCost,
-    modelPreset,
-    setModelPreset,
-    modelPresets,
-    showModelPreset,
-    isModelPresetAllowed,
-    aiModel,
-    setAiModel,
-    aiModels,
-    showAiModel,
     isAiModelAllowed,
-    closerPresetCreditDelta,
     generatedImageFormat,
     setGeneratedImageFormat,
     generatedImageFormats,
@@ -363,7 +417,6 @@ export default function AiImageWorkspace({
     if (previousTemplateId === currentTemplateId) return
     if (previousTemplateId === null && currentTemplateId === null) return
 
-    setCloserPresetModalOpen(false)
     setPreviewModal({
       open: false,
       src: '',
@@ -487,6 +540,21 @@ export default function AiImageWorkspace({
     setGeneratedFile(null)
   }, [isRestoreColorizeMode, restoreStyle])
 
+  const previousPictureStyleRef = useRef(pictureStyle)
+
+  useEffect(() => {
+    if (!isPhotoStylesMode) {
+      previousPictureStyleRef.current = pictureStyle
+      return
+    }
+
+    if (previousPictureStyleRef.current === pictureStyle) return
+
+    previousPictureStyleRef.current = pictureStyle
+    setGeneratedPreview('')
+    setGeneratedFile(null)
+  }, [isPhotoStylesMode, pictureStyle])
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -495,6 +563,7 @@ export default function AiImageWorkspace({
 
     setClientFile(file)
     setClientPreview(URL.createObjectURL(file))
+    queueImageModeration(file)
     setGeneratedPreview('')
     setGeneratedFile(null)
     resetMaskState()
@@ -522,6 +591,7 @@ export default function AiImageWorkspace({
       return URL.createObjectURL(file)
     })
     setFaceFile(file)
+    queueImageModeration(file)
     setGeneratedPreview('')
     setGeneratedFile(null)
 
@@ -529,48 +599,35 @@ export default function AiImageWorkspace({
   }
 
   const handleReferenceFilesChange = (e) => {
-    const incoming = Array.from(e.target.files || [])
-    if (!incoming.length) return
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const index = smartEditSlotRef.current
+    if (index < 0 || index >= SMART_EDIT_MAX_REFERENCE_IMAGES) {
+      e.target.value = ''
+      return
+    }
+
+    queueImageModeration(file)
 
     setReferenceFiles((prev) => {
-      const remaining = SMART_EDIT_MAX_REFERENCE_IMAGES - prev.length
-      if (remaining <= 0) return prev
-      return [...prev, ...incoming.slice(0, remaining)]
-    })
-
-    setReferencePreviews((prev) => {
-      const remaining = SMART_EDIT_MAX_REFERENCE_IMAGES - prev.length
-      if (remaining <= 0) return prev
-      return [
-        ...prev,
-        ...incoming
-          .slice(0, remaining)
-          .map((file) => URL.createObjectURL(file)),
-      ]
-    })
-
-    e.target.value = ''
-  }
-
-  const removeReferenceFile = (index) => {
-    setReferenceFiles((prev) => prev.filter((_, i) => i !== index))
-    setReferencePreviews((prev) => {
+      if (index > prev.length) return prev
       const next = [...prev]
-      const [removed] = next.splice(index, 1)
-      if (removed) URL.revokeObjectURL(removed)
+      next[index] = file
       return next
     })
-  }
 
-  const clearReferenceFiles = () => {
-    setReferenceFiles([])
     setReferencePreviews((prev) => {
-      revokePreviewUrls(prev)
-      return []
+      if (index > prev.length) return prev
+      const next = [...prev]
+      if (next[index]) URL.revokeObjectURL(next[index])
+      next[index] = URL.createObjectURL(file)
+      return next
     })
-    if (referenceInputRef.current) {
-      referenceInputRef.current.value = ''
-    }
+
+    setGeneratedPreview('')
+    setGeneratedFile(null)
+    e.target.value = ''
   }
 
   const trimmedExtraPrompt = String(extraPrompt || '').trim()
@@ -578,8 +635,9 @@ export default function AiImageWorkspace({
   const canRunSmartEdit = Boolean(trimmedExtraPrompt)
   const canRunIdentityTransfer = Boolean(clientFile && faceFile)
 
-  const runGeneration = async (presetOverride) => {
+  const runGeneration = async () => {
     if (!clientFile || !template?.id) return
+    if (moderationBlocksGenerate()) return
 
     if (isRemoveObjectsMode && !canRunRemoveObjects) {
       return
@@ -591,12 +649,6 @@ export default function AiImageWorkspace({
 
     if (isIdentityTransferMode && !canRunIdentityTransfer) {
       return
-    }
-
-    const activePreset = presetOverride || modelPreset || DEFAULT_MODEL_PRESET
-
-    if (presetOverride && presetOverride !== modelPreset) {
-      setModelPreset(presetOverride)
     }
 
     setLoading(true)
@@ -640,8 +692,6 @@ export default function AiImageWorkspace({
         if (showOutputFormat && outputFormat) {
           formData.append('outputFormat', outputFormat)
         }
-        formData.append('modelPreset', activePreset)
-        formData.append('aiModel', aiModel || 'classic')
         formData.append('isRegeneration', generatedPreview ? 'true' : 'false')
 
         if (
@@ -651,6 +701,10 @@ export default function AiImageWorkspace({
           formData.append('restoreStyle', restoreStyle)
         } else if ((modeKey || template.id) === RESTORE_COLORIZE_MODE) {
           formData.append('restoreStyle', DEFAULT_RESTORE_STYLE)
+        }
+
+        if ((modeKey || template.id) === PHOTO_STYLES_MODE) {
+          formData.append('pictureStyle', resolvedPictureStyle)
         }
 
         if (!isLogin && visitorId) {
@@ -695,8 +749,6 @@ export default function AiImageWorkspace({
       formData.append('extraPrompt', normalizedExtraPrompt)
       formData.append('outputFormat', outputFormat)
       formData.append('photoQuality', photoQuality)
-      formData.append('modelPreset', activePreset)
-      formData.append('aiModel', aiModel || 'classic')
       formData.append('isRegeneration', generatedPreview ? 'true' : 'false')
 
       if (!isLogin && visitorId) {
@@ -725,35 +777,14 @@ export default function AiImageWorkspace({
     }
   }
 
-  const shouldOfferCloserPreset =
-    Boolean(generatedPreview) &&
-    modelPreset === BALANCED_MODEL_PRESET &&
-    showModelPreset &&
-    isModelPresetAllowed('identity') &&
-    closerPresetCreditDelta > 0
-
   const handleGenerateClick = () => {
     if (!clientFile || !template?.id) return
+    if (moderationBlocksGenerate()) return
     if (isRemoveObjectsMode && !canRunRemoveObjects) return
     if (isSmartEditMode && !canRunSmartEdit) return
     if (isIdentityTransferMode && !canRunIdentityTransfer) return
 
-    if (shouldOfferCloserPreset) {
-      setCloserPresetModalOpen(true)
-      return
-    }
-
     runGeneration()
-  }
-
-  const handleCloserPresetApply = () => {
-    setCloserPresetModalOpen(false)
-    runGeneration('identity')
-  }
-
-  const handleCloserPresetDecline = () => {
-    setCloserPresetModalOpen(false)
-    runGeneration(BALANCED_MODEL_PRESET)
   }
 
   const downloadGeneratedImage = (
@@ -1096,33 +1127,54 @@ export default function AiImageWorkspace({
     ? 'Upload your photo, paint a mask, describe what to remove, or both — then generate.'
     : isEnhanceQualityMode
       ? 'Upload your photo, choose likeness and export size, then generate a cleaner version of the same photo.'
-      : isSmartEditMode
-        ? 'Upload your main photo, optionally add up to 5 reference photos, describe the edit, then generate.'
-        : isIdentityTransferMode
+      : isPhotoStylesMode
+        ? 'Upload one photo, pick a style above the preview, then generate.'
+        : isSmartEditMode
+          ? 'Upload the Main photo, add Detail photos if the edit needs them, describe the change, then generate.'
+          : isIdentityTransferMode
           ? 'Upload a Reference photo, then a Photo with your face — keep the shot, transfer your identity.'
           : workspaceDescription
 
+  const reviewFiles = uploadsForModeration()
+  const hasFlaggedUpload = reviewFiles.some(
+    (file) => imageChecks[imageCheckKey(file)] === 'flagged',
+  )
+  const hasFailedUpload = reviewFiles.some(
+    (file) => imageChecks[imageCheckKey(file)] === 'error',
+  )
+  const hasPendingUpload = reviewFiles.some((file) => {
+    const status = imageChecks[imageCheckKey(file)]
+    return status !== 'clear' && status !== 'flagged' && status !== 'error'
+  })
+
   const isGenerateDisabled =
     !clientFile ||
+    moderationBlocksGenerate() ||
     (isRemoveObjectsMode && !canRunRemoveObjects) ||
     (isSmartEditMode && !canRunSmartEdit) ||
     (isIdentityTransferMode && !canRunIdentityTransfer)
 
   const resolvedActionCardLabels = {
     ...actionCardLabels,
-    descriptionDisabled: isRemoveObjectsMode
-      ? !clientFile
-        ? 'Upload your photo first to continue.'
-        : 'Paint a removal mask, add a prompt, or both before generating.'
-      : isSmartEditMode
-        ? !clientFile
-          ? 'Upload your main photo first to continue.'
-          : 'Add a short edit prompt before generating.'
-        : isIdentityTransferMode
-          ? !clientFile
-            ? 'Upload a Reference photo first to continue.'
-            : 'Upload a Photo with your face before generating.'
-          : actionCardLabels.descriptionDisabled,
+    descriptionDisabled: hasFlaggedUpload
+      ? PHOTO_FLAGGED_MESSAGE
+      : hasFailedUpload
+        ? PHOTO_CHECK_FAILED_MESSAGE
+        : hasPendingUpload
+          ? PHOTO_CHECK_PENDING_MESSAGE
+          : isRemoveObjectsMode
+            ? !clientFile
+              ? 'Upload your photo first to continue.'
+              : 'Paint a removal mask, add a prompt, or both before generating.'
+            : isSmartEditMode
+              ? !clientFile
+                ? 'Upload your main photo first to continue.'
+                : 'Add a short edit prompt before generating.'
+              : isIdentityTransferMode
+                ? !clientFile
+                  ? 'Upload a Reference photo first to continue.'
+                  : 'Upload a Photo with your face before generating.'
+                : actionCardLabels.descriptionDisabled,
   }
 
   // Photo Lab always keeps the first column so layout stays 3-up even when a
@@ -1282,8 +1334,15 @@ export default function AiImageWorkspace({
     Boolean(clientFile) &&
     onRestoreStyleChange &&
     restoreStyle
+  const showIdentitySourceWorkspace = isIdentityTransferMode
+  const showSmartEditSourceWorkspace = isSmartEditMode
+  const showPictureStyleWorkspace = isPhotoStylesMode
   const showExpandedPhotoWorkspace =
-    showRemoveObjectsWorkspace || showRestoreStyleWorkspace
+    showRemoveObjectsWorkspace ||
+    showRestoreStyleWorkspace ||
+    showIdentitySourceWorkspace ||
+    showSmartEditSourceWorkspace ||
+    showPictureStyleWorkspace
 
   const toolbarColumnClassName = showSelectionPreview
     ? 'md:col-start-1 lg:col-start-2 lg:row-start-1'
@@ -1376,18 +1435,42 @@ export default function AiImageWorkspace({
     if (clientPreview) {
       return renderPreviewCard({
         src: clientPreview,
-        alt: isIdentityTransferMode ? 'Reference photo' : 'Uploaded photo',
-        eyebrow: isIdentityTransferMode ? 'Reference photo' : 'Uploaded photo',
-        title: clientFile?.name || (isIdentityTransferMode ? 'Reference photo' : 'Uploaded photo'),
+        alt: isIdentityTransferMode
+          ? 'Reference photo'
+          : isSmartEditMode
+            ? 'Main photo'
+            : 'Uploaded photo',
+        eyebrow: isIdentityTransferMode
+          ? 'Reference photo'
+          : isSmartEditMode
+            ? 'Main photo'
+            : 'Uploaded photo',
+        title:
+          clientFile?.name ||
+          (isIdentityTransferMode
+            ? 'Reference photo'
+            : isSmartEditMode
+              ? 'Main photo'
+              : 'Uploaded photo'),
         titleTranslate: !clientFile?.name,
         borderClassName: 'border-dashed border-white/15',
         onPreview: () =>
           openImagePreview({
             src: clientPreview,
-            alt: isIdentityTransferMode ? 'Reference photo' : 'Uploaded photo',
-            title: clientFile?.name || (isIdentityTransferMode ? 'Reference photo' : 'Uploaded photo'),
+            alt: isIdentityTransferMode
+              ? 'Reference photo'
+              : isSmartEditMode
+                ? 'Main photo'
+                : 'Uploaded photo',
+            title:
+              clientFile?.name ||
+              (isIdentityTransferMode
+                ? 'Reference photo'
+                : isSmartEditMode
+                  ? 'Main photo'
+                  : 'Uploaded photo'),
           }),
-        action: isIdentityTransferMode ? null : (
+        action: isIdentityTransferMode || isSmartEditMode ? null : (
           <Button
             type="button"
             variant="secondary"
@@ -1434,7 +1517,11 @@ export default function AiImageWorkspace({
           </span>
 
           <Text as="span" variant="body" color="white" caseMode="sentence">
-            {isIdentityTransferMode ? 'Upload Reference photo' : 'Upload your photo'}
+            {isIdentityTransferMode
+              ? 'Upload Reference photo'
+              : isSmartEditMode
+                ? 'Upload Main photo'
+                : 'Upload your photo'}
           </Text>
 
           <Text
@@ -1445,10 +1532,12 @@ export default function AiImageWorkspace({
             className="mt-2 max-w-[230px]"
           >
             {isIdentityTransferMode
-              ? 'Use the buttons above — Reference first, then your face photo.'
+              ? 'Use the buttons above — Reference photo first, then Face photo.'
               : isSmartEditMode
-                ? 'Main photo to edit. Add reference photos below if needed.'
-                : 'Choose a clear portrait photo for the best result.'}
+                ? 'Use the buttons above — Main photo first, then Detail 1 and the rest if you need them.'
+                : isPhotoStylesMode
+                  ? 'Use the buttons above to pick a style, then upload this photo.'
+                  : 'Choose a clear portrait photo for the best result.'}
           </Text>
         </button>
       ),
@@ -1458,28 +1547,54 @@ export default function AiImageWorkspace({
   const renderIdentityTransferSources = () => {
     if (!isIdentityTransferMode) return null
 
-    return (
-      <div className="mb-5 rounded-[26px] border border-white/10 bg-white/[0.025] p-4 sm:p-5">
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => inputRef.current?.click()}
-            disabled={loading}
-            className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-4 hover:bg-white/[0.12]"
-          >
-            {clientFile ? 'Change Reference' : 'Upload Reference photo'}
-          </Button>
+    const sources = [
+      {
+        key: 'reference',
+        label: 'Reference photo',
+        uploaded: Boolean(clientFile),
+        disabled: loading,
+        onClick: () => inputRef.current?.click(),
+      },
+      {
+        key: 'face',
+        label: 'Face photo',
+        uploaded: Boolean(faceFile),
+        disabled: loading || !clientFile,
+        onClick: () => faceInputRef.current?.click(),
+      },
+    ]
 
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => faceInputRef.current?.click()}
-            disabled={loading || !clientFile}
-            className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-4 hover:bg-white/[0.12]"
-          >
-            {faceFile ? 'Change face photo' : 'Upload Photo with your face'}
-          </Button>
+    return (
+      <div className="overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+        <div className="flex flex-col gap-2">
+          {sources.map((source) => (
+            <button
+              key={source.key}
+              type="button"
+              onClick={source.onClick}
+              disabled={source.disabled}
+              className={clsx(
+                'flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left transition',
+                source.uploaded
+                  ? 'border-primary/35 bg-primary/10'
+                  : 'border-white/10 bg-white/[0.03] hover:border-white/15',
+                source.disabled && 'cursor-not-allowed opacity-55 hover:border-white/10',
+              )}
+            >
+              <span
+                aria-hidden
+                className={clsx(
+                  'h-4 w-4 shrink-0 rounded-full border',
+                  source.uploaded
+                    ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                    : 'border-white/40 bg-transparent',
+                )}
+              />
+              <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
+                {source.label}
+              </Text>
+            </button>
+          ))}
         </div>
 
         <input
@@ -1493,90 +1608,66 @@ export default function AiImageWorkspace({
     )
   }
 
-  const renderSmartEditReferences = () => {
+  const renderSmartEditSources = () => {
     if (!isSmartEditMode) return null
 
-    const canAddMore =
-      referenceFiles.length < SMART_EDIT_MAX_REFERENCE_IMAGES
+    const sources = [
+      {
+        key: 'main',
+        label: 'Main photo',
+        uploaded: Boolean(clientFile),
+        disabled: loading,
+        onClick: () => inputRef.current?.click(),
+      },
+      ...Array.from({ length: SMART_EDIT_MAX_REFERENCE_IMAGES }, (_, index) => ({
+        key: `detail-${index + 1}`,
+        label: `Detail ${index + 1}`,
+        uploaded: Boolean(referenceFiles[index]),
+        disabled: loading || !clientFile || index > referenceFiles.length,
+        onClick: () => {
+          smartEditSlotRef.current = index
+          referenceInputRef.current?.click()
+        },
+      })),
+    ]
 
     return (
-      <div className="mb-5 rounded-[26px] border border-white/10 bg-white/[0.025] p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <Text as="p" variant="body" color="white" caseMode="sentence">
-              Reference photos
-            </Text>
-            <Text
-              as="p"
-              variant="caption"
-              color="muted"
-              caseMode="sentence"
-              className="mt-1"
-            >
-              Optional. Up to {SMART_EDIT_MAX_REFERENCE_IMAGES} photos for
-              clothes, objects, or style —{' '}
-              {referenceFiles.length} / {SMART_EDIT_MAX_REFERENCE_IMAGES}{' '}
-              added.
-            </Text>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {referenceFiles.length ? (
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={clearReferenceFiles}
-                disabled={loading}
-                className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-4 hover:bg-white/[0.12]"
-              >
-                Clear
-              </Button>
-            ) : null}
-
-            <Button
+      <div className="overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+        <div className="grid grid-cols-2 gap-2">
+          {sources.map((source) => (
+            <button
+              key={source.key}
               type="button"
-              variant="secondary"
-              onClick={() => referenceInputRef.current?.click()}
-              disabled={loading || !canAddMore || !clientFile}
-              className="h-[38px] rounded-full border-white/10 bg-white/[0.08] px-4 hover:bg-white/[0.12]"
+              onClick={source.onClick}
+              disabled={source.disabled}
+              className={clsx(
+                'flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left transition',
+                source.uploaded
+                  ? 'border-primary/35 bg-primary/10'
+                  : 'border-white/10 bg-white/[0.03] hover:border-white/15',
+                source.disabled && 'cursor-not-allowed opacity-55 hover:border-white/10',
+              )}
             >
-              {canAddMore ? 'Add reference' : 'Limit reached'}
-            </Button>
-          </div>
+              <span
+                aria-hidden
+                className={clsx(
+                  'h-4 w-4 shrink-0 rounded-full border',
+                  source.uploaded
+                    ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                    : 'border-white/40 bg-transparent',
+                )}
+              />
+              <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
+                {source.label}
+              </Text>
+            </button>
+          ))}
         </div>
-
-        {referencePreviews.length ? (
-          <div className="mt-4 flex flex-wrap gap-3">
-            {referencePreviews.map((src, index) => (
-              <div
-                key={`${src}-${index}`}
-                className="relative h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-black/20"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src}
-                  alt={`Reference ${index + 1}`}
-                  className="h-full w-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeReferenceFile(index)}
-                  disabled={loading}
-                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white/90 transition hover:bg-black/75"
-                  aria-label={`Remove reference ${index + 1}`}
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : null}
 
         <input
           ref={referenceInputRef}
           type="file"
           accept="image/*"
-          multiple
           className="hidden"
           onChange={handleReferenceFilesChange}
         />
@@ -1691,8 +1782,6 @@ export default function AiImageWorkspace({
         </Text>
       </div>
 
-      {renderIdentityTransferSources()}
-
       <div
         className={clsx(
           'mb-5 grid items-stretch gap-5',
@@ -1758,6 +1847,28 @@ export default function AiImageWorkspace({
               </div>
             ) : null}
 
+            {showIdentitySourceWorkspace ? (
+              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
+                {renderIdentityTransferSources()}
+              </div>
+            ) : null}
+
+            {showSmartEditSourceWorkspace ? (
+              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
+                {renderSmartEditSources()}
+              </div>
+            ) : null}
+
+            {showPictureStyleWorkspace ? (
+              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
+                <PictureStyleToolbar
+                  pictureStyle={resolvedPictureStyle}
+                  onPictureStyleChange={onPictureStyleChange}
+                  disabled={loading || !onPictureStyleChange}
+                />
+              </div>
+            ) : null}
+
             <div className={clsx('min-w-0', uploadPhotoColumnClassName)}>
               {showRemoveObjectsWorkspace
                 ? renderRemoveObjectsMaskFrame()
@@ -1801,8 +1912,6 @@ export default function AiImageWorkspace({
         />
       </div>
 
-      {renderSmartEditReferences()}
-
       <div className="grid items-stretch gap-5 lg:grid-cols-3">
         <div className="flex h-full min-h-[360px] flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5">
           <Input
@@ -1836,16 +1945,6 @@ export default function AiImageWorkspace({
             lockedText={lockedText}
             showPrompt={false}
             showOutputFormat={showOutputFormat}
-            showAiModel={showAiModel}
-            aiModel={aiModel}
-            setAiModel={setAiModel}
-            aiModels={aiModels}
-            isAiModelAllowed={isAiModelAllowed}
-            showModelPreset={showModelPreset}
-            modelPreset={modelPreset}
-            setModelPreset={setModelPreset}
-            modelPresets={modelPresets}
-            isModelPresetAllowed={isModelPresetAllowed}
             photoQualityLabel="Export size"
           />
         </div>
@@ -1891,14 +1990,6 @@ export default function AiImageWorkspace({
         src={previewModal.src}
         alt={previewModal.alt}
         title={previewModal.title}
-      />
-
-      <GenerationCloserPresetModal
-        open={closerPresetModalOpen}
-        creditDelta={closerPresetCreditDelta}
-        loading={loading}
-        onApply={handleCloserPresetApply}
-        onDecline={handleCloserPresetDecline}
       />
     </section>
   )

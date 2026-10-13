@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -20,6 +20,13 @@ import {
 import { clearResolvePromptMetadata } from '@/store/ready-template/ready-template-slice'
 
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
+import {
+  PHOTO_CHECK_FAILED_MESSAGE,
+  PHOTO_CHECK_PENDING_MESSAGE,
+  PHOTO_FLAGGED_MESSAGE,
+  imageCheckKey,
+  moderateUploadedImage,
+} from '@/utils/moderation/moderate-image'
 
 import ReadyTemplateAutogeneratePanel from '@/components/ready-template/ReadyTemplateAutogeneratePanel'
 
@@ -148,6 +155,8 @@ export default function ReadyTemplateForm() {
   const [dragActive, setDragActive] = useState(false)
   const [previewSrc, setPreviewSrc] = useState('')
   const [appliedPreviewSrc, setAppliedPreviewSrc] = useState('')
+  const [imageChecks, setImageChecks] = useState({})
+  const moderationSerialRef = useRef(new Map())
 
   const [previewGeneratorResetKey, setPreviewGeneratorResetKey] = useState(0)
 
@@ -191,6 +200,12 @@ export default function ReadyTemplateForm() {
   const watchedTags = watch('tags')
   const watchedBasePrompt = watch('basePrompt')
   const watchedPreviewFile = watch('previewFile')
+  const previewCheckStatus = watchedPreviewFile
+    ? imageChecks[imageCheckKey(watchedPreviewFile)]
+    : null
+  const previewModerationBlocks = Boolean(
+    previewCheckStatus && previewCheckStatus !== 'clear',
+  )
   const watchedPublished = watch('isPublished')
   const watchedPreviewSourceKey = watch('previewSourceKey')
   const watchedUseInCreateYourLook = watch('useInCreateYourLook')
@@ -286,6 +301,47 @@ export default function ReadyTemplateForm() {
     })
 
     await trigger(['previewFile', 'previewSourceKey'])
+    if (file) queuePreviewModeration(file)
+  }
+
+  const queuePreviewModeration = (file) => {
+    if (!file) return
+
+    const key = imageCheckKey(file)
+    const serial = (moderationSerialRef.current.get(key) || 0) + 1
+    moderationSerialRef.current.set(key, serial)
+    setImageChecks((prev) => ({ ...prev, [key]: 'pending' }))
+    setError('previewFile', {
+      type: 'manual',
+      message: PHOTO_CHECK_PENDING_MESSAGE,
+    })
+
+    moderateUploadedImage(file)
+      .then((result) => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        const status = result.flagged ? 'flagged' : 'clear'
+        setImageChecks((prev) => ({ ...prev, [key]: status }))
+
+        if (result.flagged) {
+          setError('previewFile', {
+            type: 'manual',
+            message: PHOTO_FLAGGED_MESSAGE,
+          })
+          return
+        }
+
+        clearErrors('previewFile')
+      })
+      .catch(() => {
+        if (moderationSerialRef.current.get(key) !== serial) return
+
+        setImageChecks((prev) => ({ ...prev, [key]: 'error' }))
+        setError('previewFile', {
+          type: 'manual',
+          message: PHOTO_CHECK_FAILED_MESSAGE,
+        })
+      })
   }
 
   const handleDrop = async (e) => {
@@ -351,8 +407,6 @@ export default function ReadyTemplateForm() {
     prototype,
     output,
     photoQuality,
-    aiModel,
-    modelPreset,
   }) => {
     const safePrompt = String(prompt || '').trim()
 
@@ -390,14 +444,6 @@ export default function ReadyTemplateForm() {
       formData.append('photoQualityId', photoQuality.id)
     }
 
-    if (aiModel) {
-      formData.append('aiModel', aiModel)
-    }
-
-    if (modelPreset) {
-      formData.append('modelPreset', modelPreset)
-    }
-
     const data = await dispatch(generateReadyTemplatePreview(formData)).unwrap()
 
     if (!data?.previewUrl) {
@@ -425,6 +471,23 @@ export default function ReadyTemplateForm() {
   }
 
   const onSubmit = async (values) => {
+    const uploadedPreviewStatus = values.previewFile
+      ? imageChecks[imageCheckKey(values.previewFile)]
+      : null
+
+    if (uploadedPreviewStatus && uploadedPreviewStatus !== 'clear') {
+      setError('previewFile', {
+        type: 'manual',
+        message:
+          uploadedPreviewStatus === 'flagged'
+            ? PHOTO_FLAGGED_MESSAGE
+            : uploadedPreviewStatus === 'error'
+              ? PHOTO_CHECK_FAILED_MESSAGE
+              : PHOTO_CHECK_PENDING_MESSAGE,
+      })
+      return
+    }
+
     try {
       const formData = new FormData()
 
@@ -831,7 +894,11 @@ export default function ReadyTemplateForm() {
             <Button
               type="submit"
               loading={isSubmitting || resolveMetadataLoading}
-              disabled={isSubmitting || resolveMetadataLoading}
+              disabled={
+                isSubmitting ||
+                resolveMetadataLoading ||
+                previewModerationBlocks
+              }
               fullWidth
               className="min-h-12 rounded-2xl sm:w-auto"
             >

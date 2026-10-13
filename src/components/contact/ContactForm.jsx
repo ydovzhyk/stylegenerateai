@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useDispatch } from 'react-redux'
 import { toast } from 'react-toastify'
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
+import { queueAssistantNotice } from '@/store/assistant/assistant-slice'
 
 const initialForm = {
   name: '',
@@ -16,6 +18,7 @@ function isValidEmail(email) {
 }
 
 export default function ContactForm() {
+  const dispatch = useDispatch()
   const [form, setForm] = useState(initialForm)
   const [errors, setErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
@@ -86,7 +89,9 @@ export default function ContactForm() {
       setForm(initialForm)
       setErrors({})
     } catch (error) {
-      toast.error(error?.message || 'Something went wrong.')
+      const message = error?.message || 'Something went wrong.'
+      toast.error(message)
+      dispatch(queueAssistantNotice({ message }))
     } finally {
       setIsLoading(false)
     }

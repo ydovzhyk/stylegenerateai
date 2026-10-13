@@ -3,6 +3,7 @@ import {
   Eraser,
   ImagePlus,
   Paintbrush,
+  Palette,
   Sparkles,
   UserRound,
   WandSparkles,
@@ -42,9 +43,9 @@ export const PHOTO_LAB_MODES = [
     icon: WandSparkles,
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: camera on a tripod in front of me on the table; I am wearing the hoodie from reference photo 1.',
+      'Example: put the hoodie from Detail 1 on me, and place the camera from Detail 2 on the table.',
     uploadHint:
-      'Upload your main photo, optionally add up to 5 reference photos, then describe the edit.',
+      'Upload the Main photo first, then Detail 1–5 if the edit needs them.',
   },
   {
     id: 'identity_transfer',
@@ -95,5 +96,18 @@ export const PHOTO_LAB_MODES = [
     promptPlaceholder:
       'Example: softer skin on arms, cleaner shirt, warmer evening tones.',
     uploadHint: 'Upload a portrait, lifestyle, or social media photo.',
+  },
+  {
+    id: 'photo_styles',
+    title: 'Photo Styles',
+    label: 'Restyle your photo',
+    description:
+      'Turn one photo into a coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.',
+    icon: Palette,
+    accent: 'from-sky-300/25 to-primary/25',
+    promptPlaceholder:
+      'Example: thicker outlines, or keep a hint of the outdoor background.',
+    uploadHint:
+      'Upload one photo, then pick a style with the buttons above the preview.',
   },
 ]

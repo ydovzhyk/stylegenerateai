@@ -1,8 +1,12 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
+
+import { isAssistantHiddenPath } from '@/components/assistant/assistant-content'
+import { queueAssistantNotice } from '@/store/assistant/assistant-slice'
 
 import { useLanguage } from '@/providers/languageContext'
 import { translateMyText } from '@/utils/translate/translate'
@@ -68,6 +72,7 @@ const toStr = (value) => {
 
 function useToastPair({ error, message, clearError, clearMessage }) {
   const dispatch = useDispatch()
+  const pathname = usePathname()
   const { languageIndex, hydrated } = useLanguage()
 
   const lastErrorRef = useRef({ text: '', ts: 0 })
@@ -102,13 +107,17 @@ function useToastPair({ error, message, clearError, clearMessage }) {
         progressClassName: 'sg-toast__progress sg-toast__progress--error',
       })
 
+      if (!isAssistantHiddenPath(pathname)) {
+        dispatch(queueAssistantNotice({ message: raw }))
+      }
+
       dispatch(clearError())
     })()
 
     return () => {
       cancelled = true
     }
-  }, [error, hydrated, languageIndex, dispatch, clearError])
+  }, [error, hydrated, languageIndex, dispatch, clearError, pathname])
 
   useEffect(() => {
     const raw = toStr(message)

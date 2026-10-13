@@ -64,24 +64,12 @@ export default function GenerationOptionsPanel({
   showPrompt = true,
   showOutputFormat = true,
   showPhotoQuality = true,
-  showAiModel = false,
-  aiModel,
-  setAiModel,
-  aiModels = [],
-  isAiModelAllowed,
-  showModelPreset = false,
-  modelPreset,
-  setModelPreset,
-  modelPresets = [],
-  isModelPresetAllowed,
   promptLabel = 'Additional prompt',
   promptPlaceholder = 'Add small details, mood, colors, or background...',
   photoQualityLabel = 'Photo quality',
 }) {
   const columns =
     showOutputFormat && showPhotoQuality ? 'md:grid-cols-2' : 'md:grid-cols-1'
-
-  const hasUpperSections = showPrompt || showOutputFormat || showPhotoQuality
 
   const outputFormatOptions = useMemo(
     () => buildSelectOptions(outputFormats, isFormatAllowed),
@@ -158,134 +146,6 @@ export default function GenerationOptionsPanel({
               hint={lockedText}
             />
           ) : null}
-        </div>
-      ) : null}
-
-      {showAiModel && aiModels.length ? (
-        <div className={hasUpperSections ? 'mt-4' : ''}>
-          <Text variant="section-title" color="white" className="mb-2">
-            AI model
-          </Text>
-
-          <div className="grid gap-2">
-            {aiModels.map((model) => {
-              const isLocked = !isAiModelAllowed?.(model.id)
-              const isActive = aiModel === model.id
-
-              return (
-                <button
-                  key={model.id}
-                  type="button"
-                  disabled={isLocked}
-                  onClick={() => setAiModel?.(model.id)}
-                  className={`group/option relative flex w-full flex-col items-start rounded-xl border px-3 py-2 pr-9 text-left ${
-                    isActive
-                      ? 'border-primary/50 bg-primary/20'
-                      : 'border-white/10'
-                  } ${
-                    isLocked
-                      ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
-                      : 'text-white'
-                  }`}
-                >
-                  <Text
-                    as="span"
-                    variant="sub-block-label"
-                    color="white"
-                    caseMode="title"
-                  >
-                    {model.label}
-                  </Text>
-
-                  {model.description ? (
-                    <Text
-                      as="span"
-                      variant="caption"
-                      color="muted"
-                      caseMode="sentence"
-                      className="mt-1.5 text-sm leading-5"
-                    >
-                      {model.description}
-                    </Text>
-                  ) : null}
-
-                  {isLocked ? <LockedHint text={lockedText} /> : null}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ) : null}
-
-      {showModelPreset && modelPresets.length ? (
-        <div
-          className={
-            hasUpperSections || (showAiModel && aiModels.length) ? 'mt-4' : ''
-          }
-        >
-          <Text variant="section-title" color="white" className="mb-2">
-            Photo likeness
-          </Text>
-
-          <div className="grid gap-2">
-            {modelPresets.map((preset) => {
-              const isLocked = !isModelPresetAllowed?.(preset.id)
-              const isActive = modelPreset === preset.id
-
-              return (
-                <button
-                  key={preset.id}
-                  type="button"
-                  disabled={isLocked}
-                  onClick={() => setModelPreset?.(preset.id)}
-                  className={`group/option relative flex w-full flex-col items-start rounded-xl border px-3 py-2 pr-9 text-left ${
-                    isActive
-                      ? 'border-primary/50 bg-primary/20'
-                      : 'border-white/10'
-                  } ${
-                    isLocked
-                      ? 'cursor-not-allowed bg-white/[0.015] text-white/45'
-                      : 'text-white'
-                  }`}
-                >
-                  <Text
-                    as="span"
-                    variant="sub-block-label"
-                    color="white"
-                    caseMode="title"
-                  >
-                    {preset.label}
-                  </Text>
-
-                  {preset.description ? (
-                    <Text
-                      as="span"
-                      variant="caption"
-                      color="muted"
-                      caseMode="sentence"
-                      className="mt-1.5 text-sm leading-5"
-                    >
-                      {preset.description}
-                    </Text>
-                  ) : null}
-
-                  {preset.credits != null && preset.credits > 0 ? (
-                    <Text
-                      as="span"
-                      variant="caption"
-                      color="soft"
-                      caseMode="sentence"
-                      className="mt-1 text-[11px]"
-                    >
-                      +{preset.credits} credits
-                    </Text>
-                  ) : null}
-
-                  {isLocked ? <LockedHint text={lockedText} /> : null}
-                </button>
-              )
-            })}
-          </div>
         </div>
       ) : null}
     </div>
