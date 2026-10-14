@@ -50,6 +50,11 @@ import {
   clearPhotoLabError,
   clearPhotoLabMessage,
 } from '@/store/photo-lab/photo-lab-slice'
+import { getImagineError, getImagineMessage } from '@/store/imagine/imagine-selectors'
+import {
+  clearImagineError,
+  clearImagineMessage,
+} from '@/store/imagine/imagine-slice'
 
 const TOAST_DEDUPE_WINDOW_MS = 900
 
@@ -173,6 +178,9 @@ export default function ToastListener() {
   const photoLabError = useSelector(getPhotoLabError)
   const photoLabMessage = useSelector(getPhotoLabMessage)
 
+  const imagineError = useSelector(getImagineError)
+  const imagineMessage = useSelector(getImagineMessage)
+
   useToastPair({
     error: authError,
     message: authMessage,
@@ -206,6 +214,13 @@ export default function ToastListener() {
     message: photoLabMessage,
     clearError: clearPhotoLabError,
     clearMessage: clearPhotoLabMessage,
+  })
+
+  useToastPair({
+    error: imagineError,
+    message: imagineMessage,
+    clearError: clearImagineError,
+    clearMessage: clearImagineMessage,
   })
 
   return null

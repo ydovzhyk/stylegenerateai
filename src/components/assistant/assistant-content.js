@@ -11,6 +11,7 @@ export const ASSISTANT_CONTENT = {
   pageBubbles: {
     '/': `Want a quick tour of ${PRODUCT_NAME}?`,
     '/photo-lab': 'Ask me and I will tell you more about Photo Lab.',
+    '/imagine': 'Ask me and I will tell you more about Imagine.',
     '/create-your-look':
       'You are on the page for generating your own photos from suggested templates. I can tell you more in detail.',
     '/pricing': 'I can explain plans, credits, and what each option is for.',
@@ -25,6 +26,8 @@ export const ASSISTANT_CONTENT = {
       'You are now on the Looks page, where you generate your own photos from suggested templates.',
     '/photo-lab':
       'You are now on the Photo Lab page, where you edit a photo you already have.',
+    '/imagine':
+      'You are now on the Imagine page, where you generate a new idea from a description.',
     '/pricing':
       'You are now on the Pricing page, where you can review plans and credits.',
   },
@@ -35,6 +38,7 @@ Here is where to go:
 
 - **Looks** — generate a photo of yourself from ready-made templates. Pick a look, upload your photo, and create.
 - **Photo Lab** — edit a photo you already have: portraits, restore, retouch, identity transfer, object removal, and quality boost.
+- **Imagine** — generate a new idea: a wallpaper, a tattoo sketch, a home design, or a painting.
 - **Pricing** — plans and credits if you want more generations.
 
 You do not generate images in this chat — I only guide you. Open Looks for a new styled photo, or Photo Lab to transform an existing shot.
@@ -63,6 +67,14 @@ Typical choices:
 - **Photo Styles** — turn one photo into a coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.
 
 Tell me which mode you picked (or want), and I will walk you through it.`,
+    '/imagine': `Imagine starts from a description.
+
+- **Wallpaper** — fills the frame edge to edge. Width and height start at 0. Leave both at 0: name a device in the prompt, such as a Dell XPS 16, and its standard screen is used; with no device the wallpaper is 1920×1080. Set both sizes, or leave both at 0. Computer sets 1920×1080, Phone sets 1280×2856, or type your own pixels. A typed size is used as entered. The prompt is optional: a short or empty idea becomes a full photographic scene, and a detailed prompt is kept. A reference photo is optional and only suggests the idea. It does not change the size.
+- **Tattoo** — a sketch for your artist. Set width and height in centimeters.
+- **Home** — upload your place. A renovation photo is optional. Leave the prompt empty and a style is chosen for you.
+- **Painting** — your own scene or a known painting, in a chosen technique. A photo can be the subject.
+
+A reference photo is optional on Wallpaper, Tattoo, and Painting.`,
     '/pricing': `Generations use credits, and the options you choose — quality, model, and similar — affect how much a run costs.
 
 If you tell me whether you mostly use Looks, Photo Lab, or both, I can help you pick a sensible starting point.
@@ -92,6 +104,7 @@ export const ASSISTANT_HIDDEN_PREFIXES = [
   '/forgot-password',
   '/reset-password',
   '/photo-lab-preview',
+  '/imagine-preview',
   '/ready-template',
 ]
 

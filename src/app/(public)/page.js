@@ -4,12 +4,14 @@ import Link from 'next/link'
 import Text from '@/components/shared/text/Text'
 import CreateYourLookAnimatedPreview from '@/components/create-your-look/CreateYourLookAnimatedPreview'
 import PhotoLabShowcasePreview from '@/components/photo-lab/PhotoLabShowcasePreview'
+import ImagineShowcasePreview from '@/components/imagine/ImagineShowcasePreview'
 import ContactSection from '@/components/contact/ContactSection'
 import { useTranslate } from '@/utils/translate/translate'
 
 export default function HomePage() {
   const startCreatingText = useTranslate('Start creating')
   const openPhotoLabText = useTranslate('Open Photo Lab')
+  const openImagineText = useTranslate('Open Imagine')
   return (
     <div className="flex flex-col gap-12">
       <div className="max-w-3xl">
@@ -88,6 +90,29 @@ export default function HomePage() {
             className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-[linear-gradient(135deg,#6c4df2_0%,#7c5cff_55%,#8d72ff_100%)] px-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(124,92,255,0.28)] transition-[background-color,border-color,color,box-shadow,transform] duration-300 hover:translate-y-[-1px] hover:bg-[linear-gradient(135deg,#7a5bff_0%,#8b72ff_55%,#a18dff_100%)] hover:shadow-[0_14px_34px_rgba(124,92,255,0.34)]"
           >
             <span>{openPhotoLabText || 'Open Photo Lab'}</span>
+          </Link>
+        </div>
+      </section>
+
+      <section className="flex flex-col gap-6">
+        <ImagineShowcasePreview />
+
+        <div className="flex flex-col items-start gap-4 rounded-[28px] border border-white/10 bg-white/[0.03] px-5 py-2 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3">
+          <Text
+            as="p"
+            variant="body"
+            color="muted"
+            caseMode="sentence"
+            className="max-w-xl text-sm leading-6 sm:text-base"
+          >
+            Start from a description and generate something new.
+          </Text>
+
+          <Link
+            href="/imagine"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-transparent bg-[linear-gradient(135deg,#6c4df2_0%,#7c5cff_55%,#8d72ff_100%)] px-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(124,92,255,0.28)] transition-[background-color,border-color,color,box-shadow,transform] duration-300 hover:translate-y-[-1px] hover:bg-[linear-gradient(135deg,#7a5bff_0%,#8b72ff_55%,#a18dff_100%)] hover:shadow-[0_14px_34px_rgba(124,92,255,0.34)]"
+          >
+            <span>{openImagineText || 'Open Imagine'}</span>
           </Link>
         </div>
       </section>

@@ -365,6 +365,56 @@
         }
       }
     },
+    "imagine": {
+      "title": "Imagine",
+      "productKey": "imagine",
+      "plans": {
+        "visitor": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [],
+            "baseCredits": 3
+          },
+          "options": {}
+        },
+        "free": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [],
+            "baseCredits": 3
+          },
+          "options": {}
+        },
+        "basic": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [],
+            "baseCredits": 3
+          },
+          "options": {}
+        },
+        "pro": {
+          "modeAccess": {
+            "available": true
+          },
+          "pricing": {
+            "formula": "sum",
+            "components": [],
+            "baseCredits": 3
+          },
+          "options": {}
+        }
+      }
+    },
     "photo_lab": {
       "title": "Photo Lab",
       "productKey": "photo_lab",

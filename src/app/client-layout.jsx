@@ -21,12 +21,14 @@ const ClientLayout = ({ children }) => {
     { href: '/', label: 'Home' },
     { href: '/create-your-look', label: 'Looks' },
     { href: '/photo-lab', label: 'Photo Lab' },
+    { href: '/imagine', label: 'Imagine' },
     { href: '/pricing', label: 'Pricing' },
   ]
 
   const adminNavItems = [
     { href: '/ready-template', label: 'Ready Templates' },
     { href: '/photo-lab-preview', label: 'Photo Lab Preview' },
+    { href: '/imagine-preview', label: 'Imagine Preview' },
   ]
 
   return (
