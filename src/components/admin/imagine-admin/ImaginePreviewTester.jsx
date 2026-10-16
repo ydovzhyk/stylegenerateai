@@ -297,6 +297,9 @@ export default function ImaginePreviewTester() {
       formData.append('prompt', examplePrompt)
       formData.append('generatedImageUrl', resultPreview)
       if (userPhoto) formData.append('reference', userPhoto)
+      if (selectedMode.id === 'home' && renovationFile) {
+        formData.append('example', renovationFile)
+      }
 
       await dispatch(createImagineTemplate(formData)).unwrap()
       dispatch(getImagineTemplates())
@@ -326,8 +329,8 @@ export default function ImaginePreviewTester() {
           className="mt-2 max-w-3xl"
         >
           Generate a preview, then save it as a showcase template. The public
-          preview shows this prompt beside the result. An uploaded photo appears
-          in the bottom-right corner of the result.
+          preview shows the reference photo on the left, with the prompt in a
+          frame. A design example sits on that photo. The result is on the right.
         </Text>
       </div>
 
@@ -437,7 +440,7 @@ export default function ImaginePreviewTester() {
                 caseMode="sentence"
                 className="mt-3"
               >
-                Leave both sizes at 0. A device in the prompt sets the screen. With no device, the wallpaper is 1920×1080.
+                Leave both sizes at 0. A reference photo keeps its size and scene. With no photo, a device in the prompt sets the screen, or the wallpaper is 1920×1080.
               </Text>
             </div>
           ) : null}
@@ -538,7 +541,7 @@ export default function ImaginePreviewTester() {
                   translate={!renovationFile}
                   onClick={() => renovationInputRef.current?.click()}
                 >
-                  {renovationFile ? renovationFile.name : 'Renovation idea'}
+                  {renovationFile ? renovationFile.name : 'Design example'}
                 </ChoiceButton>
               </div>
             ) : (

@@ -27,7 +27,7 @@ export const IMAGINE_MODES = [
     title: 'Home',
     label: 'House, yard, or room',
     description:
-      'Upload your place. Add a renovation photo if you have one. Leave the prompt empty to get a surprise style.',
+      'Upload your place. Add a design example when you already know the look. Leave the prompt empty for a surprise style.',
     icon: House,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:

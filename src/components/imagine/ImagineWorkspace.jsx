@@ -338,7 +338,7 @@ export default function ImagineWorkspace({ mode }) {
               />
             </div>
             <Text as="p" variant="caption" color="faint" caseMode="sentence" className="mt-3">
-              Leave both sizes at 0. A device in the prompt sets the screen. With no device, the wallpaper is 1920×1080.
+              Leave both sizes at 0. A reference photo keeps its size and scene. With no photo, a device in the prompt sets the screen, or the wallpaper is 1920×1080.
             </Text>
           </div>
         ) : null}
@@ -422,11 +422,14 @@ export default function ImagineWorkspace({ mode }) {
               onPick={() => placeInputRef.current?.click()}
             />
             <UploadButton
-              label="Renovation idea"
+              label="Design example"
               file={renovationFile}
               disabled={isGenerating || !placeFile}
               onPick={() => renovationInputRef.current?.click()}
             />
+            <Text as="p" variant="caption" color="faint" caseMode="sentence">
+              Optional. Upload a photo of the look you want, even from another house or room. The result is one photo of your place.
+            </Text>
             <input
               ref={placeInputRef}
               type="file"

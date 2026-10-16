@@ -78,6 +78,7 @@ function mapTemplate(template) {
     prompt: String(template?.prompt || '').trim(),
     afterSrc: String(template?.resultImageUrl || '').trim(),
     faceSrc: String(template?.referenceImageUrl || '').trim(),
+    exampleSrc: String(template?.exampleImageUrl || '').trim(),
   }
 }
 
@@ -111,8 +112,61 @@ function ModeChip({ mode, active, pinned, onClick }) {
   )
 }
 
-function PromptCard({ prompt, title, label, showBadge = true }) {
+function PhotoInset({
+  src,
+  alt,
+  label,
+  onClick,
+  ariaLabel,
+  priority = false,
+}) {
+  if (!src) return null
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel || `Open ${label || 'photo'} preview`}
+      className="absolute bottom-3 right-3 z-[4] w-[30%] cursor-zoom-in overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4"
+    >
+      <div className="relative aspect-[4/5] w-full">
+        <Image
+          src={src}
+          alt={alt || label || 'Photo'}
+          fill
+          sizes="120px"
+          priority={priority}
+          unoptimized
+          className="object-cover object-[center_18%]"
+        />
+        {label ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
+            <span className="block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
+              {label}
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </button>
+  )
+}
+
+function SourceCard({
+  src,
+  alt,
+  title,
+  prompt,
+  exampleSrc,
+  exampleLabel,
+  priority = false,
+  onOpenPreview,
+  openPreviewAriaLabel,
+  onOpenExamplePreview,
+  openExampleAriaLabel,
+}) {
   const reducedMotion = useReducedMotion()
+  const hasImage = Boolean(src)
+  const hasCopy = Boolean(title || prompt)
 
   return (
     <motion.article
@@ -122,50 +176,69 @@ function PromptCard({ prompt, title, label, showBadge = true }) {
         duration: reducedMotion ? 0 : 0.55,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm"
+      className={clsx(
+        'group relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm',
+        hasImage && 'cursor-zoom-in',
+      )}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-[linear-gradient(160deg,rgba(124,92,255,0.18)_0%,rgba(8,10,18,0.2)_42%,rgba(3,6,18,0.72)_100%)]">
-        <div
-          className={clsx(
-            'absolute inset-0 flex flex-col px-5 pt-5 sm:px-6',
-            showBadge ? 'pb-16' : 'pb-5',
-          )}
-        >
-          {title ? (
-            <Text
-              as="p"
-              variant="section-title"
-              color="white"
-              translate={false}
-              className="mb-4 line-clamp-3 shrink-0"
-            >
-              {title}
-            </Text>
-          ) : null}
-          <div
-            className={clsx(
-              'flex min-h-0 flex-1 overflow-y-auto',
-              title ? 'items-start' : 'items-center',
-            )}
-          >
-            <Text
-              as="p"
-              variant="body-sm"
-              color="white"
-              translate={false}
-              className="w-full whitespace-pre-wrap leading-6 text-white/90"
-            >
-              {prompt}
-            </Text>
-          </div>
-        </div>
-        {showBadge ? (
-          <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
-            <span className="inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/75 backdrop-blur-sm">
-              {label}
-            </span>
+        {hasImage && onOpenPreview ? (
+          <button
+            type="button"
+            onClick={onOpenPreview}
+            aria-label={openPreviewAriaLabel || 'Open photo preview'}
+            className="absolute inset-0 z-[1] cursor-zoom-in"
+          />
+        ) : null}
+        {hasImage ? (
+          <ShowcasePreviewImage
+            src={src}
+            alt={alt}
+            imageKey={src}
+            priority={priority}
+            objectPositionClassName="object-center"
+          />
+        ) : null}
+        {hasImage ? (
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(3,6,18,0.55)_0%,rgba(3,6,18,0.05)_38%,rgba(3,6,18,0.2)_100%)]" />
+        ) : null}
+        {hasCopy ? (
+          <div className="absolute left-3 right-3 top-3 z-[3] max-h-[42%] overflow-y-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2.5 backdrop-blur-md">
+            {title ? (
+              <Text
+                as="p"
+                variant="body-sm"
+                color="white"
+                translate={false}
+                className="line-clamp-2 font-medium"
+              >
+                {title}
+              </Text>
+            ) : null}
+            {prompt ? (
+              <Text
+                as="p"
+                variant="caption"
+                color="white"
+                translate={false}
+                className={clsx(
+                  'whitespace-pre-wrap leading-5 text-white/90',
+                  title && 'mt-1.5',
+                )}
+              >
+                {prompt}
+              </Text>
+            ) : null}
           </div>
         ) : null}
+        <PhotoInset
+          src={exampleSrc}
+          alt={exampleLabel}
+          label={exampleLabel}
+          priority={priority}
+          onClick={onOpenExamplePreview}
+          ariaLabel={openExampleAriaLabel}
+        />
       </div>
     </motion.article>
   )
@@ -176,9 +249,6 @@ function ResultCard({
   alt,
   label,
   shineSeed,
-  insetSrc,
-  insetAlt,
-  insetLabel,
   priority = false,
   onOpenPreview,
   openPreviewAriaLabel,
@@ -186,7 +256,6 @@ function ResultCard({
 }) {
   const reducedMotion = useReducedMotion()
   const hasImage = Boolean(src)
-  const hasInset = Boolean(insetSrc)
 
   return (
     <motion.article
@@ -218,6 +287,7 @@ function ResultCard({
               alt={alt}
               imageKey={src}
               priority={priority}
+              objectPositionClassName="object-center"
             />
           </AnimatePresence>
         ) : (
@@ -226,36 +296,8 @@ function ResultCard({
 
         <div className="pointer-events-none absolute -inset-px bg-[linear-gradient(to_top,rgba(3,6,18,0.92)_0%,rgba(3,6,18,0.22)_34%,rgba(3,6,18,0.04)_62%,rgba(3,6,18,0.24)_100%)]" />
 
-        {hasInset ? (
-          <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[30%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4">
-            <div className="relative aspect-[4/5] w-full">
-              <Image
-                src={insetSrc}
-                alt={insetAlt || insetLabel || 'Your photo'}
-                fill
-                sizes="120px"
-                priority={priority}
-                unoptimized
-                className="object-cover object-[center_18%]"
-              />
-              {insetLabel ? (
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
-                  <span className="block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
-                    {insetLabel}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : null}
-
         {showBadge ? (
-          <div
-            className={clsx(
-              'absolute z-[2] p-4',
-              hasInset ? 'inset-x-0 bottom-0 sm:right-[34%] sm:left-0' : 'inset-x-0 bottom-0',
-            )}
-          >
+          <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
             <ShinyBadge
               shineSeed={shineSeed}
               className="rounded-full border border-cyan-400/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-300 backdrop-blur-sm"
@@ -289,6 +331,7 @@ export default function ImagineShowcasePreview() {
   const promptLabel = useTranslate('Prompt', { caseMode: 'title' })
   const generatedLabel = useTranslate('Generated', { caseMode: 'title' })
   const yourPhotoLabel = useTranslate('Your photo', { caseMode: 'title' })
+  const designExampleLabel = useTranslate('Design example', { caseMode: 'title' })
   const openPreviewText = useTranslate('Open image preview', {
     caseMode: 'sentence',
   })
@@ -432,7 +475,7 @@ export default function ImagineShowcasePreview() {
 
             <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-5">
               <span className="flex min-h-[42px] items-center justify-center rounded-full border border-primary/25 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-primary-soft">
-                {promptLabel}
+                {activeItem?.faceSrc ? yourPhotoLabel : promptLabel}
               </span>
               <ShinyBadge
                 shineSeed={`generated-${activeItem?.id || activeMode.id}`}
@@ -443,12 +486,37 @@ export default function ImagineShowcasePreview() {
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-              <PromptCard
-                key={`prompt-${activeItem?.id || activeMode.id}-${displayPrompt}`}
-                prompt={displayPrompt}
+              <SourceCard
+                key={`source-${activeItem?.id || activeMode.id}-${activeItem?.faceSrc || displayPrompt}`}
+                src={activeItem?.faceSrc || ''}
+                alt={activeItem?.title || yourPhotoLabel}
                 title={activeItem?.title || ''}
-                label={promptLabel}
-                showBadge={highlightedModeId !== 'wallpaper'}
+                prompt={displayPrompt}
+                exampleSrc={activeItem?.exampleSrc || ''}
+                exampleLabel={activeItem?.exampleSrc ? designExampleLabel : ''}
+                priority={activeIndex === 0}
+                openPreviewAriaLabel={`${openPreviewText}: ${yourPhotoLabel}`}
+                openExampleAriaLabel={`${openPreviewText}: ${designExampleLabel}`}
+                onOpenPreview={
+                  activeItem?.faceSrc
+                    ? () =>
+                        openImagePreview({
+                          src: activeItem.faceSrc,
+                          alt: activeItem.title || yourPhotoLabel,
+                          title: yourPhotoLabel,
+                        })
+                    : undefined
+                }
+                onOpenExamplePreview={
+                  activeItem?.exampleSrc
+                    ? () =>
+                        openImagePreview({
+                          src: activeItem.exampleSrc,
+                          alt: designExampleLabel,
+                          title: designExampleLabel,
+                        })
+                    : undefined
+                }
               />
               <ResultCard
                 src={activeItem?.afterSrc || ''}
@@ -456,9 +524,6 @@ export default function ImagineShowcasePreview() {
                 label={generatedLabel}
                 showBadge={highlightedModeId !== 'wallpaper'}
                 shineSeed={`result-${activeItem?.id || activeMode.id}`}
-                insetSrc={activeItem?.faceSrc || ''}
-                insetAlt={activeItem?.title || 'Your photo'}
-                insetLabel={activeItem?.faceSrc ? yourPhotoLabel : ''}
                 priority={activeIndex === 0}
                 openPreviewAriaLabel={`${openPreviewText}: ${generatedLabel}`}
                 onOpenPreview={

@@ -1,20 +1,30 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
+import { useDispatch } from 'react-redux'
 import Text from '@/components/shared/text/Text'
 import ImagineModes from '@/components/imagine/ImagineModes'
 import ImagineShowcasePreview from '@/components/imagine/ImagineShowcasePreview'
 import ImagineWorkspace from '@/components/imagine/ImagineWorkspace'
 import { IMAGINE_MODES } from '@/constants/imagine'
+import { setAssistantImagineMode } from '@/store/assistant/assistant-slice'
 
 export default function ImaginePage() {
+  const dispatch = useDispatch()
   const [selectedModeId, setSelectedModeId] = useState(null)
   const workspaceRef = useRef(null)
   const selectedMode = IMAGINE_MODES.find((mode) => mode.id === selectedModeId) || null
 
+  useEffect(() => {
+    return () => {
+      dispatch(setAssistantImagineMode(null))
+    }
+  }, [dispatch])
+
   const handleSelectMode = (modeId) => {
     setSelectedModeId(modeId)
+    dispatch(setAssistantImagineMode(modeId))
     requestAnimationFrame(() => {
       const top =
         (workspaceRef.current?.getBoundingClientRect().top || 0) + window.scrollY

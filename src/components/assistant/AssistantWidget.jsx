@@ -41,6 +41,7 @@ import {
   getAssistantLastGenerationAt,
   getAssistantMessages,
   getAssistantNotice,
+  getAssistantImagineModeId,
   getAssistantPhotoLabModeId,
   getAssistantProactive,
   getAssistantChatLanguage,
@@ -56,6 +57,8 @@ import {
   getLookSettingsText,
   getLookTemplateBubbleText,
   getPageBubbleText,
+  getImagineModeBubbleText,
+  getImagineModeSettingsText,
   getPhotoLabModeBubbleText,
   getPhotoLabModeSettingsText,
   getGenerationSaveBubbleText,
@@ -191,6 +194,7 @@ export default function AssistantWidget() {
   const hasOpenedChat = useSelector(getAssistantHasOpenedChat)
   const hasSentMessage = useSelector(getAssistantHasSentMessage)
   const photoLabModeId = useSelector(getAssistantPhotoLabModeId)
+  const imagineModeId = useSelector(getAssistantImagineModeId)
   const lastGenerationAt = useSelector(getAssistantLastGenerationAt)
   const chatLanguage = useSelector(getAssistantChatLanguage)
   const lookTemplate = useSelector(getSelectedYourLookTemplate)
@@ -214,8 +218,10 @@ export default function AssistantWidget() {
   const chatLanguageRef = useRef(chatLanguage)
   const lastLookTemplateIdRef = useRef(null)
   const lastPhotoLabModeIdRef = useRef(null)
+  const lastImagineModeIdRef = useRef(null)
   const explainedLookSettingsRef = useRef(false)
   const explainedPhotoLabModesRef = useRef(new Set())
+  const explainedImagineModesRef = useRef(new Set())
   const explainedSaveOptionsRef = useRef(false)
   const lastGenerationAtRef = useRef(null)
   const authSessionKeyRef = useRef(null)
@@ -235,7 +241,11 @@ export default function AssistantWidget() {
       ? String(user?._id || user?.id || user?.email || 'user')
       : 'visitor'
   const pricingProductKey =
-    pathname === '/photo-lab' ? 'photo_lab' : 'ready_template'
+    pathname === '/photo-lab'
+      ? 'photo_lab'
+      : pathname === '/imagine'
+        ? 'imagine'
+        : 'ready_template'
   const pricingModeKey = pathname === '/photo-lab' ? photoLabModeId : null
   const pricingCopy = formatAssistantPricingCopy(
     buildAssistantPricingContext({
@@ -364,9 +374,11 @@ export default function AssistantWidget() {
     introducedPathsRef.current = new Set()
     explainedLookSettingsRef.current = false
     explainedPhotoLabModesRef.current = new Set()
+    explainedImagineModesRef.current = new Set()
     explainedSaveOptionsRef.current = false
     lastLookTemplateIdRef.current = null
     lastPhotoLabModeIdRef.current = null
+    lastImagineModeIdRef.current = null
     lastGenerationAtRef.current = null
   }, [authSessionKey])
 
@@ -439,6 +451,7 @@ export default function AssistantWidget() {
     if (hidden || !hintsOn || !hydrated) return undefined
     if (pathname === '/create-your-look' && lookTemplate?.id) return undefined
     if (pathname === '/photo-lab' && photoLabModeId) return undefined
+    if (pathname === '/imagine' && imagineModeId) return undefined
 
     const pageText = getPageBubbleText(pathname)
     if (!pageText) return undefined
@@ -464,6 +477,7 @@ export default function AssistantWidget() {
     dispatch,
     lookTemplate?.id,
     photoLabModeId,
+    imagineModeId,
   ])
 
   useEffect(() => {
@@ -537,6 +551,37 @@ export default function AssistantWidget() {
     )
     return undefined
   }, [photoLabModeId, isOpen, hidden, hintsOn, hydrated, pricingCopy])
+
+  useEffect(() => {
+    if (pathname !== '/imagine' || !imagineModeId) {
+      if (!imagineModeId) lastImagineModeIdRef.current = null
+      return undefined
+    }
+
+    if (hidden || !hydrated) return undefined
+    if (explainedImagineModesRef.current.has(imagineModeId)) return undefined
+    if (lastImagineModeIdRef.current === imagineModeId) return undefined
+
+    lastImagineModeIdRef.current = imagineModeId
+    const settingsText = getImagineModeSettingsText(imagineModeId, pricingCopy)
+
+    if (isOpen) {
+      explainedImagineModesRef.current.add(imagineModeId)
+      pushLocalMessage(settingsText)
+      return undefined
+    }
+
+    if (!hintsOn) return undefined
+    showHintRef.current(
+      {
+        kind: 'imagine-mode',
+        text: getImagineModeBubbleText(imagineModeId),
+        showAvatar: true,
+      },
+      WELCOME_VISIBLE_MS,
+    )
+    return undefined
+  }, [imagineModeId, pathname, isOpen, hidden, hintsOn, hydrated, pricingCopy])
 
   useEffect(() => {
     if (!lastGenerationAt) {
@@ -680,6 +725,7 @@ export default function AssistantWidget() {
     const isSettingsBubble =
       bubbleKind === 'look-template' ||
       bubbleKind === 'mode' ||
+      bubbleKind === 'imagine-mode' ||
       isSaveBubble
     const saveSettingsText =
       lastGenerationAt && !explainedSaveOptionsRef.current
@@ -702,14 +748,25 @@ export default function AssistantWidget() {
       !explainedPhotoLabModesRef.current.has(photoLabModeId)
         ? getPhotoLabModeSettingsText(photoLabModeId, pricingCopy)
         : null
+    const imagineSettingsText =
+      !saveSettingsText &&
+      !modeSettingsText &&
+      pathname === '/imagine' &&
+      imagineModeId &&
+      !explainedImagineModesRef.current.has(imagineModeId)
+        ? getImagineModeSettingsText(imagineModeId, pricingCopy)
+        : null
     const settingsText =
-      saveSettingsText || lookSettingsText || modeSettingsText
+      saveSettingsText || lookSettingsText || modeSettingsText || imagineSettingsText
 
     const markSettingsExplained = () => {
       if (saveSettingsText) explainedSaveOptionsRef.current = true
       if (lookSettingsText) explainedLookSettingsRef.current = true
       if (modeSettingsText && photoLabModeId) {
         explainedPhotoLabModesRef.current.add(photoLabModeId)
+      }
+      if (imagineSettingsText && imagineModeId) {
+        explainedImagineModesRef.current.add(imagineModeId)
       }
     }
 
@@ -771,9 +828,11 @@ export default function AssistantWidget() {
     introducedPathsRef.current = new Set()
     explainedLookSettingsRef.current = false
     explainedPhotoLabModesRef.current = new Set()
+    explainedImagineModesRef.current = new Set()
     explainedSaveOptionsRef.current = false
     lastLookTemplateIdRef.current = null
     lastPhotoLabModeIdRef.current = null
+    lastImagineModeIdRef.current = null
     lastGenerationAtRef.current = null
     dispatch(clearAssistantChat())
   }
@@ -808,6 +867,7 @@ export default function AssistantWidget() {
         })),
         page: pathname,
         photoLabModeId,
+        imagineModeId,
         lookTemplateTitle: lookTemplate?.title || null,
       }),
     )

@@ -11,6 +11,8 @@ export const getAssistantHasSentMessage = (state) =>
   state.assistant.hasSentMessage
 export const getAssistantPhotoLabModeId = (state) =>
   state.assistant.photoLabModeId
+export const getAssistantImagineModeId = (state) =>
+  state.assistant.imagineModeId
 export const getAssistantLastGenerationAt = (state) =>
   state.assistant.lastGenerationAt
 export const getAssistantLastProactiveAt = (state) =>

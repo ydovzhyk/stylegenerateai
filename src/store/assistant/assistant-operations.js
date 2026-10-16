@@ -11,13 +11,17 @@ const toReject = (error, rejectWithValue) => {
 
 export const sendAssistantMessage = createAsyncThunk(
   'assistant/send-message',
-  async ({ message, history, page, photoLabModeId, lookTemplateTitle }, { rejectWithValue }) => {
+  async (
+    { message, history, page, photoLabModeId, imagineModeId, lookTemplateTitle },
+    { rejectWithValue },
+  ) => {
     try {
       return await axiosChatWithAssistant({
         message,
         history,
         page,
         photoLabModeId,
+        imagineModeId,
         lookTemplateTitle,
       })
     } catch (error) {

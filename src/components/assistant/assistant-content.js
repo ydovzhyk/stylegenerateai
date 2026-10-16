@@ -1,4 +1,5 @@
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
+import { IMAGINE_MODES } from '@/constants/imagine'
 
 export const PRODUCT_NAME = 'AI Style Generator'
 
@@ -69,9 +70,11 @@ Typical choices:
 Tell me which mode you picked (or want), and I will walk you through it.`,
     '/imagine': `Imagine starts from a description.
 
-- **Wallpaper** — fills the frame edge to edge. Width and height start at 0. Leave both at 0: name a device in the prompt, such as a Dell XPS 16, and its standard screen is used; with no device the wallpaper is 1920×1080. Set both sizes, or leave both at 0. Computer sets 1920×1080, Phone sets 1280×2856, or type your own pixels. A typed size is used as entered. The prompt is optional: a short or empty idea becomes a full photographic scene, and a detailed prompt is kept. A reference photo is optional and only suggests the idea. It does not change the size.
+- **Wallpaper** — fills the frame edge to edge. Width and height start at 0.
+  **With a reference photo:** upload the photo, leave both sizes at 0, and write only what to change. Example: replace the BMW with the latest Audi A5 and keep the dark color. The wallpaper keeps that photo's size, scene, camera, and lighting. Computer, Phone, or a typed size still sets the pixels, but the scene stays the uploaded photo. On the preview, the reference photo is on the left, the prompt sits in a frame on that photo, and the result is on the right.
+  **Without a photo:** leave both sizes at 0. A device named in the prompt, such as a Dell XPS 16, uses its standard screen. With no device, the wallpaper is 1920×1080. Computer sets 1920×1080, Phone sets 1280×2856, or type both sizes. A short or empty idea becomes a full photographic scene. A detailed prompt is kept.
 - **Tattoo** — a sketch for your artist. Set width and height in centimeters.
-- **Home** — upload your place. A renovation photo is optional. Leave the prompt empty and a style is chosen for you.
+- **Home** — upload your place. A design example is optional: another house or room that shows the look you want. The result is one photo of your place in that look. Leave both the example and the prompt empty and a style is chosen for you.
 - **Painting** — your own scene or a known painting, in a chosen technique. A photo can be the subject.
 
 A reference photo is optional on Wallpaper, Tattoo, and Painting.`,
@@ -272,6 +275,55 @@ export function getPhotoLabModeSettingsText(modeId, pricingCopy = '') {
 ${guide}
 
 ${getSharedPhotoLabSettingsText()}
+
+${pricing}`
+}
+
+function getImagineMode(modeId) {
+  return IMAGINE_MODES.find((mode) => mode.id === modeId) || null
+}
+
+export function getImagineModeBubbleText(modeId) {
+  const title = getImagineMode(modeId)?.title || 'this mode'
+  return ASSISTANT_CONTENT.photoLabModeBubble.replace('{mode}', title)
+}
+
+const IMAGINE_MODE_GUIDES = {
+  wallpaper: `**With a reference photo** — upload the photo, leave width and height at 0, and write only what to change. Example: replace the BMW with the latest Audi A5 and keep the dark color. The wallpaper keeps that photo's size, scene, camera, and lighting. Computer, Phone, or a typed size still sets the pixels, but the scene stays the uploaded photo. An empty prompt keeps the photograph as it is.
+
+**Without a photo** — leave both sizes at 0. A device named in the prompt, such as a Dell XPS 16, uses its standard screen. With no device, the wallpaper is 1920×1080. Computer sets 1920×1080. Phone sets 1280×2856. Or type both sizes.
+
+**Prompt** — optional. A short or empty idea becomes a full photographic scene. A detailed prompt is kept.`,
+  tattoo: `**Prompt** — required. Describe the tattoo.
+
+**Size** — width and height in centimeters, from 1 to 40. The fields start at 5 and 10.
+
+**Style** — Custom, Fine line, Stencil, Blackwork, or Symbolic.
+
+**Reference photo** — optional. The result is a clean sketch for a tattoo artist.`,
+  home: `**Your place** — required. Upload a house, yard, or room. The result is one photo of that same place.
+
+**Design example** — optional. Upload a photo of the look you want, even from another house or room. That look is applied to your place.
+
+**Prompt** — optional. Use it for an extra wish, or leave it empty. With no example and no prompt, a style is chosen for you.`,
+  painting: `**Technique** — As described, Cubism, Impressionism, Oil, Watercolor, or Expressionism.
+
+**Prompt or photo** — write your own scene, name a known painting, or upload a photo to paint from. You need a prompt or a photo.
+
+There is no size panel. Without a photo, the painting is square.`,
+}
+
+export function getImagineModeSettingsText(modeId, pricingCopy = '') {
+  const mode = getImagineMode(modeId)
+  const title = mode?.title || 'this Imagine mode'
+  const guide =
+    IMAGINE_MODE_GUIDES[modeId] ||
+    'Follow the fields for this mode, then press Generate.'
+  const pricing = String(pricingCopy || '').trim()
+
+  return `You picked **${title}**.
+
+${guide}
 
 ${pricing}`
 }

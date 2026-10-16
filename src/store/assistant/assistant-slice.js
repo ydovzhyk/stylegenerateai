@@ -68,6 +68,7 @@ const initialState = {
   hasOpenedChat: false,
   hasSentMessage: false,
   photoLabModeId: null,
+  imagineModeId: null,
   lastGenerationAt: null,
   lastProactiveAt: 0,
   chatLanguage: 'en',
@@ -162,6 +163,9 @@ const assistantSlice = createSlice({
     setAssistantPhotoLabMode: (state, action) => {
       state.photoLabModeId = action.payload || null
     },
+    setAssistantImagineMode: (state, action) => {
+      state.imagineModeId = action.payload || null
+    },
     setAssistantChatLanguage: (state, action) => {
       const next = String(action.payload || '').trim().toLowerCase()
       if (!next) return
@@ -239,6 +243,7 @@ export const {
   hideProactiveHint,
   setAssistantHintsEnabled,
   setAssistantPhotoLabMode,
+  setAssistantImagineMode,
   setAssistantChatLanguage,
   clearAssistantError,
   clearAssistantChat,
