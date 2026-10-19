@@ -2,19 +2,72 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Sparkles } from 'lucide-react'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import Text from '@/components/shared/text/Text'
 import ImagineModes from '@/components/imagine/ImagineModes'
 import ImagineShowcasePreview from '@/components/imagine/ImagineShowcasePreview'
 import ImagineWorkspace from '@/components/imagine/ImagineWorkspace'
 import { IMAGINE_MODES } from '@/constants/imagine'
 import { setAssistantImagineMode } from '@/store/assistant/assistant-slice'
+import { getImagineTemplatesState } from '@/store/imagine/imagine-selectors'
+
+const EMPTY_MODE_PREVIEW = { beforeUrl: '', afterUrl: '', title: '' }
+
+function pickRandomTemplatePreviewPair(modeId, templatesByMode) {
+  const modeTemplates = templatesByMode?.[modeId] || []
+  const pairedTemplates = modeTemplates.filter(
+    (item) =>
+      String(item?.referenceImageUrl || '').trim() &&
+      String(item?.resultImageUrl || '').trim(),
+  )
+
+  if (pairedTemplates.length) {
+    const template =
+      pairedTemplates[Math.floor(Math.random() * pairedTemplates.length)]
+
+    return {
+      beforeUrl: String(template.referenceImageUrl).trim(),
+      afterUrl: String(template.resultImageUrl).trim(),
+      title: String(template.title || '').trim(),
+    }
+  }
+
+  const resultOnlyTemplates = modeTemplates.filter((item) =>
+    String(item?.resultImageUrl || '').trim(),
+  )
+
+  if (!resultOnlyTemplates.length) return EMPTY_MODE_PREVIEW
+
+  const template =
+    resultOnlyTemplates[Math.floor(Math.random() * resultOnlyTemplates.length)]
+
+  return {
+    beforeUrl: '',
+    afterUrl: String(template.resultImageUrl).trim(),
+    title: String(template.title || '').trim(),
+  }
+}
 
 export default function ImaginePage() {
   const dispatch = useDispatch()
+  const templatesByMode = useSelector(getImagineTemplatesState)
   const [selectedModeId, setSelectedModeId] = useState(null)
+  const [selectedModePreview, setSelectedModePreview] = useState(EMPTY_MODE_PREVIEW)
   const workspaceRef = useRef(null)
   const selectedMode = IMAGINE_MODES.find((mode) => mode.id === selectedModeId) || null
+
+  useEffect(() => {
+    if (!selectedModeId || selectedModePreview.afterUrl) return
+
+    const previewPair = pickRandomTemplatePreviewPair(
+      selectedModeId,
+      templatesByMode,
+    )
+
+    if (previewPair.afterUrl) {
+      setSelectedModePreview(previewPair)
+    }
+  }, [selectedModeId, selectedModePreview.afterUrl, templatesByMode])
 
   useEffect(() => {
     return () => {
@@ -25,6 +78,9 @@ export default function ImaginePage() {
   const handleSelectMode = (modeId) => {
     setSelectedModeId(modeId)
     dispatch(setAssistantImagineMode(modeId))
+    setSelectedModePreview(
+      pickRandomTemplatePreviewPair(modeId, templatesByMode),
+    )
     requestAnimationFrame(() => {
       const top =
         (workspaceRef.current?.getBoundingClientRect().top || 0) + window.scrollY
@@ -91,6 +147,7 @@ export default function ImaginePage() {
         <ImagineWorkspace
           key={selectedMode?.id || 'empty'}
           mode={selectedMode}
+          examplePreview={selectedModePreview}
         />
       </div>
     </div>
