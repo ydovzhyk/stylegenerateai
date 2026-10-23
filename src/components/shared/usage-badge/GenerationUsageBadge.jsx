@@ -83,9 +83,9 @@ export default function GenerationUsageBadge({ compact = false, className }) {
   return (
     <div
       className={clsx(
-        'inline-flex h-[40px] items-center gap-2 rounded-2xl border px-3',
-        'bg-white/[0.04] text-white shadow-[0_0_0_1px_rgba(124,92,255,0.08)] backdrop-blur-sm',
-        isLow ? 'border-amber-300/30' : 'border-white/10',
+        'inline-flex h-[40px] items-center gap-2 rounded-2xl border px-3 text-white',
+        'bg-white/[0.04]',
+        isLow ? 'border-amber-300/30' : 'border-white/8',
         className,
       )}
       title={getUsageTitle(usage)}

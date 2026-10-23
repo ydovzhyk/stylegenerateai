@@ -18,14 +18,16 @@ function writeSettings(patch) {
 
 function Flag({ src, alt }) {
   return (
-    <Image
-      src={src}
-      alt={alt}
-      width={18}
-      height={18}
-      className="h-[18px] w-[18px] shrink-0 object-cover"
-      draggable={false}
-    />
+    <span className="relative inline-flex h-[18px] w-[18px] shrink-0 overflow-hidden rounded-full">
+      <Image
+        src={src}
+        alt={alt}
+        width={18}
+        height={18}
+        className="h-full w-full object-cover"
+        draggable={false}
+      />
+    </span>
   )
 }
 
