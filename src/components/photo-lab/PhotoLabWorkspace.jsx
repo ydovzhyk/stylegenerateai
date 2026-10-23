@@ -2,6 +2,8 @@
 
 import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
 import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
+import Photo from '@/components/shared/photo/Photo'
+import { PHOTO_OVERLAY_TEXT_OUTLINE } from '@/components/shared/preview-badge/PreviewBadge'
 import Text from '@/components/shared/text/Text'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
@@ -191,19 +193,23 @@ export default function PhotoLabWorkspace({ selectedMode }) {
           <div className="relative flex h-[360px] items-center justify-center overflow-hidden rounded-[22px] border border-white/10 bg-background-soft sm:h-[460px] lg:h-[560px]">
             {clientPreview ? (
               <>
-                <img
+                <Photo
                   src={clientPreview}
                   alt=""
                   aria-hidden="true"
-                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl"
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 560px"
+                  className="scale-110 opacity-25 blur-2xl"
                 />
 
                 <div className="absolute inset-0 bg-black/20" />
 
-                <img
+                <Photo
                   src={clientPreview}
                   alt="Uploaded photo"
-                  className="relative z-[1] h-full w-full object-contain"
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 560px"
+                  className="z-[1] object-contain"
                 />
               </>
             ) : (
@@ -265,19 +271,23 @@ export default function PhotoLabWorkspace({ selectedMode }) {
           >
             {generatedPreview ? (
               <>
-                <img
+                <Photo
                   src={generatedPreview}
                   alt=""
                   aria-hidden="true"
-                  className="absolute inset-0 h-full w-full scale-110 object-cover opacity-25 blur-2xl"
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 560px"
+                  className="scale-110 opacity-25 blur-2xl"
                 />
 
                 <div className="absolute inset-0 bg-black/20" />
 
-                <img
+                <Photo
                   src={generatedPreview}
                   alt="Generated result"
-                  className="relative z-[1] h-full w-full object-contain"
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 560px"
+                  className="z-[1] object-contain"
                 />
               </>
             ) : (
@@ -313,10 +323,11 @@ export default function PhotoLabWorkspace({ selectedMode }) {
         >
           {clientPreview ? (
             <>
-              <img
+              <Photo
                 src={clientPreview}
                 alt="Uploaded photo"
-                className="absolute inset-0 h-full w-full object-cover"
+                fill
+                sizes="(max-width: 1280px) 90vw, 320px"
               />
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
@@ -327,7 +338,7 @@ export default function PhotoLabWorkspace({ selectedMode }) {
                   variant="caption"
                   color="white"
                   translate={false}
-                  className="truncate"
+                  className={`truncate ${PHOTO_OVERLAY_TEXT_OUTLINE}`}
                 >
                   {clientFile?.name}
                 </Text>
@@ -337,7 +348,7 @@ export default function PhotoLabWorkspace({ selectedMode }) {
                   variant="caption"
                   color="muted"
                   caseMode="sentence"
-                  className="mt-1"
+                  className={`mt-1 ${PHOTO_OVERLAY_TEXT_OUTLINE}`}
                 >
                   Click to change photo
                 </Text>

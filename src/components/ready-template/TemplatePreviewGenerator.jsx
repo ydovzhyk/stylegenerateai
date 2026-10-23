@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import { dataUrlToFile } from '@/utils/files/dataUrlToFile'
@@ -526,12 +527,17 @@ export default function TemplatePreviewGenerator({
               </div>
 
               <div className="mt-4 overflow-hidden rounded-[22px] border border-white/10 bg-background-soft p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeSourcePreview}
-                  alt="Source preview"
-                  className={`mx-auto ${selectedPreviewAspectClass} max-h-[380px] w-full rounded-[18px] object-cover`}
-                />
+                <div
+                  className={`relative mx-auto ${selectedPreviewAspectClass} max-h-[380px] w-full`}
+                >
+                  <Photo
+                    src={activeSourcePreview}
+                    alt="Source preview"
+                    fill
+                    sizes="(max-width: 768px) 90vw, 420px"
+                    className="rounded-[18px]"
+                  />
+                </div>
               </div>
             </div>
           ) : (
@@ -541,12 +547,17 @@ export default function TemplatePreviewGenerator({
               </Text>
 
               <div className="mt-4 overflow-hidden rounded-[22px] border border-white/10 bg-background-soft p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={activeSourcePreview}
-                  alt="Uploaded source preview"
-                  className={`mx-auto ${selectedPreviewAspectClass} max-h-[380px] w-full rounded-[18px] object-cover`}
-                />
+                <div
+                  className={`relative mx-auto ${selectedPreviewAspectClass} max-h-[380px] w-full`}
+                >
+                  <Photo
+                    src={activeSourcePreview}
+                    alt="Uploaded source preview"
+                    fill
+                    sizes="(max-width: 768px) 90vw, 420px"
+                    className="rounded-[18px]"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -722,12 +733,17 @@ export default function TemplatePreviewGenerator({
                   className="block w-full rounded-[18px] focus:outline-none focus:ring-2 focus:ring-primary/60"
                   aria-label="Open generated image in full size"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={generatedPreview}
-                    alt="Generated result"
-                    className={`mx-auto ${selectedPreviewAspectClass} max-h-[420px] w-full rounded-[18px] object-cover transition hover:opacity-95`}
-                  />
+                  <div
+                    className={`relative mx-auto ${selectedPreviewAspectClass} max-h-[420px] w-full`}
+                  >
+                    <Photo
+                      src={generatedPreview}
+                      alt="Generated result"
+                      fill
+                      sizes="(max-width: 768px) 90vw, 420px"
+                      className="rounded-[18px] transition hover:opacity-95"
+                    />
+                  </div>
                 </button>
               </div>
             ) : (

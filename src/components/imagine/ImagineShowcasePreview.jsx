@@ -2,14 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import Image from 'next/image'
 import clsx from 'clsx'
+import Photo from '@/components/shared/photo/Photo'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Trash2, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
+import PreviewBadge, {
+  PHOTO_OVERLAY_TEXT_OUTLINE,
+} from '@/components/shared/preview-badge/PreviewBadge'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 import { IMAGINE_MODES } from '@/constants/imagine'
 import { useTranslate } from '@/utils/translate/translate'
@@ -53,18 +56,6 @@ function useRotatingIndex(length, delay, resetKey) {
   }, [length, delay, resetKey])
 
   return [index, setIndex]
-}
-
-function ShinyBadge({ children, className = '', shineSeed }) {
-  return (
-    <span
-      key={shineSeed}
-      className={`relative inline-flex isolate overflow-hidden ${className}`}
-    >
-      <span className="relative z-[2]">{children}</span>
-      <span className="pointer-events-none absolute bottom-[-20%] left-[-120%] top-[-20%] z-[1] w-[60%] animate-premium-shine-sweep bg-[linear-gradient(120deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_20%,rgba(255,255,255,0.52)_50%,rgba(255,255,255,0.08)_80%,rgba(255,255,255,0)_100%)] opacity-0" />
-    </span>
-  )
 }
 
 function mapTemplate(template) {
@@ -130,18 +121,22 @@ function PhotoInset({
       className="absolute bottom-3 right-3 z-[4] w-[30%] cursor-zoom-in overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4"
     >
       <div className="relative aspect-[4/5] w-full">
-        <Image
+        <Photo
           src={src}
           alt={alt || label || 'Photo'}
           fill
           sizes="120px"
           priority={priority}
-          unoptimized
-          className="object-cover object-[center_18%]"
+          className="object-[center_18%]"
         />
         {label ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
-            <span className="block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
+            <span
+              className={clsx(
+                'block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85',
+                PHOTO_OVERLAY_TEXT_OUTLINE,
+              )}
+            >
               {label}
             </span>
           </div>
@@ -199,9 +194,6 @@ function SourceCard({
             objectPositionClassName="object-center"
           />
         ) : null}
-        {hasImage ? (
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(3,6,18,0.55)_0%,rgba(3,6,18,0.05)_38%,rgba(3,6,18,0.2)_100%)]" />
-        ) : null}
         {hasCopy ? (
           <div className="absolute left-3 right-3 top-3 z-[3] max-h-[42%] overflow-y-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2.5 backdrop-blur-md">
             {title ? (
@@ -248,11 +240,9 @@ function ResultCard({
   src,
   alt,
   label,
-  shineSeed,
   priority = false,
   onOpenPreview,
   openPreviewAriaLabel,
-  showBadge = true,
 }) {
   const reducedMotion = useReducedMotion()
   const hasImage = Boolean(src)
@@ -293,19 +283,6 @@ function ResultCard({
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-slate-800/80 via-slate-950 to-black" />
         )}
-
-        <div className="pointer-events-none absolute -inset-px bg-[linear-gradient(to_top,rgba(3,6,18,0.92)_0%,rgba(3,6,18,0.22)_34%,rgba(3,6,18,0.04)_62%,rgba(3,6,18,0.24)_100%)]" />
-
-        {showBadge ? (
-          <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
-            <ShinyBadge
-              shineSeed={shineSeed}
-              className="rounded-full border border-cyan-400/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-300 backdrop-blur-sm"
-            >
-              {label}
-            </ShinyBadge>
-          </div>
-        ) : null}
       </div>
     </motion.article>
   )
@@ -474,15 +451,17 @@ export default function ImagineShowcasePreview() {
             ) : null}
 
             <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-5">
-              <span className="flex min-h-[42px] items-center justify-center rounded-full border border-primary/25 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-primary-soft">
+              <PreviewBadge variant="header" tone="primary">
                 {activeItem?.faceSrc ? yourPhotoLabel : promptLabel}
-              </span>
-              <ShinyBadge
+              </PreviewBadge>
+              <PreviewBadge
+                variant="header"
+                tone="neutral"
+                shine
                 shineSeed={`generated-${activeItem?.id || activeMode.id}`}
-                className="flex min-h-[42px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-white/55"
               >
                 {generatedLabel}
-              </ShinyBadge>
+              </PreviewBadge>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
@@ -522,8 +501,6 @@ export default function ImagineShowcasePreview() {
                 src={activeItem?.afterSrc || ''}
                 alt={activeItem?.title || activeMode.title}
                 label={generatedLabel}
-                showBadge={highlightedModeId !== 'wallpaper'}
-                shineSeed={`result-${activeItem?.id || activeMode.id}`}
                 priority={activeIndex === 0}
                 openPreviewAriaLabel={`${openPreviewText}: ${generatedLabel}`}
                 onOpenPreview={

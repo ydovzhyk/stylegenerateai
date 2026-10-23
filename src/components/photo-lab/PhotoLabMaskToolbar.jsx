@@ -1,6 +1,7 @@
 'use client'
 
 import Button from '@/components/shared/button/Button'
+import { HoverTip } from '@/components/shared/info-hint/InfoHint'
 import Text from '@/components/shared/text/Text'
 import {
   PHOTO_LAB_MASK_BRUSH_SIZES,
@@ -40,17 +41,6 @@ export const MASK_TOOL_HINTS = {
     'Draw a tight closed outline around only the object to remove, then release to fill. Use the eraser to exclude railings, shadows, and ground you want to keep.',
   eraser: 'Erase painted mask strokes to keep those areas unchanged.',
   clearMask: 'Remove the entire painted mask and start over.',
-}
-
-function MaskToolbarTooltip({ text, children, className = '' }) {
-  return (
-    <span className={`group/mask-tip relative ${className}`}>
-      {children}
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-[210px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-center text-xs leading-relaxed text-cyan-300 opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/mask-tip:opacity-100">
-        {text}
-      </span>
-    </span>
-  )
 }
 
 export default function PhotoLabMaskToolbar({
@@ -98,7 +88,7 @@ export default function PhotoLabMaskToolbar({
       <div
         className={`grid w-full gap-2 ${showEraser ? 'grid-cols-3' : 'grid-cols-2'}`}
       >
-        <MaskToolbarTooltip text={MASK_TOOL_HINTS.brush} className="w-full">
+        <HoverTip text={MASK_TOOL_HINTS.brush} className="w-full">
           <Button
             type="button"
             variant={
@@ -111,10 +101,10 @@ export default function PhotoLabMaskToolbar({
           >
             Brush
           </Button>
-        </MaskToolbarTooltip>
+        </HoverTip>
 
         {showEraser ? (
-          <MaskToolbarTooltip text={MASK_TOOL_HINTS.eraser} className="w-full">
+          <HoverTip text={MASK_TOOL_HINTS.eraser} className="w-full">
             <Button
               type="button"
               variant={
@@ -127,10 +117,10 @@ export default function PhotoLabMaskToolbar({
             >
               Eraser
             </Button>
-          </MaskToolbarTooltip>
+          </HoverTip>
         ) : null}
 
-        <MaskToolbarTooltip text={MASK_TOOL_HINTS.clearMask} className="w-full">
+        <HoverTip text={MASK_TOOL_HINTS.clearMask} className="w-full">
           <Button
             type="button"
             variant="secondary"
@@ -140,7 +130,7 @@ export default function PhotoLabMaskToolbar({
           >
             Clear mask
           </Button>
-        </MaskToolbarTooltip>
+        </HoverTip>
       </div>
 
       <div className="mt-3 flex w-full justify-center gap-2">
@@ -148,7 +138,7 @@ export default function PhotoLabMaskToolbar({
           const active = maskBrushSize === option.size
 
           return (
-            <MaskToolbarTooltip key={option.id} text={option.hint}>
+            <HoverTip key={option.id} text={option.hint}>
               <Button
                 type="button"
                 variant={active ? 'primary' : 'secondary'}
@@ -158,21 +148,23 @@ export default function PhotoLabMaskToolbar({
               >
                 {option.label}
               </Button>
-            </MaskToolbarTooltip>
+            </HoverTip>
           )
         })}
       </div>
 
       <div className="mt-3 flex w-full items-center justify-center gap-2">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
+          iconOnly
           onClick={() => maskEditorRef.current?.zoomOut()}
           disabled={disabled || maskZoomState.zoom <= PHOTO_LAB_MASK_ZOOM.min}
           aria-label="Zoom out"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 transition hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Minus size={16} />
-        </button>
+          className="shrink-0 border-white/10 bg-black/30 text-white/80 hover:border-white/10 hover:bg-black/40 hover:text-white hover:shadow-none"
+          leftIcon={<Minus size={16} />}
+        />
 
         <input
           type="range"
@@ -188,29 +180,33 @@ export default function PhotoLabMaskToolbar({
           className="h-1.5 w-full min-w-[120px] max-w-[220px] cursor-pointer appearance-none rounded-full bg-white/10 accent-[#7c5cff] disabled:cursor-not-allowed disabled:opacity-40"
         />
 
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
+          iconOnly
           onClick={() => maskEditorRef.current?.zoomIn()}
           disabled={disabled || maskZoomState.zoom >= PHOTO_LAB_MASK_ZOOM.max}
           aria-label="Zoom in"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 transition hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Plus size={16} />
-        </button>
+          className="shrink-0 border-white/10 bg-black/30 text-white/80 hover:border-white/10 hover:bg-black/40 hover:text-white hover:shadow-none"
+          leftIcon={<Plus size={16} />}
+        />
 
         <span className="min-w-[48px] shrink-0 text-center text-xs font-medium text-white/70">
           {maskZoomState.zoomPercent}%
         </span>
 
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="sm"
+          iconOnly
           onClick={() => maskEditorRef.current?.resetView()}
           disabled={disabled || !maskZoomState.canResetView}
           aria-label="Reset zoom"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 transition hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <RotateCcw size={15} />
-        </button>
+          className="shrink-0 border-white/10 bg-black/30 text-white/80 hover:border-white/10 hover:bg-black/40 hover:text-white hover:shadow-none"
+          leftIcon={<RotateCcw size={15} />}
+        />
       </div>
     </div>
   )

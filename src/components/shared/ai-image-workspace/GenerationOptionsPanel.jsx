@@ -1,27 +1,13 @@
 'use client'
 
 import { useMemo } from 'react'
+import clsx from 'clsx'
 import { Lock } from 'lucide-react'
-import Text from '@/components/shared/text/Text'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
-import { useTranslate } from '@/utils/translate/translate'
 
 const SECTION_TITLE_LABEL_CLASS =
   'text-lg font-semibold text-white md:text-xl'
-
-function LockedHint({ text }) {
-  const translatedText = useTranslate(text, { caseMode: 'sentence' })
-
-  return (
-    <span className="pointer-events-none absolute right-3 top-1/2 z-20 flex -translate-y-1/2 text-muted">
-      <Lock size={14} className="text-muted" />
-      <span className="absolute bottom-full right-0 mb-3 w-[210px] rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-cyan-300 text-xs leading-relaxed opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/option:opacity-100">
-        {translatedText}
-      </span>
-    </span>
-  )
-}
 
 function buildSelectOptions(items = [], isAllowed) {
   return items.map((item) => {
@@ -68,9 +54,6 @@ export default function GenerationOptionsPanel({
   promptPlaceholder = 'Add small details, mood, colors, or background...',
   photoQualityLabel = 'Photo quality',
 }) {
-  const columns =
-    showOutputFormat && showPhotoQuality ? 'md:grid-cols-2' : 'md:grid-cols-1'
-
   const outputFormatOptions = useMemo(
     () => buildSelectOptions(outputFormats, isFormatAllowed),
     [outputFormats, isFormatAllowed],
@@ -104,11 +87,7 @@ export default function GenerationOptionsPanel({
       ) : null}
 
       {showOutputFormat || showPhotoQuality ? (
-        <div
-          className={
-            showPrompt ? `mt-4 grid gap-4 ${columns}` : `grid gap-4 ${columns}`
-          }
-        >
+        <div className={clsx('grid grid-cols-1 gap-4', showPrompt && 'mt-4')}>
           {showOutputFormat ? (
             <Select
               id="generation-output-format"

@@ -2,7 +2,7 @@
 
 import clsx from 'clsx'
 import ReactSelect, { components as defaultComponents } from 'react-select'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 function DropdownIndicator(props) {
   const { selectProps } = props
@@ -21,6 +21,14 @@ function DropdownIndicator(props) {
       />
     </defaultComponents.DropdownIndicator>
   )
+}
+
+/** Close only on page/document scroll. Do not close on nested scrollers
+ * (e.g. create-your-look rail auto-scroll) — that opened-and-closed instantly. */
+function shouldCloseMenuOnScroll(event) {
+  const target = event?.target
+  if (!(target instanceof Element)) return true
+  return target === document.documentElement || target === document.body
 }
 
 export default function Select({
@@ -56,6 +64,26 @@ export default function Select({
   const describedById = id ? `${id}__help` : undefined
   const isActive = isFocused || menuIsOpen
   const showErrorState = Boolean(error) && !isActive
+
+  // Wheel often scrolls the page under a short menu without a documentElement
+  // scroll target react-select recognizes — close on wheel outside a scrollable list.
+  useEffect(() => {
+    if (!menuIsOpen) return undefined
+
+    const onWheel = (event) => {
+      const target = event.target
+      if (target instanceof Element) {
+        const list = target.closest(`.${classNamePrefix}__menu-list`)
+        if (list && list.scrollHeight > list.clientHeight + 1) return
+      }
+      setMenuIsOpen(false)
+    }
+
+    window.addEventListener('wheel', onWheel, { capture: true, passive: true })
+    return () => {
+      window.removeEventListener('wheel', onWheel, { capture: true })
+    }
+  }, [menuIsOpen, classNamePrefix])
 
   const mergedComponents = useMemo(
     () => ({
@@ -228,6 +256,8 @@ export default function Select({
         }
         menuPosition="fixed"
         menuPlacement={menuPlacement}
+        menuIsOpen={menuIsOpen}
+        closeMenuOnScroll={shouldCloseMenuOnScroll}
         unstyled
         classNamePrefix={classNamePrefix}
         components={mergedComponents}

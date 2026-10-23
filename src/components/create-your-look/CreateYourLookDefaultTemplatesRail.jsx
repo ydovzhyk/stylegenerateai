@@ -24,6 +24,10 @@ import {
 
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
+import Photo from '@/components/shared/photo/Photo'
+import PreviewBadge, {
+  PHOTO_OVERLAY_TEXT_OUTLINE,
+} from '@/components/shared/preview-badge/PreviewBadge'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
 
@@ -86,6 +90,7 @@ const RailTemplateCard = memo(function RailTemplateCard({
   isAdmin = false,
   onRequestDelete,
   onToggleCreateYourLook,
+  priority = false,
 }) {
   const reducedMotion = useReducedMotion()
 
@@ -165,21 +170,26 @@ const RailTemplateCard = memo(function RailTemplateCard({
       ) : null}
 
       <div className="relative aspect-[4/5] overflow-hidden">
-        <motion.img
-          src={item.previewUrl}
-          alt={item.title}
-          className="absolute inset-[-1px] h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover object-[50%_5%]"
+        <motion.div
+          className="absolute inset-0"
           whileHover={reducedMotion ? undefined : { scale: 1.045 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        />
-
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(3,6,18,0.9)_0%,rgba(3,6,18,0.24)_38%,rgba(3,6,18,0.05)_66%,rgba(3,6,18,0.02)_100%)]" />
+        >
+          <Photo
+            src={item.previewUrl}
+            alt={item.title}
+            fill
+            sizes="(max-width: 768px) 70vw, 280px"
+            priority={priority}
+            className="object-[50%_5%]"
+          />
+        </motion.div>
 
         <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
           {item.category ? (
-            <span className="mb-2 inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary-soft backdrop-blur-sm">
+            <PreviewBadge tone="primary" className="mb-2">
               {item.category}
-            </span>
+            </PreviewBadge>
           ) : null}
 
           <Text
@@ -187,7 +197,7 @@ const RailTemplateCard = memo(function RailTemplateCard({
             variant="body"
             color="white"
             caseMode="sentence"
-            className="line-clamp-2 pr-2"
+            className={`line-clamp-2 pr-2 ${PHOTO_OVERLAY_TEXT_OUTLINE}`}
           >
             {item.title}
           </Text>
@@ -749,9 +759,6 @@ export default function CreateYourLookDefaultTemplatesRail() {
       </div>
 
       <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-background/65 via-background/30 to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-background/65 via-background/30 to-transparent" />
-
         <div
           ref={containerRef}
           onScroll={handleScroll}
@@ -791,6 +798,7 @@ export default function CreateYourLookDefaultTemplatesRail() {
                 isAdmin={isAdmin}
                 onRequestDelete={setTemplateToDelete}
                 onToggleCreateYourLook={handleToggleCreateYourLook}
+                priority={index < 3}
               />
             ))}
 

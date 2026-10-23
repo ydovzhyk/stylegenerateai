@@ -4,7 +4,12 @@ import clsx from 'clsx'
 import { useTranslate } from '@/utils/translate/translate'
 
 const baseClasses =
-  'inline-flex items-center justify-center gap-2 rounded-full border font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-300 disabled:cursor-not-allowed disabled:opacity-55'
+  'inline-flex items-center justify-center gap-2 border font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-300 disabled:cursor-not-allowed disabled:opacity-55'
+
+const shapeClasses = {
+  pill: 'rounded-full',
+  soft: 'rounded-2xl',
+}
 
 const variantClasses = {
   primary:
@@ -15,10 +20,24 @@ const variantClasses = {
     'border-transparent text-[var(--text-soft)] bg-transparent hover:bg-white/6 hover:text-white',
 }
 
+const activeVariantClasses = {
+  primary: '',
+  secondary:
+    'border-primary/35 bg-primary/10 text-white hover:border-primary/45 hover:bg-primary/15 hover:shadow-none',
+  ghost:
+    'border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.08]',
+}
+
 const sizeClasses = {
-  sm: 'min-h-10 px-4 text-sm',
+  sm: 'min-h-9 px-3.5 text-xs',
   md: 'min-h-10 px-4 text-sm',
-  lg: 'min-h-10 px-4 text-sm',
+  lg: 'min-h-11 px-5 text-sm',
+}
+
+const iconOnlySizeClasses = {
+  sm: 'h-9 w-9 min-h-9 min-w-9 p-0',
+  md: 'h-10 w-10 min-h-10 min-w-10 p-0',
+  lg: 'h-11 w-11 min-h-11 min-w-11 p-0',
 }
 
 function SideVisual({ icon, image, alt = '' }) {
@@ -44,6 +63,9 @@ export default function Button({
   type = 'button',
   variant = 'primary',
   size = 'md',
+  shape = 'pill',
+  iconOnly = false,
+  active = false,
   fullWidth = false,
   loading = false,
   disabled = false,
@@ -59,6 +81,9 @@ export default function Button({
   ...props
 }) {
   const isDisabled = disabled || loading
+  const resolvedVariant = variantClasses[variant] ? variant : 'primary'
+  const resolvedShape = shapeClasses[shape] ? shape : 'pill'
+  const resolvedSize = sizeClasses[size] ? size : 'md'
 
   const textToTranslate =
     translate && isPrimitiveText(children) ? String(children) : ''
@@ -77,10 +102,16 @@ export default function Button({
     <button
       type={type}
       disabled={isDisabled}
+      aria-pressed={active ? true : undefined}
       className={clsx(
         baseClasses,
-        variantClasses[variant],
-        sizeClasses[size],
+        shapeClasses[resolvedShape],
+        active && activeVariantClasses[resolvedVariant]
+          ? activeVariantClasses[resolvedVariant]
+          : variantClasses[resolvedVariant],
+        iconOnly
+          ? iconOnlySizeClasses[resolvedSize]
+          : sizeClasses[resolvedSize],
         fullWidth && 'w-full',
         className,
       )}
@@ -89,7 +120,7 @@ export default function Button({
       {loading ? (
         <>
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          <span>{resolvedLoadingText}</span>
+          {!iconOnly ? <span>{resolvedLoadingText}</span> : null}
         </>
       ) : (
         <>

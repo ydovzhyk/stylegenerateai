@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
+import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
 import { MODAL_OVERLAY_ELEVATED_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
@@ -242,12 +243,14 @@ export default function SettingsPage() {
 
                 <div className="mb-5 overflow-hidden rounded-full border border-white/10 bg-background-soft">
                   {previewSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={previewSrc}
-                      alt={tAvatarAlt}
-                      className="h-28 w-28 object-cover sm:h-32 sm:w-32 md:h-36 md:w-36"
-                    />
+                    <div className="relative h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36">
+                      <Photo
+                        src={previewSrc}
+                        alt={tAvatarAlt}
+                        fill
+                        sizes="144px"
+                      />
+                    </div>
                   ) : (
                     <div className="flex h-28 w-28 items-center justify-center text-4xl text-foreground-faint sm:h-32 sm:w-32 md:h-36 md:w-36 md:text-5xl">
                       👤

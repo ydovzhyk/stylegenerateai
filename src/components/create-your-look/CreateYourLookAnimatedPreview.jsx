@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Trash2, X } from 'lucide-react'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
+import PreviewBadge from '@/components/shared/preview-badge/PreviewBadge'
 import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
@@ -73,24 +74,9 @@ function buildMobileSequence(manItems = [], womanItems = []) {
   return result
 }
 
-function ShinyBadge({ children, className = '', shineSeed }) {
-  return (
-    <span
-      key={shineSeed}
-      className={`relative inline-flex isolate overflow-hidden ${className}`}
-    >
-      <span className="relative z-[2]">{children}</span>
-
-      <span className="pointer-events-none absolute bottom-[-20%] left-[-120%] top-[-20%] z-[1] w-[60%] animate-premium-shine-sweep bg-[linear-gradient(120deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_20%,rgba(255,255,255,0.52)_50%,rgba(255,255,255,0.08)_80%,rgba(255,255,255,0)_100%)] opacity-0" />
-    </span>
-  )
-}
-
 function getAccentClasses(accent = 'primary') {
   return {
-    accentBorder:
-      accent === 'primary' ? 'border-primary/25' : 'border-cyan-400/25',
-    accentText: accent === 'primary' ? 'text-primary-soft' : 'text-cyan-300',
+    accentTone: accent === 'primary' ? 'primary' : 'cyan',
     hoverBorder:
       accent === 'primary'
         ? 'hover:border-primary/30'
@@ -131,16 +117,14 @@ function PreviewImageCard({
   alt,
   category,
   label,
-  labelType = 'default',
   accent = 'primary',
   imageKey,
-  shineSeed,
   showMeta = false,
   priority = false,
   onOpenPreview,
 }) {
   const reducedMotion = useReducedMotion()
-  const { accentBorder, accentText, hoverBorder } = getAccentClasses(accent)
+  const { accentTone, hoverBorder } = getAccentClasses(accent)
   const hasImage = Boolean(src)
   const isPreviewable = hasImage && typeof onOpenPreview === 'function'
 
@@ -177,34 +161,13 @@ function PreviewImageCard({
           />
         </AnimatePresence>
 
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(3,6,18,0.82)_0%,rgba(3,6,18,0.18)_34%,rgba(3,6,18,0.03)_62%,rgba(3,6,18,0.16)_100%)]" />
-
-        {showMeta ? (
+        {showMeta && category ? (
           <div className="absolute left-4 right-4 top-4 z-[2]">
-            {category ? (
-              <span
-                className={`mb-2 inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] backdrop-blur-sm ${accentText}`}
-              >
-                {category}
-              </span>
-            ) : null}
+            <PreviewBadge tone={accentTone} className="mb-2">
+              {category}
+            </PreviewBadge>
           </div>
         ) : null}
-
-        <div className="absolute inset-x-0 bottom-0 z-[2] p-4">
-          {labelType === 'after' ? (
-            <ShinyBadge
-              shineSeed={`${labelType}-${shineSeed}`}
-              className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] backdrop-blur-sm ${accentBorder} ${accentText} bg-black/30`}
-            >
-              {label}
-            </ShinyBadge>
-          ) : (
-            <span className="inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/75 backdrop-blur-sm">
-              {label}
-            </span>
-          )}
-        </div>
       </div>
     </motion.article>
   )
@@ -231,10 +194,8 @@ function PreviewPair({
         alt={`${item.title} ${beforeAltText}`}
         category={item.category}
         label={beforeText}
-        labelType="before"
         accent={accent}
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
-        shineSeed={`before-${contentKey}`}
         showMeta
         priority={priority}
         onOpenPreview={
@@ -253,10 +214,8 @@ function PreviewPair({
         src={item.afterSrc}
         alt={`${item.title} ${afterAltText}`}
         label={afterText}
-        labelType="after"
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
-        shineSeed={`after-${contentKey}`}
         priority={priority}
         onOpenPreview={
           onOpenPreview
@@ -282,7 +241,7 @@ function PreviewGroupCard({
   onRequestDelete,
   priority = false,
 }) {
-  const { accentBorder, accentText } = getAccentClasses(accent)
+  const { accentTone } = getAccentClasses(accent)
 
   const malePreviewText = useTranslate('male preview', { caseMode: 'lower' })
   const femalePreviewText = useTranslate('female preview', {
@@ -312,18 +271,18 @@ function PreviewGroupCard({
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <span
-          className={`flex min-h-[42px] items-center justify-center rounded-full border px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
-        >
+        <PreviewBadge variant="header" tone={accentTone}>
           {item.gender === 'man' ? malePreviewText : femalePreviewText}
-        </span>
+        </PreviewBadge>
 
-        <ShinyBadge
+        <PreviewBadge
+          variant="header"
+          tone="neutral"
+          shine
           shineSeed={`ai-${contentKey}`}
-          className="flex min-h-[42px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-white/55"
         >
           {aiTransformationText}
-        </ShinyBadge>
+        </PreviewBadge>
       </div>
 
       <PreviewPair

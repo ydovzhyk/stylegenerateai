@@ -3,6 +3,7 @@
 import clsx from 'clsx'
 import { GripVertical } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import PreviewBadge from '@/components/shared/preview-badge/PreviewBadge'
 
 const DEFAULT_OBJECT_POSITION = '50% 18%'
 
@@ -12,19 +13,6 @@ function clamp(value, min, max) {
 
 export function shouldShowBeforePreview(position, threshold = 50) {
   return position >= threshold
-}
-
-function ShinyBadge({ children, className = '', shineSeed = 'comparison-after' }) {
-  return (
-    <span
-      key={shineSeed}
-      className={`relative inline-flex isolate overflow-hidden ${className}`}
-    >
-      <span className="relative z-[2]">{children}</span>
-
-      <span className="pointer-events-none absolute bottom-[-20%] left-[-120%] top-[-20%] z-[1] w-[60%] animate-premium-shine-sweep bg-[linear-gradient(120deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_20%,rgba(255,255,255,0.52)_50%,rgba(255,255,255,0.08)_80%,rgba(255,255,255,0)_100%)] opacity-0" />
-    </span>
-  )
 }
 
 export function ComparisonPreviewBadge({
@@ -39,25 +27,15 @@ export function ComparisonPreviewBadge({
   const showBefore = shouldShowBeforePreview(position, threshold)
   const label = showBefore ? beforeLabel : afterLabel
 
-  const badge = showBefore ? (
-    <span
-      className={clsx(
-        'inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/75 backdrop-blur-sm',
-        badgeClassName,
-      )}
-    >
-      {label}
-    </span>
-  ) : (
-    <ShinyBadge
+  const badge = (
+    <PreviewBadge
+      tone={showBefore ? 'neutral' : 'cyan'}
+      shine={!showBefore}
       shineSeed={shineSeed}
-      className={clsx(
-        'rounded-full border border-cyan-400/25 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-cyan-300 backdrop-blur-sm',
-        badgeClassName,
-      )}
+      className={badgeClassName}
     >
       {label}
-    </ShinyBadge>
+    </PreviewBadge>
   )
 
   if (!wrapperClassName) {

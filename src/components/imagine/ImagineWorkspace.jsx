@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import clsx from 'clsx'
-import { ImagePlus, Info, Maximize2, Sparkles } from 'lucide-react'
+import { ImagePlus, Maximize2, Sparkles } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
+import InfoHint from '@/components/shared/info-hint/InfoHint'
+import Photo from '@/components/shared/photo/Photo'
+import { PHOTO_OVERLAY_TEXT_OUTLINE } from '@/components/shared/preview-badge/PreviewBadge'
 import BeforeAfterComparisonSlider, {
   ComparisonPreviewBadge,
   resolveComparisonPreviewTarget,
@@ -20,9 +23,9 @@ import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
 import { queueAssistantNotice } from '@/store/assistant/assistant-slice'
 import { axiosGenerateImagine } from '@/services/api/imagine'
-import { useTranslate } from '@/utils/translate/translate'
 import {
   PAINTING_TECHNIQUES,
+  TATTOO_REFERENCE_PROMPT_EXAMPLE,
   TATTOO_STYLES,
   WALLPAPER_PRESETS,
 } from '@/constants/imagine'
@@ -89,59 +92,50 @@ function SizeField({ id, label, value, onChange, suffix }) {
 
 function SourceButton({ label, uploaded, disabled, onClick }) {
   return (
-    <button
+    <Button
       type="button"
-      onClick={onClick}
+      variant="secondary"
+      shape="soft"
+      active={uploaded}
       disabled={disabled}
-      className={clsx(
-        'flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left transition',
-        uploaded
-          ? 'border-primary/35 bg-primary/10'
-          : 'border-white/10 bg-white/[0.03] hover:border-white/15',
-        disabled && 'cursor-not-allowed opacity-55 hover:border-white/10',
-      )}
+      fullWidth
+      onClick={onClick}
+      className="justify-start gap-3 px-4 py-3 font-medium"
+      leftIcon={
+        <span
+          aria-hidden
+          className={clsx(
+            'h-4 w-4 shrink-0 rounded-full border',
+            uploaded
+              ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+              : 'border-white/40 bg-transparent',
+          )}
+        />
+      }
     >
-      <span
-        aria-hidden
-        className={clsx(
-          'h-4 w-4 shrink-0 rounded-full border',
-          uploaded
-            ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-            : 'border-white/40 bg-transparent',
-        )}
-      />
-      <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
-        {label}
-      </Text>
-    </button>
+      {label}
+    </Button>
   )
 }
 
 function ChoiceGrid({ items, activeId, onSelect, disabled }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {items.map((item) => {
-        const active = activeId === item.id
-        return (
-          <button
-            key={item.id}
-            type="button"
-            disabled={disabled}
-            onClick={() => onSelect(item.id)}
-            className={clsx(
-              'rounded-2xl border px-4 py-3 text-left transition',
-              active
-                ? 'border-primary/35 bg-primary/10'
-                : 'border-white/10 bg-white/[0.03] hover:border-white/15',
-              disabled && 'cursor-not-allowed opacity-55',
-            )}
-          >
-            <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
-              {item.label}
-            </Text>
-          </button>
-        )
-      })}
+      {items.map((item) => (
+        <Button
+          key={item.id}
+          type="button"
+          variant="secondary"
+          shape="soft"
+          active={activeId === item.id}
+          disabled={disabled}
+          fullWidth
+          onClick={() => onSelect(item.id)}
+          className="justify-start px-4 py-3 text-left font-medium"
+        >
+          {item.label}
+        </Button>
+      ))}
     </div>
   )
 }
@@ -334,15 +328,6 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
     }
   }
 
-  const wallpaperSizeHint = useTranslate(
-    'Leave both sizes at 0. A reference photo keeps its size and scene. With no photo, a device in the prompt sets the screen, or the wallpaper is 1920×1080.',
-    { caseMode: 'sentence' },
-  )
-  const homePhotoHint = useTranslate(
-    'Your place is required. A design example is optional, even from another house or room. The result is one photo of your place.',
-    { caseMode: 'sentence' },
-  )
-
   if (!mode) {
     return (
       <section className="gradient-border-card p-5 sm:p-6 lg:p-7">
@@ -362,6 +347,13 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
   const uploadLabel = isHome ? 'Your place' : 'Reference photo'
   const inputsReady = inputsReadyFor(mode.id, prompt, placeFile, referenceFile)
   const promptOptional = mode.id === 'home' || mode.id === 'wallpaper'
+  const promptPlaceholder =
+    mode.id === 'tattoo'
+      ? tattooStyle === 'custom' && referenceFile
+        ? TATTOO_REFERENCE_PROMPT_EXAMPLE
+        : TATTOO_STYLES.find((style) => style.id === tattooStyle)?.promptExample ||
+          mode.promptPlaceholder
+      : mode.promptPlaceholder
   const missingHint = inputsReady
     ? ''
     : mode.id === 'home'
@@ -414,31 +406,38 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
       </div>
 
       <div className="mb-5 grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <div className="flex min-w-0 flex-col gap-3 overflow-visible md:col-start-1 lg:col-start-2 lg:row-start-1">
-          <div className="relative overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+        <div className="flex min-w-0 flex-col gap-3 self-start overflow-visible md:col-start-1 lg:col-start-2 lg:row-start-1">
+          <div
+            className={clsx(
+              'relative overflow-visible rounded-2xl border border-white/10 bg-background-soft/70',
+              isHome ? 'px-3 pb-3' : 'p-4',
+            )}
+          >
             {isHome ? (
-              <span className="group absolute right-3 top-3 z-20 flex cursor-pointer text-muted transition-colors hover:text-cyan-300">
-                <Info size={14} aria-label="Your place hint" />
-                <span className="pointer-events-none absolute bottom-full right-0 z-20 mb-3 w-[210px] rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-center text-xs leading-relaxed text-muted opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover:opacity-100">
-                  {homePhotoHint}
-                </span>
-              </span>
-            ) : null}
-            {isHome ? (
-              <div className="grid grid-cols-2 gap-2 pt-6">
-                <SourceButton
-                  label="Your place"
-                  uploaded={Boolean(placeFile)}
-                  disabled={isGenerating}
-                  onClick={() => placeInputRef.current?.click()}
-                />
-                <SourceButton
-                  label="Design example"
-                  uploaded={Boolean(renovationFile)}
-                  disabled={isGenerating || !placeFile}
-                  onClick={() => renovationInputRef.current?.click()}
-                />
-              </div>
+              <>
+                <div className="absolute right-3 top-3 z-20">
+                  <InfoHint
+                    text="Your place is required. A design example is optional, even from another house or room. The result is one photo of your place."
+                    label="Your place hint"
+                    align="end"
+                  />
+                </div>
+                {/* top-3 + Info(14px) + top-3 — clears the absolute hint, mirrors edge inset below */}
+                <div className="mt-[calc(0.75rem+14px+0.75rem)] grid grid-cols-2 gap-2">
+                  <SourceButton
+                    label="Your place"
+                    uploaded={Boolean(placeFile)}
+                    disabled={isGenerating}
+                    onClick={() => placeInputRef.current?.click()}
+                  />
+                  <SourceButton
+                    label="Design example"
+                    uploaded={Boolean(renovationFile)}
+                    disabled={isGenerating || !placeFile}
+                    onClick={() => renovationInputRef.current?.click()}
+                  />
+                </div>
+              </>
             ) : null}
 
             {mode.id === 'wallpaper' ? (
@@ -447,12 +446,11 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                   <Text as="p" variant="body" color="white" caseMode="sentence">
                     Screen size
                   </Text>
-                  <span className="group relative flex cursor-pointer text-muted transition-colors hover:text-cyan-300">
-                    <Info size={14} aria-label="Screen size hint" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-[210px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-center text-xs leading-relaxed text-muted opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover:opacity-100">
-                      {wallpaperSizeHint}
-                    </span>
-                  </span>
+                  <InfoHint
+                    text="Leave both sizes at 0. A reference photo keeps its size and scene. With no photo, a device in the prompt sets the screen, or the wallpaper is 1920×1080."
+                    label="Screen size hint"
+                    align="end"
+                  />
                 </div>
                 <ChoiceGrid
                   items={WALLPAPER_PRESETS}
@@ -492,15 +490,25 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
 
             {mode.id === 'tattoo' ? (
               <div className="flex flex-col gap-3">
-                <Text as="p" variant="body" color="white" caseMode="sentence">
-                  Print size
-                </Text>
+                <div className="flex items-center justify-between gap-3">
+                  <Text as="p" variant="body" color="white" caseMode="sentence">
+                    Tattoo style
+                  </Text>
+                  <InfoHint
+                    text="With a reference photo, choose Custom and write: Make this same subject a clean sketch. Other styles redraw the subject in that technique."
+                    label="Tattoo style hint"
+                    align="end"
+                  />
+                </div>
                 <ChoiceGrid
                   items={TATTOO_STYLES}
                   activeId={tattooStyle}
                   disabled={isGenerating}
                   onSelect={setTattooStyle}
                 />
+                <Text as="p" variant="body" color="white" caseMode="sentence">
+                  Print size
+                </Text>
                 <div className="grid grid-cols-2 gap-2">
                   <SizeField
                     id="tattoo-width"
@@ -588,10 +596,12 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                 className="absolute inset-0 z-[1] cursor-zoom-in"
                 aria-label="Open image preview: Generated"
               />
-              <img
+              <Photo
                 src={exampleAfter}
                 alt={exampleTitle}
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                fill
+                sizes="(max-width: 1024px) 90vw, 420px"
+                className="object-center"
               />
             </>
           ) : (
@@ -616,10 +626,21 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
 
           {exampleAfter ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
-              <Text as="p" variant="caption" color="soft" caseMode="sentence">
+              <Text
+                as="p"
+                variant="caption"
+                color="soft"
+                caseMode="sentence"
+                className={PHOTO_OVERLAY_TEXT_OUTLINE}
+              >
                 Selected mode
               </Text>
-              <Text as="p" variant="body" color="white" className="mt-1 line-clamp-1">
+              <Text
+                as="p"
+                variant="body"
+                color="white"
+                className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
+              >
                 {exampleTitle}
               </Text>
               <Text
@@ -627,7 +648,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                 variant="caption"
                 color="muted"
                 caseMode="sentence"
-                className="mt-1 line-clamp-1"
+                className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
               >
                 {mode.title}
               </Text>
@@ -657,10 +678,12 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                 className="absolute inset-0 z-[1] cursor-zoom-in"
                 aria-label={`Open image preview: ${uploadLabel}`}
               />
-              <img
+              <Photo
                 src={uploadPreview}
                 alt={uploadLabel}
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                fill
+                sizes="(max-width: 1024px) 90vw, 420px"
+                className="object-center"
               />
               {isHome && designExamplePreview ? (
                 <button
@@ -676,12 +699,19 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                   aria-label="Open image preview: Design example"
                 >
                   <span className="relative block aspect-[4/5] w-full">
-                    <img
+                    <Photo
                       src={designExamplePreview}
                       alt="Design example"
-                      className="absolute inset-0 h-full w-full object-cover object-center"
+                      fill
+                      sizes="120px"
+                      className="object-center"
                     />
-                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5 text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
+                    <span
+                      className={clsx(
+                        'absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5 text-center text-[9px] uppercase tracking-[0.14em] text-white/85',
+                        PHOTO_OVERLAY_TEXT_OUTLINE,
+                      )}
+                    >
                       Design example
                     </span>
                   </span>
@@ -702,7 +732,13 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                 <Maximize2 size={15} />
               </button>
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
-                <Text as="p" variant="caption" color="soft" caseMode="sentence">
+                <Text
+                  as="p"
+                  variant="caption"
+                  color="soft"
+                  caseMode="sentence"
+                  className={PHOTO_OVERLAY_TEXT_OUTLINE}
+                >
                   {uploadLabel}
                 </Text>
                 <Text
@@ -710,7 +746,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                   variant="body"
                   color="white"
                   translate={false}
-                  className="mt-1 line-clamp-1"
+                  className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
                 >
                   {uploadFile?.name || uploadLabel}
                 </Text>
@@ -738,7 +774,11 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                 <ImagePlus size={24} />
               </span>
               <Text as="span" variant="body" color="white" caseMode="sentence">
-                {isHome ? 'Upload your place' : 'Upload a reference photo'}
+                {isHome
+                  ? 'Upload your place'
+                  : mode.id === 'tattoo'
+                    ? 'Upload a reference'
+                    : 'Upload a reference photo'}
               </Text>
               <Text
                 as="span"
@@ -751,7 +791,9 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                   ? 'A photo of the house, yard, or room you want to redesign.'
                   : mode.id === 'wallpaper'
                     ? 'Optional. Add it to keep this picture and change only what you describe. Or start from the prompt alone.'
-                    : 'Optional. The idea can also start from the prompt alone.'}
+                    : mode.id === 'tattoo'
+                      ? 'Optional. You get a clean sketch for your artist, not a tattoo on skin. Describe the design in the prompt.'
+                      : 'Optional. The idea can also start from the prompt alone.'}
               </Text>
             </button>
           )}
@@ -778,16 +820,30 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                 className="absolute inset-0 z-[1] cursor-zoom-in"
                 aria-label="Open image preview: Generated"
               />
-              <img
+              <Photo
                 src={previewUrl}
                 alt={`${mode.title} result`}
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                fill
+                sizes="(max-width: 1024px) 90vw, 420px"
+                className="object-center"
               />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
-                <Text as="p" variant="caption" color="soft" caseMode="sentence">
+                <Text
+                  as="p"
+                  variant="caption"
+                  color="soft"
+                  caseMode="sentence"
+                  className={PHOTO_OVERLAY_TEXT_OUTLINE}
+                >
                   AI generated result
                 </Text>
-                <Text as="p" variant="body" color="white" caseMode="sentence" className="mt-1">
+                <Text
+                  as="p"
+                  variant="body"
+                  color="white"
+                  caseMode="sentence"
+                  className={clsx('mt-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
+                >
                   Your idea is ready
                 </Text>
                 {resultCaption ? (
@@ -796,7 +852,10 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                     variant="caption"
                     color="muted"
                     translate={false}
-                    className="mt-1 line-clamp-2"
+                    className={clsx(
+                      'mt-1 line-clamp-2',
+                      PHOTO_OVERLAY_TEXT_OUTLINE,
+                    )}
                   >
                     {resultCaption}
                   </Text>
@@ -833,7 +892,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
             rows={5}
             label={promptOptional ? 'Optional prompt' : 'Prompt'}
             labelClassName="text-lg font-semibold text-white md:text-xl"
-            placeholder={mode.promptPlaceholder}
+            placeholder={promptPlaceholder}
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
             caseMode="sentence"

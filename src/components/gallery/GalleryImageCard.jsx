@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Download, Trash2 } from 'lucide-react'
 import Button from '@/components/shared/button/Button'
+import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import { axiosDownloadGeneratedImageFile } from '@/services/api/generated-image'
@@ -75,11 +76,12 @@ export default function GalleryImageCard({
                 className="absolute inset-0 z-[1] cursor-zoom-in"
               />
 
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Photo
                 src={previewSrc}
                 alt={item?.title || 'Saved image'}
-                className="absolute inset-[-1px] h-[calc(100%+2px)] w-[calc(100%+2px)] object-cover object-[50%_5%]"
+                fill
+                sizes="(max-width: 640px) 90vw, 320px"
+                className="object-[50%_5%]"
               />
             </>
           ) : (

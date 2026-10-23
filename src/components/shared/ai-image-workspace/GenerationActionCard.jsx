@@ -1,27 +1,15 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Download, Info, Lock, RotateCcw, Sparkles } from 'lucide-react'
+import { Download, Lock, RotateCcw, Sparkles } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
+import InfoHint, { HoverTip } from '@/components/shared/info-hint/InfoHint'
 import { useTranslate } from '@/utils/translate/translate'
 
 const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
-
-function HoverHint({ text, children, className = '' }) {
-  const translatedText = useTranslate(text, { caseMode: 'sentence' })
-
-  return (
-    <div className={`group/hint relative w-full ${className}`.trim()}>
-      {children}
-      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-[210px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-center text-xs leading-relaxed text-cyan-300 opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/hint:opacity-100">
-        {translatedText}
-      </span>
-    </div>
-  )
-}
 
 function formatFileFormatOption(option) {
   return (
@@ -235,13 +223,11 @@ export default function GenerationActionCard({
                   </label>
                 </div>
 
-                <span className="cursor-pointer group relative flex text-muted transition-colors hover:text-cyan-300">
-                  <Info size={14} />
-
-                  <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-3 w-[210px] -translate-x-1/2 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-center text-xs leading-relaxed text-muted opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover:opacity-100">
-                    The image will be saved before downloading.
-                  </span>
-                </span>
+                <InfoHint
+                  text="The image will be saved before downloading."
+                  label="Save to gallery hint"
+                  align="end"
+                />
               </div>
             </div>
           ) : (
@@ -257,13 +243,13 @@ export default function GenerationActionCard({
           )}
 
           {printExportProcessing ? (
-            <HoverHint text={printExportProcessingHint}>
+            <HoverTip text={printExportProcessingHint} className="mt-5 block w-full">
               <Button
                 type="button"
                 variant="secondary"
                 disabled
                 translate={false}
-                className="mt-5 h-[44px] w-full rounded-full px-7"
+                className="h-[44px] w-full rounded-full px-7"
               >
                 <span className="inline-flex items-center justify-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -273,7 +259,7 @@ export default function GenerationActionCard({
                   </span>
                 </span>
               </Button>
-            </HoverHint>
+            </HoverTip>
           ) : (
             <Button
               type="button"

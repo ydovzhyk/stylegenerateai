@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Minus, Plus, RotateCcw } from 'lucide-react'
+import Button from '@/components/shared/button/Button'
 import Text from '@/components/shared/text/Text'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
+
+const ICON_BUTTON_CLASS =
+  'border-white/10 bg-black/30 text-white/80 hover:border-white/10 hover:bg-black/40 hover:text-white hover:shadow-none'
 
 const MIN_ZOOM = 1
 const MAX_ZOOM = 3
@@ -187,14 +191,16 @@ export default function ImagePreviewModal({
             {title}
           </Text>
 
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            iconOnly
             onClick={onClose}
             aria-label="Close preview"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 backdrop-blur-md transition hover:bg-black/40 hover:text-white"
+            className={`${ICON_BUTTON_CLASS} backdrop-blur-md`}
           >
             ✕
-          </button>
+          </Button>
         </div>
 
         <div
@@ -238,15 +244,17 @@ export default function ImagePreviewModal({
           </Text>
 
           <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
+              iconOnly
               onClick={() => updateZoom(zoom - ZOOM_STEP)}
               disabled={zoom <= MIN_ZOOM}
               aria-label="Zoom out"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 transition hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Minus size={16} />
-            </button>
+              className={ICON_BUTTON_CLASS}
+              leftIcon={<Minus size={16} />}
+            />
 
             <input
               type="range"
@@ -259,29 +267,33 @@ export default function ImagePreviewModal({
               className="h-1.5 w-full min-w-[140px] max-w-[220px] cursor-pointer appearance-none rounded-full bg-white/10 accent-[#7c5cff] sm:w-[180px]"
             />
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
+              iconOnly
               onClick={() => updateZoom(zoom + ZOOM_STEP)}
               disabled={zoom >= MAX_ZOOM}
               aria-label="Zoom in"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 transition hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Plus size={16} />
-            </button>
+              className={ICON_BUTTON_CLASS}
+              leftIcon={<Plus size={16} />}
+            />
 
             <span className="min-w-[48px] text-center text-xs font-medium text-white/70">
               {zoomPercent}%
             </span>
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
+              iconOnly
               onClick={resetView}
               disabled={zoom <= MIN_ZOOM && pan.x === 0 && pan.y === 0}
               aria-label="Reset zoom"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 transition hover:bg-black/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <RotateCcw size={15} />
-            </button>
+              className={ICON_BUTTON_CLASS}
+              leftIcon={<RotateCcw size={15} />}
+            />
           </div>
         </div>
       </div>

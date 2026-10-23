@@ -49,6 +49,30 @@ export const axiosGetGenerationJob = async (jobId, visitorId) => {
   return data
 }
 
+export const axiosDiscardGenerationJob = async (jobId, visitorId) => {
+  const params = {
+    _ts: Date.now(),
+  }
+
+  if (visitorId) {
+    params.visitorId = visitorId
+  }
+
+  const { data } = await instance.delete(`/generation-jobs/${jobId}`, {
+    params,
+  })
+
+  return data
+}
+
+function discardGenerationJobInBackground(jobId, visitorId = '') {
+  if (!jobId) return
+
+  void axiosDiscardGenerationJob(jobId, visitorId).catch(() => {
+    // TTL still cleans up if discard fails.
+  })
+}
+
 export async function waitForGenerationJob(
   jobId,
   visitorId = '',
@@ -61,10 +85,12 @@ export async function waitForGenerationJob(
     const status = await axiosGetGenerationJob(jobId, visitorId)
 
     if (status?.status === 'ready') {
+      discardGenerationJobInBackground(jobId, visitorId)
       return status
     }
 
     if (status?.status === 'failed') {
+      discardGenerationJobInBackground(jobId, visitorId)
       const error = new Error(
         status?.errorMessage || 'Generation failed. Please try again.',
       )
@@ -106,6 +132,12 @@ export async function resolveGenerationResponse(data, context) {
   }
 
   if (data?.status === 'ready') {
+    if (data.previewUrl) {
+      discardGenerationJobInBackground(
+        data.jobId,
+        resolvePollContext(context).visitorId,
+      )
+    }
     return data
   }
 

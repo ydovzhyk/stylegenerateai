@@ -1,23 +1,12 @@
 'use client'
 
 import clsx from 'clsx'
-import { CircleHelp } from 'lucide-react'
+import InfoHint from '@/components/shared/info-hint/InfoHint'
 import Text from '@/components/shared/text/Text'
 import {
   RESTORE_STYLE_IDS,
   getRestoreStyleMeta,
 } from '@/constants/restore-styles'
-
-function RestoreStyleTooltip({ text, children, className = '' }) {
-  return (
-    <span className={`group/restore-tip relative inline-flex ${className}`}>
-      {children}
-      <span className="pointer-events-none absolute bottom-full right-0 z-30 mb-3 w-[min(280px,calc(100vw-48px))] rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-left text-xs leading-relaxed text-cyan-300 opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/restore-tip:opacity-100 group-focus-within/restore-tip:opacity-100">
-        {text}
-      </span>
-    </span>
-  )
-}
 
 export default function RestoreStyleToolbar({
   restoreStyle,
@@ -76,18 +65,18 @@ export default function RestoreStyleToolbar({
                   {meta.label}
                 </Text>
 
-                <RestoreStyleTooltip text={meta.modalDescription}>
-                  <span
-                    tabIndex={0}
-                    role="note"
-                    aria-label={`More about ${meta.label}`}
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/55 transition hover:border-cyan-400/30 hover:text-cyan-300"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <CircleHelp size={14} />
-                  </span>
-                </RestoreStyleTooltip>
+                <span
+                  className="inline-flex shrink-0"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <InfoHint
+                    text={meta.modalDescription}
+                    label={`More about ${meta.label}`}
+                    align="end"
+                    widthClassName="w-[min(280px,calc(100vw-48px))]"
+                  />
+                </span>
               </span>
             </label>
           )

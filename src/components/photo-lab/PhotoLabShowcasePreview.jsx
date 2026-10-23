@@ -2,15 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import Image from 'next/image'
 import clsx from 'clsx'
+import Photo from '@/components/shared/photo/Photo'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Trash2, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
+import PreviewBadge, {
+  PHOTO_OVERLAY_TEXT_OUTLINE,
+} from '@/components/shared/preview-badge/PreviewBadge'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
+import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { useTranslate } from '@/utils/translate/translate'
 import {
   collectRotationPreloadUrls,
@@ -26,88 +30,58 @@ import { getUser } from '@/store/auth/auth-selectors'
 
 const CARD_ROTATE_MS = 8200
 
-const MODE_PREVIEW_LABELS = {
-  professional_portrait: { before: 'Casual', after: 'LinkedIn-ready' },
-  restore_colorize: { before: 'Old photo', after: 'Restored' },
-  smart_edit: { before: 'Original', after: 'Edited' },
-  identity_transfer: { before: 'Reference', after: 'Your face' },
-  remove_objects: { before: 'Distracting', after: 'Clean' },
-  enhance_quality: { before: 'Soft', after: 'Clearer' },
-  creative_retouch: { before: 'Everyday', after: 'Instagram-ready' },
-  photo_styles: { before: 'Your photo', after: 'Restyled' },
-}
-
-const MODE_SOURCE_BADGE_LABELS = {
-  professional_portrait: 'Casual photo',
-  restore_colorize: 'Old photo',
-  smart_edit: 'Original',
-  identity_transfer: 'Reference',
-  remove_objects: 'Distracting',
-  enhance_quality: 'Soft',
-  creative_retouch: 'Everyday',
-  photo_styles: 'Your photo',
-}
-
-function getSourceBadgeLabel(modeId = '') {
-  return (
-    MODE_SOURCE_BADGE_LABELS[modeId] ||
-    MODE_PREVIEW_LABELS[modeId]?.before ||
-    'Before'
-  )
-}
-
 const SHOWCASE_MODE_ITEMS = [
   {
     id: 'professional_portrait',
-    afterLabel: 'LinkedIn-ready',
-    title: 'LinkedIn-ready portrait',
+    chipLabel: 'Professional look',
+    title: 'Professional portrait',
     description:
       'Same you in a clean business look — professional outfit and a modern office setting.',
   },
   {
     id: 'restore_colorize',
-    afterLabel: 'Restored',
+    chipLabel: 'Restored photo',
     title: 'Restore family memories',
     description:
       'Repair damage and fading — keep the original look, or add natural color.',
   },
   {
     id: 'smart_edit',
-    afterLabel: 'Edited',
+    chipLabel: 'Edited look',
     title: 'Change outfit or scene',
     description: 'Modify clothing, objects, lighting, and background.',
   },
   {
     id: 'identity_transfer',
-    afterLabel: 'Your face',
+    chipLabel: 'With your face',
     title: 'Same shot, your face',
     description:
       'Keep the reference pose, clothes, and scene — transfer your face into that photo.',
   },
   {
     id: 'remove_objects',
-    afterLabel: 'Clean',
+    chipLabel: 'Clean photo',
     title: 'Remove unwanted objects',
     description:
       'Clear out distractions — keep the rest of the shot exactly as it was.',
   },
   {
     id: 'enhance_quality',
-    afterLabel: 'Clearer',
+    chipLabel: 'Enhanced photo',
     title: 'Sharper photo quality',
     description:
       'Recover detail and cut haze or compression — same photo, easier to read.',
   },
   {
     id: 'creative_retouch',
-    afterLabel: 'Instagram-ready',
+    chipLabel: 'Retouched look',
     title: 'Premium Instagram polish',
     description:
       'Same shot, cleaner finish: polished skin, even tone, and a premium look.',
   },
   {
     id: 'photo_styles',
-    afterLabel: 'Restyled',
+    chipLabel: 'Styled photo',
     title: 'Restyle your photo',
     description:
       'Coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.',
@@ -128,10 +102,7 @@ function getShowcaseModeItem(modeId) {
 function mapTemplateToShowcaseItem(template) {
   const modeId = String(template?.mode || '').trim()
   const modeMeta = getModeMeta(modeId)
-  const labels = MODE_PREVIEW_LABELS[modeId] || {
-    before: 'Before',
-    after: 'After',
-  }
+  const labels = getModePreviewLabels(modeId)
 
   return {
     id: template?._id || template?.slug || `${modeId}-${template?.title}`,
@@ -167,24 +138,9 @@ function buildPinnedShowcaseItems(templatesByMode = {}, modeId = '') {
   return modeTemplates.map((template) => mapTemplateToShowcaseItem(template))
 }
 
-function ShinyBadge({ children, className = '', shineSeed }) {
-  return (
-    <span
-      key={shineSeed}
-      className={`relative inline-flex isolate overflow-hidden ${className}`}
-    >
-      <span className="relative z-[2]">{children}</span>
-
-      <span className="pointer-events-none absolute bottom-[-20%] left-[-120%] top-[-20%] z-[1] w-[60%] animate-premium-shine-sweep bg-[linear-gradient(120deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.08)_20%,rgba(255,255,255,0.52)_50%,rgba(255,255,255,0.08)_80%,rgba(255,255,255,0)_100%)] opacity-0" />
-    </span>
-  )
-}
-
 function getAccentClasses(accent = 'primary') {
   return {
-    accentBorder:
-      accent === 'primary' ? 'border-primary/25' : 'border-cyan-400/25',
-    accentText: accent === 'primary' ? 'text-primary-soft' : 'text-cyan-300',
+    accentTone: accent === 'primary' ? 'primary' : 'cyan',
     hoverBorder:
       accent === 'primary'
         ? 'hover:border-primary/30'
@@ -226,10 +182,8 @@ function PreviewImageCard({
   alt,
   category,
   label,
-  labelType = 'default',
   accent = 'cyan',
   imageKey,
-  shineSeed,
   showMeta = false,
   insetSrc = '',
   insetAlt = '',
@@ -239,7 +193,7 @@ function PreviewImageCard({
   openPreviewAriaLabel,
 }) {
   const reducedMotion = useReducedMotion()
-  const { accentBorder, accentText, hoverBorder } = getAccentClasses(accent)
+  const { accentTone, hoverBorder } = getAccentClasses(accent)
   const hasImage = Boolean(src)
   const hasInset = Boolean(insetSrc)
   const isPreviewable = hasImage && typeof onOpenPreview === 'function'
@@ -277,33 +231,31 @@ function PreviewImageCard({
           <div className="absolute inset-0 bg-gradient-to-br from-slate-800/80 via-slate-950 to-black" />
         )}
 
-        <div className="pointer-events-none absolute -inset-px bg-[linear-gradient(to_top,rgba(3,6,18,0.92)_0%,rgba(3,6,18,0.22)_34%,rgba(3,6,18,0.04)_62%,rgba(3,6,18,0.24)_100%)]" />
-
         {showMeta && category ? (
           <div className="absolute left-4 right-4 top-4 z-[2]">
-            <span
-              className={`inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] backdrop-blur-sm ${accentText}`}
-            >
-              {category}
-            </span>
+            <PreviewBadge tone={accentTone}>{category}</PreviewBadge>
           </div>
         ) : null}
 
         {hasInset ? (
           <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[30%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4">
             <div className="relative aspect-[4/5] w-full">
-              <Image
+              <Photo
                 src={insetSrc}
                 alt={insetAlt || insetLabel || 'Face photo'}
                 fill
                 sizes="120px"
                 priority={priority}
-                unoptimized
-                className="object-cover object-[center_18%]"
+                className="object-[center_18%]"
               />
               {insetLabel ? (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
-                  <span className="block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
+                  <span
+                    className={clsx(
+                      'block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white',
+                      PHOTO_OVERLAY_TEXT_OUTLINE,
+                    )}
+                  >
                     {insetLabel}
                   </span>
                 </div>
@@ -311,23 +263,6 @@ function PreviewImageCard({
             </div>
           </div>
         ) : null}
-
-        <div
-          className={`absolute z-[2] p-4 ${hasInset ? 'inset-x-0 bottom-0 sm:right-[34%] sm:left-0' : 'inset-x-0 bottom-0'}`}
-        >
-          {labelType === 'after' ? (
-            <ShinyBadge
-              shineSeed={`${labelType}-${shineSeed}`}
-              className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] backdrop-blur-sm ${accentBorder} ${accentText} bg-black/30`}
-            >
-              {label}
-            </ShinyBadge>
-          ) : (
-            <span className="inline-flex rounded-full border border-white/12 bg-black/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-white/75 backdrop-blur-sm">
-              {label}
-            </span>
-          )}
-        </div>
       </div>
     </motion.article>
   )
@@ -363,10 +298,8 @@ function PreviewPair({
         src={item.beforeSrc}
         alt={`${item.title} ${beforeAltText}`}
         label={beforeLabel}
-        labelType="before"
         accent={accent}
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
-        shineSeed={`before-${contentKey}`}
         insetSrc={faceSrc}
         insetAlt={`${item.title} face`}
         insetLabel={faceSrc ? faceInsetLabel : ''}
@@ -388,10 +321,8 @@ function PreviewPair({
         src={item.afterSrc}
         alt={`${item.title} ${afterAltText}`}
         label={afterLabel}
-        labelType="after"
         accent={accent}
         imageKey={`after-${contentKey}-${item.afterSrc}`}
-        shineSeed={`after-${contentKey}`}
         priority={priority}
         openPreviewAriaLabel={`${openPreviewText}: ${afterLabel}`}
         onOpenPreview={
@@ -418,16 +349,12 @@ function PreviewGroupCard({
   onRequestDelete,
   priority = false,
 }) {
-  const { accentBorder, accentText } = getAccentClasses(accent)
-  const aiTransformationText = useTranslate('AI transformation', {
-    caseMode: 'none',
-  })
+  const { accentTone } = getAccentClasses(accent)
+  const labels = getModePreviewLabels(item?.modeId)
+  const sourceBadgeLabel = useTranslate(labels.before, { caseMode: 'title' })
+  const resultBadgeLabel = useTranslate(labels.after, { caseMode: 'title' })
 
   if (!item) return null
-
-  const sourceBadgeLabel = useTranslate(getSourceBadgeLabel(item.modeId), {
-    caseMode: 'title',
-  })
 
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.035] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:p-5">
@@ -447,18 +374,18 @@ function PreviewGroupCard({
       ) : null}
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:gap-5">
-        <span
-          className={`flex min-h-[42px] items-center justify-center rounded-full border px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] ${accentBorder} ${accentText} bg-white/[0.03]`}
-        >
+        <PreviewBadge variant="header" tone={accentTone}>
           {sourceBadgeLabel}
-        </span>
+        </PreviewBadge>
 
-        <ShinyBadge
+        <PreviewBadge
+          variant="header"
+          tone="neutral"
+          shine
           shineSeed={`ai-${contentKey}`}
-          className="flex min-h-[42px] items-center justify-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-center text-[11px] uppercase leading-[1.45] tracking-[0.18em] text-white/55"
         >
-          {aiTransformationText}
-        </ShinyBadge>
+          {resultBadgeLabel}
+        </PreviewBadge>
       </div>
 
       <PreviewPair
@@ -473,7 +400,9 @@ function PreviewGroupCard({
 }
 
 function ShowcaseModeChip({ modeItem, active, pinned, onClick }) {
-  const label = useTranslate(modeItem.afterLabel, { caseMode: 'title' })
+  const label = useTranslate(modeItem.chipLabel || modeItem.afterLabel, {
+    caseMode: 'title',
+  })
 
   return (
     <button
@@ -671,11 +600,9 @@ export default function PhotoLabShowcasePreview() {
                 title: activeShowcaseMode.title,
                 beforeSrc: '',
                 afterSrc: '',
-                beforeLabel:
-                  MODE_PREVIEW_LABELS[activeShowcaseMode.id]?.before ||
-                  'Before',
-                afterLabel:
-                  MODE_PREVIEW_LABELS[activeShowcaseMode.id]?.after || 'After',
+                beforeLabel: getModePreviewLabels(activeShowcaseMode.id)
+                  .before,
+                afterLabel: getModePreviewLabels(activeShowcaseMode.id).after,
               }}
               accent="cyan"
               contentKey={`placeholder-${activeShowcaseMode.id}`}

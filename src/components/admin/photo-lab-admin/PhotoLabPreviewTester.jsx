@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import PhotoLabMaskEditor, {
@@ -912,29 +913,29 @@ export default function PhotoLabPreviewTester() {
                   const active = pictureStyle === style.id
 
                   return (
-                    <button
+                    <Button
                       key={style.id}
                       type="button"
-                      onClick={() => setPictureStyle(style.id)}
+                      variant="secondary"
+                      shape="soft"
+                      active={active}
                       disabled={isGenerating || isSavingTemplate}
-                      className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition ${
-                        active
-                          ? 'border-primary/35 bg-primary/10'
-                          : 'border-white/10 bg-background-soft/70'
-                      }`}
+                      fullWidth
+                      onClick={() => setPictureStyle(style.id)}
+                      className="justify-start gap-3 px-4 py-3 font-medium"
+                      leftIcon={
+                        <span
+                          aria-hidden
+                          className={
+                            active
+                              ? 'h-4 w-4 shrink-0 rounded-full border border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                              : 'h-4 w-4 shrink-0 rounded-full border border-white/40'
+                          }
+                        />
+                      }
                     >
-                      <span
-                        aria-hidden
-                        className={`h-4 w-4 shrink-0 rounded-full border ${
-                          active
-                            ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-                            : 'border-white/40'
-                        }`}
-                      />
-                      <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
-                        {style.shortLabel}
-                      </Text>
-                    </button>
+                      {style.shortLabel}
+                    </Button>
                   )
                 })}
               </div>
@@ -1172,11 +1173,14 @@ export default function PhotoLabPreviewTester() {
                                       className="h-4 w-4 accent-[var(--primary)]"
                                     />
 
-                                    <img
-                                      src={source.src}
-                                      alt={source.label}
-                                      className="h-10 w-10 shrink-0 rounded-lg object-cover"
-                                    />
+                                    <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg">
+                                      <Photo
+                                        src={source.src}
+                                        alt={source.label}
+                                        fill
+                                        sizes="40px"
+                                      />
+                                    </span>
 
                                     <Text
                                       as="span"
@@ -1452,11 +1456,15 @@ export default function PhotoLabPreviewTester() {
                       className="absolute inset-0 z-[1] cursor-zoom-in"
                     />
 
-                    <img
-                      src={activeSourcePreview}
-                      alt="Source preview"
-                      className="relative z-0 max-h-[520px] w-full rounded-[18px] object-contain"
-                    />
+                    <div className="relative z-0 mx-auto h-[520px] w-full">
+                      <Photo
+                        src={activeSourcePreview}
+                        alt="Source preview"
+                        fill
+                        sizes="(max-width: 1024px) 90vw, 640px"
+                        className="rounded-[18px] object-contain"
+                      />
+                    </div>
 
                     {activeSourcePreviewItem ? (
                       <span className="pointer-events-none absolute left-4 top-4 z-[2] rounded-full border border-white/15 bg-black/45 px-3 py-1 text-xs text-white backdrop-blur">
@@ -1619,11 +1627,15 @@ export default function PhotoLabPreviewTester() {
                       className="absolute inset-0 z-[1] cursor-zoom-in"
                     />
 
-                    <img
-                      src={resultPreview}
-                      alt="Generated Photo Lab preview"
-                      className="relative z-0 max-h-[520px] w-full rounded-[18px] object-contain"
-                    />
+                    <div className="relative z-0 mx-auto h-[520px] w-full">
+                      <Photo
+                        src={resultPreview}
+                        alt="Generated Photo Lab preview"
+                        fill
+                        sizes="(max-width: 1024px) 90vw, 640px"
+                        className="rounded-[18px] object-contain"
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div className="max-w-sm px-4">

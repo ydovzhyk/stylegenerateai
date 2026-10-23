@@ -7,6 +7,8 @@ import clsx from 'clsx'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Photo from '@/components/shared/photo/Photo'
+
 import { axiosGenerateImagine } from '@/services/api/imagine'
 import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
 import {
@@ -30,28 +32,18 @@ import {
 
 function ChoiceButton({ active, disabled, onClick, children, translate = true }) {
   return (
-    <button
+    <Button
       type="button"
-      onClick={onClick}
+      variant="secondary"
+      shape="soft"
+      active={active}
       disabled={disabled}
-      className={clsx(
-        'rounded-2xl border px-4 py-3 text-left transition',
-        active
-          ? 'border-primary/45 bg-primary/15'
-          : 'border-white/10 bg-background-soft/70 hover:border-primary/25',
-        disabled && 'cursor-not-allowed opacity-55',
-      )}
+      onClick={onClick}
+      translate={translate}
+      className="justify-start px-4 py-3 text-left font-medium"
     >
-      <Text
-        as="span"
-        variant="body-sm"
-        color="white"
-        caseMode="sentence"
-        translate={translate}
-      >
-        {children}
-      </Text>
-    </button>
+      {children}
+    </Button>
   )
 }
 
@@ -638,18 +630,24 @@ export default function ImaginePreviewTester() {
                     {`Screen: ${wallpaperScreenLabel}`}
                   </Text>
                 ) : null}
-                <img
-                  src={resultPreview}
-                  alt="Generated Imagine preview"
-                  className="max-h-[520px] w-full rounded-[18px] object-contain"
-                />
+                <div className="relative mx-auto h-[520px] w-full">
+                  <Photo
+                    src={resultPreview}
+                    alt="Generated Imagine preview"
+                    fill
+                    sizes="(max-width: 1024px) 90vw, 640px"
+                    className="rounded-[18px] object-contain"
+                  />
+                </div>
                 {userPhotoUrl ? (
                   <div className="pointer-events-none absolute bottom-3 right-3 w-[22%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)]">
                     <div className="relative aspect-[4/5] w-full">
-                      <img
+                      <Photo
                         src={userPhotoUrl}
                         alt="Uploaded photo"
-                        className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
+                        fill
+                        sizes="120px"
+                        className="object-[center_18%]"
                       />
                     </div>
                   </div>

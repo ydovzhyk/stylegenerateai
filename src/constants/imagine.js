@@ -52,12 +52,40 @@ export const WALLPAPER_PRESETS = [
 ]
 
 export const TATTOO_STYLES = [
-  { id: 'custom', label: 'Custom' },
-  { id: 'fine_line', label: 'Fine line' },
-  { id: 'stencil', label: 'Stencil' },
-  { id: 'blackwork', label: 'Blackwork' },
-  { id: 'symbolic', label: 'Symbolic' },
+  {
+    id: 'custom',
+    label: 'Custom',
+    promptExample:
+      'Example: A Japanese koi fish swimming upstream through swirling waves, surrounded by cherry blossoms, in a traditional Japanese tattoo style.',
+  },
+  {
+    id: 'fine_line',
+    label: 'Fine line',
+    promptExample:
+      'Example: A delicate butterfly surrounded by tiny wildflowers, with elegant flowing details and a graceful composition.',
+  },
+  {
+    id: 'stencil',
+    label: 'Stencil',
+    promptExample:
+      'Example: A highly realistic tiger head facing forward, with an intense gaze, detailed fur texture, natural facial anatomy, and a powerful expression.',
+  },
+  {
+    id: 'blackwork',
+    label: 'Blackwork',
+    promptExample:
+      'Example: A mysterious raven perched on an ancient skull, surrounded by thorny branches and dark botanical elements.',
+  },
+  {
+    id: 'symbolic',
+    label: 'Symbolic',
+    promptExample:
+      'Example: A broken hourglass with sand transforming into flying birds, surrounded by subtle geometric shapes, symbolizing freedom, the passage of time and destiny.',
+  },
 ]
+
+export const TATTOO_REFERENCE_PROMPT_EXAMPLE =
+  'Example: Make this same subject a clean sketch.'
 
 export const PAINTING_TECHNIQUES = [
   { id: 'described', label: 'As described' },

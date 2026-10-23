@@ -1,7 +1,6 @@
 'use client'
 
-import clsx from 'clsx'
-import Text from '@/components/shared/text/Text'
+import Button from '@/components/shared/button/Button'
 import {
   PICTURE_STYLE_IDS,
   getPictureStyleMeta,
@@ -20,32 +19,29 @@ export default function PictureStyleToolbar({
           const active = pictureStyle === styleId
 
           return (
-            <button
+            <Button
               key={styleId}
               type="button"
-              onClick={() => onPictureStyleChange(styleId)}
+              variant="secondary"
+              shape="soft"
+              active={active}
               disabled={disabled}
-              className={clsx(
-                'flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left transition',
-                active
-                  ? 'border-primary/35 bg-primary/10'
-                  : 'border-white/10 bg-white/[0.03] hover:border-white/15',
-                disabled && 'cursor-not-allowed opacity-55 hover:border-white/10',
-              )}
+              fullWidth
+              onClick={() => onPictureStyleChange(styleId)}
+              className="justify-start gap-3 px-4 py-3 font-medium"
+              leftIcon={
+                <span
+                  aria-hidden
+                  className={
+                    active
+                      ? 'h-4 w-4 shrink-0 rounded-full border border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                      : 'h-4 w-4 shrink-0 rounded-full border border-white/40 bg-transparent'
+                  }
+                />
+              }
             >
-              <span
-                aria-hidden
-                className={clsx(
-                  'h-4 w-4 shrink-0 rounded-full border',
-                  active
-                    ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-                    : 'border-white/40 bg-transparent',
-                )}
-              />
-              <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
-                {meta.shortLabel}
-              </Text>
-            </button>
+              {meta.shortLabel}
+            </Button>
           )
         })}
       </div>

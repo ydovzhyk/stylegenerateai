@@ -32,6 +32,7 @@ import ReadyTemplateAutogeneratePanel from '@/components/ready-template/ReadyTem
 
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Photo from '@/components/shared/photo/Photo'
 import Select from '@/components/shared/select/Select'
 import Text from '@/components/shared/text/Text'
 import TemplatePreviewGenerator from '@/components/ready-template/TemplatePreviewGenerator'
@@ -641,12 +642,15 @@ export default function ReadyTemplateForm() {
             {previewSrc || appliedPreviewSrc ? (
               <div className="w-full">
                 <div className="overflow-hidden rounded-[22px] border border-white/10 bg-background-soft p-2 md:p-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={previewSrc || appliedPreviewSrc}
-                    alt={tPreviewAlt}
-                    className="mx-auto max-h-[240px] w-auto rounded-[18px] object-contain sm:max-h-[320px] md:max-h-[520px]"
-                  />
+                  <div className="relative mx-auto h-[240px] w-full sm:h-[320px] md:h-[520px]">
+                    <Photo
+                      src={previewSrc || appliedPreviewSrc}
+                      alt={tPreviewAlt}
+                      fill
+                      sizes="(max-width: 768px) 90vw, 560px"
+                      className="rounded-[18px] object-contain"
+                    />
+                  </div>
                 </div>
 
                 <Text

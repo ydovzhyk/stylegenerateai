@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useDispatch, useSelector } from 'react-redux'
 import clsx from 'clsx'
 import Button from '@/components/shared/button/Button'
+import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
 import { useTranslate } from '@/utils/translate/translate'
 import { logout } from '@/store/auth/auth-operations'
@@ -218,10 +219,11 @@ export default function HeaderUserMenu({ user }) {
       >
         <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-primary/15 text-sm font-semibold text-primary-soft shadow-violet-soft">
           {safeAvatar ? (
-            <img
+            <Photo
               src={safeAvatar}
               alt={safeName}
-              className="h-full w-full object-cover"
+              fill
+              sizes="32px"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
@@ -265,10 +267,11 @@ export default function HeaderUserMenu({ user }) {
         <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3">
           <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-primary/15 text-sm font-semibold text-primary-soft">
             {safeAvatar ? (
-              <img
+              <Photo
                 src={safeAvatar}
                 alt={safeName}
-                className="h-full w-full object-cover"
+                fill
+                sizes="48px"
                 referrerPolicy="no-referrer"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'

@@ -17,6 +17,8 @@ import RestoreStyleToolbar from '@/components/photo-lab/RestoreStyleToolbar'
 import PictureStyleToolbar from '@/components/photo-lab/PictureStyleToolbar'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Photo from '@/components/shared/photo/Photo'
+import { PHOTO_OVERLAY_TEXT_OUTLINE } from '@/components/shared/preview-badge/PreviewBadge'
 import Text from '@/components/shared/text/Text'
 import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restore-styles'
 import {
@@ -1003,11 +1005,13 @@ export default function AiImageWorkspace({
           <>
             {!useContain ? (
               <>
-                <img
+                <Photo
                   src={src}
                   alt=""
                   aria-hidden="true"
-                  className="absolute inset-0 h-full w-full scale-110 object-cover object-[center_18%] opacity-25 blur-2xl"
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 420px"
+                  className="scale-110 object-[center_18%] opacity-25 blur-2xl"
                 />
 
                 <div className="absolute inset-0 bg-black/20" />
@@ -1016,25 +1020,33 @@ export default function AiImageWorkspace({
 
             {useContain ? (
               imagePadding ? (
-                <div className="absolute inset-0 z-[1] flex items-center justify-center p-3">
-                  <img
-                    src={src}
-                    alt={alt}
-                    className="max-h-full max-w-full object-contain"
-                  />
+                <div className="absolute inset-0 z-[1] p-3">
+                  <div className="relative h-full w-full">
+                    <Photo
+                      src={src}
+                      alt={alt}
+                      fill
+                      sizes="(max-width: 1024px) 90vw, 420px"
+                      className="object-contain"
+                    />
+                  </div>
                 </div>
               ) : (
-                <img
+                <Photo
                   src={src}
                   alt={alt}
-                  className="absolute inset-0 z-[1] h-full w-full object-contain"
+                  fill
+                  sizes="(max-width: 1024px) 90vw, 420px"
+                  className="z-[1] object-contain"
                 />
               )
             ) : (
-              <img
+              <Photo
                 src={src}
                 alt={alt}
-                className="absolute inset-0 z-[1] h-full w-full object-cover object-[center_18%] transition duration-700 group-hover:scale-[1.018]"
+                fill
+                sizes="(max-width: 1024px) 90vw, 420px"
+                className="z-[1] object-[center_18%] transition duration-700 group-hover:scale-[1.018]"
               />
             )}
 
@@ -1053,7 +1065,13 @@ export default function AiImageWorkspace({
 
             <div className="absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
               {eyebrow ? (
-                <Text as="p" variant="caption" color="soft" caseMode="sentence">
+                <Text
+                  as="p"
+                  variant="caption"
+                  color="soft"
+                  caseMode="sentence"
+                  className={PHOTO_OVERLAY_TEXT_OUTLINE}
+                >
                   {eyebrow}
                 </Text>
               ) : null}
@@ -1063,7 +1081,7 @@ export default function AiImageWorkspace({
                 variant="body"
                 color="white"
                 translate={titleTranslate}
-                className="mt-1 line-clamp-1"
+                className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
               >
                 {title}
               </Text>
@@ -1074,7 +1092,7 @@ export default function AiImageWorkspace({
                   variant="caption"
                   color="muted"
                   caseMode="sentence"
-                  className="mt-1 line-clamp-1"
+                  className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
                 >
                   {description}
                 </Text>
@@ -1231,7 +1249,13 @@ export default function AiImageWorkspace({
           />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
-            <Text as="p" variant="caption" color="soft" caseMode="sentence">
+            <Text
+              as="p"
+              variant="caption"
+              color="soft"
+              caseMode="sentence"
+              className={PHOTO_OVERLAY_TEXT_OUTLINE}
+            >
               {selectionEyebrow}
             </Text>
 
@@ -1239,7 +1263,7 @@ export default function AiImageWorkspace({
               as="p"
               variant="body"
               color="white"
-              className="mt-1 line-clamp-1"
+              className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
             >
               {template.title}
             </Text>
@@ -1250,7 +1274,7 @@ export default function AiImageWorkspace({
                 variant="caption"
                 color="muted"
                 caseMode="sentence"
-                className="mt-1 line-clamp-1"
+                className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
               >
                 {template.category}
               </Text>
@@ -1486,14 +1510,20 @@ export default function AiImageWorkspace({
         overlay: isIdentityTransferMode && facePreview ? (
           <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[28%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4">
             <div className="relative aspect-[4/5] w-full">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Photo
                 src={facePreview}
                 alt="Photo with your face"
-                className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
+                fill
+                sizes="120px"
+                className="object-[center_18%]"
               />
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
-                <span className="block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85">
+                <span
+                  className={clsx(
+                    'block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85',
+                    PHOTO_OVERLAY_TEXT_OUTLINE,
+                  )}
+                >
                   Face
                 </span>
               </div>
@@ -1568,32 +1598,30 @@ export default function AiImageWorkspace({
       <div className="overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
         <div className="flex flex-col gap-2">
           {sources.map((source) => (
-            <button
+            <Button
               key={source.key}
               type="button"
-              onClick={source.onClick}
+              variant="secondary"
+              shape="soft"
+              active={source.uploaded}
               disabled={source.disabled}
-              className={clsx(
-                'flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left transition',
-                source.uploaded
-                  ? 'border-primary/35 bg-primary/10'
-                  : 'border-white/10 bg-white/[0.03] hover:border-white/15',
-                source.disabled && 'cursor-not-allowed opacity-55 hover:border-white/10',
-              )}
+              fullWidth
+              onClick={source.onClick}
+              className="justify-start gap-3 px-4 py-3 font-medium"
+              leftIcon={
+                <span
+                  aria-hidden
+                  className={clsx(
+                    'h-4 w-4 shrink-0 rounded-full border',
+                    source.uploaded
+                      ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                      : 'border-white/40 bg-transparent',
+                  )}
+                />
+              }
             >
-              <span
-                aria-hidden
-                className={clsx(
-                  'h-4 w-4 shrink-0 rounded-full border',
-                  source.uploaded
-                    ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-                    : 'border-white/40 bg-transparent',
-                )}
-              />
-              <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
-                {source.label}
-              </Text>
-            </button>
+              {source.label}
+            </Button>
           ))}
         </div>
 
@@ -1635,32 +1663,30 @@ export default function AiImageWorkspace({
       <div className="overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
         <div className="grid grid-cols-2 gap-2">
           {sources.map((source) => (
-            <button
+            <Button
               key={source.key}
               type="button"
-              onClick={source.onClick}
+              variant="secondary"
+              shape="soft"
+              active={source.uploaded}
               disabled={source.disabled}
-              className={clsx(
-                'flex w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 text-left transition',
-                source.uploaded
-                  ? 'border-primary/35 bg-primary/10'
-                  : 'border-white/10 bg-white/[0.03] hover:border-white/15',
-                source.disabled && 'cursor-not-allowed opacity-55 hover:border-white/10',
-              )}
+              fullWidth
+              onClick={source.onClick}
+              className="justify-start gap-3 px-4 py-3 font-medium"
+              leftIcon={
+                <span
+                  aria-hidden
+                  className={clsx(
+                    'h-4 w-4 shrink-0 rounded-full border',
+                    source.uploaded
+                      ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                      : 'border-white/40 bg-transparent',
+                  )}
+                />
+              }
             >
-              <span
-                aria-hidden
-                className={clsx(
-                  'h-4 w-4 shrink-0 rounded-full border',
-                  source.uploaded
-                    ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-                    : 'border-white/40 bg-transparent',
-                )}
-              />
-              <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
-                {source.label}
-              </Text>
-            </button>
+              {source.label}
+            </Button>
           ))}
         </div>
 
@@ -1740,7 +1766,13 @@ export default function AiImageWorkspace({
       />
 
       <div className="absolute inset-x-0 bottom-0 z-[2] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
-        <Text as="p" variant="caption" color="soft" caseMode="sentence">
+        <Text
+          as="p"
+          variant="caption"
+          color="soft"
+          caseMode="sentence"
+          className={PHOTO_OVERLAY_TEXT_OUTLINE}
+        >
           Uploaded photo
         </Text>
 
@@ -1749,7 +1781,7 @@ export default function AiImageWorkspace({
           variant="body"
           color="white"
           caseMode="sentence"
-          className="mt-1 line-clamp-1"
+          className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
           translate={false}
         >
           {clientFile?.name || 'Uploaded photo'}
