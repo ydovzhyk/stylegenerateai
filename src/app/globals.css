@@ -114,7 +114,10 @@
   --assistant-right: 1.25rem;
   --assistant-fab-size: 56px;
   --assistant-stack-gap: 0.75rem;
-  --assistant-panel-h: 80dvh;
+  /* svh = stable on mobile (doesn't jump when browser chrome shows/hides).
+     vh fallback for older browsers; dvh was intentionally avoided. */
+  --assistant-panel-h: 80vh;
+  --assistant-panel-h: 80svh;
 
   --radius-sm: 14px;
   --radius-md: 20px;

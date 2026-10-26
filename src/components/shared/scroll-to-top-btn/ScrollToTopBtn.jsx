@@ -3,9 +3,12 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import clsx from 'clsx'
+import { useSelector } from 'react-redux'
+import { getAssistantIsOpen } from '@/store/assistant/assistant-selectors'
 
 export default function ScrollToTopButton() {
   const [isVisible, setIsVisible] = useState(false)
+  const isAssistantOpen = useSelector(getAssistantIsOpen)
 
   useEffect(() => {
     const toggleVisibility = () => {
@@ -41,6 +44,9 @@ export default function ScrollToTopButton() {
         isVisible
           ? 'pointer-events-auto translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-3 opacity-0',
+        // Mobile chat panel covers the send control — hide scroll-to-top while open.
+        isAssistantOpen &&
+          'max-md:!pointer-events-none max-md:!translate-y-3 max-md:!opacity-0',
       )}
     >
       <span
