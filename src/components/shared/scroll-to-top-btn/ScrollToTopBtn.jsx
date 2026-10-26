@@ -36,8 +36,8 @@ export default function ScrollToTopButton() {
         'group fixed right-[var(--assistant-right)] z-[70] rounded-full p-[1px] transition-all duration-300 ease-out',
         'bg-[linear-gradient(135deg,rgba(124,92,255,0.95),rgba(0,213,255,0.8))]',
         'shadow-[0_10px_30px_rgba(124,92,255,0.28),0_0_24px_rgba(0,213,255,0.12)]',
-        // Stay above the assistant FAB; FAB no longer moves when the panel opens.
-        'bottom-[calc(var(--assistant-edge)+var(--assistant-fab-size)+var(--assistant-stack-gap))] md:bottom-[var(--assistant-edge)]',
+        // FAB sits mid-right; scroll-to-top stays at the bottom edge.
+        'bottom-[var(--assistant-edge)]',
         isVisible
           ? 'pointer-events-auto translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-3 opacity-0',

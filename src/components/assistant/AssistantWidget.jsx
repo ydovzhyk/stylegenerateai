@@ -1034,8 +1034,8 @@ export default function AssistantWidget() {
         <div
           className={clsx(
             'pointer-events-auto fixed right-[var(--assistant-right)] z-[70] w-max max-w-[min(16rem,calc(100vw-2rem))]',
-            'bottom-[calc(var(--assistant-edge)+var(--assistant-fab-size)+var(--assistant-stack-gap))]',
-            'md:bottom-[calc(50%+(var(--assistant-fab-size)/2)+var(--assistant-stack-gap))]',
+            // Sit just above the vertically centered FAB (anchored from bottom).
+            'bottom-[calc(50%+(var(--assistant-fab-size)/2)+var(--assistant-stack-gap))]',
           )}
         >
           <AssistantBubble text={proactive.text} onClick={openWithGreeting} />
@@ -1045,9 +1045,8 @@ export default function AssistantWidget() {
       <div
         className={clsx(
           'pointer-events-auto fixed right-[var(--assistant-right)] z-[70]',
-          // Mobile: always bottom-right (same open/close). Desktop: vertical center.
-          'bottom-[var(--assistant-edge)]',
-          'md:top-1/2 md:bottom-auto md:-translate-y-1/2',
+          // Vertical center on the right, same open/close. Anchored from bottom of the viewport.
+          'bottom-1/2 translate-y-1/2',
         )}
       >
         <button
