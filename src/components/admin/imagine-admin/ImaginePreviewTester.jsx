@@ -7,6 +7,7 @@ import clsx from 'clsx'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Select from '@/components/shared/select/Select'
 import Photo from '@/components/shared/photo/Photo'
 
 import { axiosGenerateImagine } from '@/services/api/imagine'
@@ -18,6 +19,7 @@ import {
 import { setImagineError } from '@/store/imagine/imagine-slice'
 import {
   IMAGINE_MODES,
+  PAINTING_CANVAS_PRESETS,
   PAINTING_TECHNIQUES,
   TATTOO_STYLES,
   WALLPAPER_PRESETS,
@@ -88,7 +90,9 @@ export default function ImaginePreviewTester() {
   const [tattooWidth, setTattooWidth] = useState('5')
   const [tattooHeight, setTattooHeight] = useState('10')
   const [tattooStyle, setTattooStyle] = useState('custom')
-  const [technique, setTechnique] = useState('described')
+  const [technique, setTechnique] = useState('original')
+  const [paintingWidth, setPaintingWidth] = useState('0')
+  const [paintingHeight, setPaintingHeight] = useState('0')
   const [referenceFile, setReferenceFile] = useState(null)
   const [placeFile, setPlaceFile] = useState(null)
   const [renovationFile, setRenovationFile] = useState(null)
@@ -134,10 +138,37 @@ export default function ImaginePreviewTester() {
           ? promptReady || Boolean(referenceFile)
           : promptReady
 
+  const paintingLookOptions = PAINTING_TECHNIQUES.map((item) => ({
+    value: item.id,
+    label: item.label,
+  }))
+  const selectedPaintingLook =
+    paintingLookOptions.find((option) => option.value === technique) || null
   const examplePrompt =
     prompt.trim() ||
     wallpaperScene ||
-    (homeStyleLabel ? `Style: ${homeStyleLabel}` : '')
+    (homeStyleLabel ? `Style: ${homeStyleLabel}` : '') ||
+    (selectedMode.id === 'painting' && selectedPaintingLook
+      ? `Look: ${selectedPaintingLook.label}`
+      : '')
+  const paintingCanvasOptions = PAINTING_CANVAS_PRESETS.map((item) => ({
+    value: item.id,
+    label: item.label,
+    width: item.width,
+    height: item.height,
+  }))
+  const selectedPaintingCanvas =
+    paintingCanvasOptions.find(
+      (option) =>
+        paintingWidth === String(option.width) &&
+        paintingHeight === String(option.height),
+    ) || null
+  const tattooStyleOptions = TATTOO_STYLES.map((item) => ({
+    value: item.id,
+    label: item.label,
+  }))
+  const selectedTattooStyle =
+    tattooStyleOptions.find((option) => option.value === tattooStyle) || null
 
   const queueCheck = (file) => {
     if (!file) return
@@ -210,6 +241,8 @@ export default function ImaginePreviewTester() {
 
     if (selectedMode.id === 'painting') {
       formData.append('technique', technique)
+      formData.append('width', paintingWidth)
+      formData.append('height', paintingHeight)
       if (referenceFile) formData.append('reference', referenceFile)
     }
 
@@ -274,7 +307,13 @@ export default function ImaginePreviewTester() {
       setError('Template title is required')
       return
     }
-    if (!examplePrompt) {
+    const canSaveHomeWithoutPrompt =
+      selectedMode.id === 'home' && Boolean(userPhoto)
+    if (
+      !examplePrompt &&
+      !(selectedMode.id === 'painting' && technique) &&
+      !canSaveHomeWithoutPrompt
+    ) {
       setError('A prompt example is required')
       return
     }
@@ -286,7 +325,13 @@ export default function ImaginePreviewTester() {
       const formData = new FormData()
       formData.append('mode', selectedMode.id)
       formData.append('title', title)
-      formData.append('prompt', examplePrompt)
+      formData.append('prompt', prompt.trim())
+      if (selectedMode.id === 'painting') {
+        formData.append('technique', technique)
+      }
+      if (selectedMode.id === 'home' && homeStyleLabel) {
+        formData.append('homeStyle', homeStyleLabel)
+      }
       formData.append('generatedImageUrl', resultPreview)
       if (userPhoto) formData.append('reference', userPhoto)
       if (selectedMode.id === 'home' && renovationFile) {
@@ -448,17 +493,21 @@ export default function ImaginePreviewTester() {
               >
                 Tattoo style
               </Text>
-              <div className="mb-3 grid grid-cols-2 gap-2">
-                {TATTOO_STYLES.map((style) => (
-                  <ChoiceButton
-                    key={style.id}
-                    active={tattooStyle === style.id}
-                    disabled={busy}
-                    onClick={() => setTattooStyle(style.id)}
-                  >
-                    {style.label}
-                  </ChoiceButton>
-                ))}
+              <div className="mb-3">
+                <Select
+                  id="admin-tattoo-style"
+                  options={tattooStyleOptions}
+                  value={selectedTattooStyle}
+                  onChange={(option) => {
+                    if (!option?.value) return
+                    setTattooStyle(option.value)
+                  }}
+                  isDisabled={busy}
+                  isSearchable={false}
+                  isClearable={false}
+                  placeholder="Select style"
+                  hideHelp
+                />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <SizeField
@@ -490,19 +539,78 @@ export default function ImaginePreviewTester() {
                 caseMode="sentence"
                 className="mb-3 uppercase tracking-[0.18em]"
               >
-                Technique
+                Look
+              </Text>
+              <div className="mb-3">
+                <Select
+                  id="admin-painting-look"
+                  options={paintingLookOptions}
+                  value={selectedPaintingLook}
+                  onChange={(option) => {
+                    if (!option?.value) return
+                    setTechnique(option.value)
+                  }}
+                  isDisabled={busy}
+                  isSearchable={false}
+                  isClearable={false}
+                  placeholder="Select look"
+                  hideHelp
+                />
+              </div>
+              <Text
+                as="p"
+                variant="caption"
+                color="faint"
+                caseMode="sentence"
+                className="mb-3 uppercase tracking-[0.18em]"
+              >
+                Canvas size
+              </Text>
+              <div className="mb-3">
+                <Select
+                  id="admin-painting-canvas"
+                  options={paintingCanvasOptions}
+                  value={selectedPaintingCanvas}
+                  onChange={(option) => {
+                    if (!option) return
+                    setPaintingWidth(String(option.width ?? 0))
+                    setPaintingHeight(String(option.height ?? 0))
+                  }}
+                  isDisabled={busy}
+                  isSearchable={false}
+                  isClearable={false}
+                  placeholder="Custom size"
+                  hideHelp
+                />
+              </div>
+              <Text
+                as="p"
+                variant="caption"
+                color="faint"
+                caseMode="sentence"
+                className="mb-3"
+              >
+                Auto leaves both at 0. A reference photo keeps its proportions; a
+                named famous painting uses that work’s; otherwise 1024×1024
+                square.
               </Text>
               <div className="grid grid-cols-2 gap-2">
-                {PAINTING_TECHNIQUES.map((item) => (
-                  <ChoiceButton
-                    key={item.id}
-                    active={technique === item.id}
-                    disabled={busy}
-                    onClick={() => setTechnique(item.id)}
-                  >
-                    {item.label}
-                  </ChoiceButton>
-                ))}
+                <SizeField
+                  id="admin-painting-width"
+                  label="Width"
+                  value={paintingWidth}
+                  suffix="px"
+                  disabled={busy}
+                  onChange={setPaintingWidth}
+                />
+                <SizeField
+                  id="admin-painting-height"
+                  label="Height"
+                  value={paintingHeight}
+                  suffix="px"
+                  disabled={busy}
+                  onChange={setPaintingHeight}
+                />
               </div>
             </div>
           ) : null}

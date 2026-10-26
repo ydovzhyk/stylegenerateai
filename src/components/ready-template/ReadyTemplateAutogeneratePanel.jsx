@@ -265,7 +265,7 @@ export default function ReadyTemplateAutogeneratePanel() {
 
             <div className="rounded-2xl border border-white/10 bg-background-soft/80 p-4">
               <Text as="p" variant="caption" color="muted" caseMode="sentence">
-                Available range: 1–{totalCategories || 0}
+                Available range: 1-{totalCategories || 0}
               </Text>
 
               {selectedStartLabel ? (

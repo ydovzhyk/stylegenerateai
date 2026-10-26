@@ -6,7 +6,9 @@ export const IMAGINE_MODES = [
     title: 'Wallpaper',
     label: 'Phone or computer',
     description:
-      'Pick Computer or Phone, or type a size. Leave the prompt empty for a surprise scene. The image fills the frame.',
+      'Create a wallpaper for your phone or computer - from a short idea or a photo.',
+    workspaceHint:
+      'Pick a screen size, add a prompt or leave it empty for a surprise, optional photo.',
     icon: ImageIcon,
     accent: 'from-sky-300/25 to-primary/25',
     promptPlaceholder:
@@ -17,7 +19,9 @@ export const IMAGINE_MODES = [
     title: 'Tattoo',
     label: 'Sketch for your artist',
     description:
-      'Describe a tattoo sketch and set the print size in centimeters. The result is a clean design to hand to a tattoo artist.',
+      'Get a clean sketch to hand to your tattoo artist, with size in centimeters.',
+    workspaceHint:
+      'Choose a style and size in cm, describe the idea, optional reference photo.',
     icon: PenLine,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder: 'Example: a small wolf under a thin crescent moon.',
@@ -27,7 +31,9 @@ export const IMAGINE_MODES = [
     title: 'Home',
     label: 'House, yard, or room',
     description:
-      'Upload your place. Add a design example when you already know the look. Leave the prompt empty for a surprise style.',
+      'Create a new look for your house or room from a photo of the place.',
+    workspaceHint:
+      'Upload a photo of your place. A design example and prompt are optional.',
     icon: House,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
@@ -36,13 +42,15 @@ export const IMAGINE_MODES = [
   {
     id: 'painting',
     title: 'Painting',
-    label: 'A technique, a subject',
+    label: 'Any scene, any artist look',
     description:
-      'Ask for your own scene or a known painting. Add a photo to paint that subject in the chosen technique.',
+      'Paint your own scene, a famous work, or a photo - in oil, pencil, gouache, and more.',
+    workspaceHint:
+      'Choose a look and canvas size, then add a prompt and/or photo.',
     icon: Palette,
     accent: 'from-violet-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: a storm over the sea, or name a known painting.',
+      'Example: a storm over the sea, or Starry Night, or in the style of Monet.',
   },
 ]
 
@@ -88,10 +96,16 @@ export const TATTOO_REFERENCE_PROMPT_EXAMPLE =
   'Example: Make this same subject a clean sketch.'
 
 export const PAINTING_TECHNIQUES = [
-  { id: 'described', label: 'As described' },
-  { id: 'cubism', label: 'Cubism' },
-  { id: 'impressionism', label: 'Impressionism' },
+  { id: 'original', label: 'As original' },
+  { id: 'photo', label: 'As photo' },
   { id: 'oil', label: 'Oil' },
-  { id: 'watercolor', label: 'Watercolor' },
-  { id: 'expressionism', label: 'Expressionism' },
+  { id: 'pencil', label: 'Pencil' },
+  { id: 'gouache', label: 'Gouache' },
+]
+
+export const PAINTING_CANVAS_PRESETS = [
+  { id: 'auto', label: 'Auto', width: 0, height: 0 },
+  { id: 'square', label: 'Square', width: 1024, height: 1024 },
+  { id: 'landscape', label: 'Landscape', width: 1536, height: 1024 },
+  { id: 'portrait', label: 'Portrait', width: 1024, height: 1536 },
 ]

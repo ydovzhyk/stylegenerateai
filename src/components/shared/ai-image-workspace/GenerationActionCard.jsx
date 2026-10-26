@@ -54,7 +54,7 @@ export default function GenerationActionCard({
   buttonGenerating = 'Generating...',
   buttonDownload = 'Download',
   buttonDownloadProcessing = 'Processing…',
-  printExportProcessingHint = "We're preparing your file format. Please wait — this may take a little while.",
+  printExportProcessingHint = "We're preparing your file format. Please wait - this may take a little while.",
   creditCost = null,
   printExportProcessing = false,
   printExportProgress = null,

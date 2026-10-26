@@ -739,7 +739,7 @@ export default function ReadyTemplateForm() {
             label="Template title"
             type="text"
             placeholder="Avatar Style Portrait"
-            hint="2–80 characters."
+            hint="2-80 characters."
             required
             caseMode="sentence"
             {...register('title', {

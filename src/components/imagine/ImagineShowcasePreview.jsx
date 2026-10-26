@@ -14,7 +14,7 @@ import PreviewBadge, {
   PHOTO_OVERLAY_TEXT_OUTLINE,
 } from '@/components/shared/preview-badge/PreviewBadge'
 import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
-import { IMAGINE_MODES } from '@/constants/imagine'
+import { IMAGINE_MODES, PAINTING_TECHNIQUES } from '@/constants/imagine'
 import { useTranslate } from '@/utils/translate/translate'
 import {
   collectRotationPreloadUrls,
@@ -58,6 +58,31 @@ function useRotatingIndex(length, delay, resetKey) {
   return [index, setIndex]
 }
 
+function getPaintingLookLabel(techniqueId = '') {
+  const id = String(techniqueId || '').trim()
+  if (!id) return ''
+  return PAINTING_TECHNIQUES.find((item) => item.id === id)?.label || ''
+}
+
+function buildDisplayPrompt({
+  templatePrompt = '',
+  techniqueId = '',
+  homeStyle = '',
+  fallback = '',
+} = {}) {
+  const prompt = String(templatePrompt || '').trim()
+  const lookLabel = getPaintingLookLabel(techniqueId)
+  const lookLine = lookLabel ? `Look: ${lookLabel}` : ''
+  const styleLine = String(homeStyle || '').trim()
+    ? `Style: ${String(homeStyle).trim()}`
+    : ''
+
+  return (
+    [lookLine, styleLine, prompt].filter(Boolean).join('\n') ||
+    String(fallback || '').trim()
+  )
+}
+
 function mapTemplate(template) {
   const modeId = String(template?.mode || '').trim()
 
@@ -67,6 +92,8 @@ function mapTemplate(template) {
     modeId,
     title: String(template?.title || '').trim(),
     prompt: String(template?.prompt || '').trim(),
+    technique: String(template?.technique || '').trim(),
+    homeStyle: String(template?.homeStyle || '').trim(),
     afterSrc: String(template?.resultImageUrl || '').trim(),
     faceSrc: String(template?.referenceImageUrl || '').trim(),
     exampleSrc: String(template?.exampleImageUrl || '').trim(),
@@ -195,14 +222,26 @@ function SourceCard({
           />
         ) : null}
         {hasCopy ? (
-          <div className="absolute left-3 right-3 top-3 z-[3] max-h-[42%] overflow-y-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2.5 backdrop-blur-md">
+          <div
+            className={clsx(
+              'absolute z-[3] overflow-y-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2.5 backdrop-blur-md',
+              hasImage
+                ? // Reference photo: keep top panel + scroll, ~15% shorter than before (42% → 35.7%)
+                  'left-3 right-3 top-3 max-h-[35.7%]'
+                : // No reference: fill card with equal inset on all sides
+                  'inset-3',
+            )}
+          >
             {title ? (
               <Text
                 as="p"
                 variant="body-sm"
                 color="white"
                 translate={false}
-                className="line-clamp-2 font-medium"
+                className={clsx(
+                  'font-medium',
+                  hasImage ? 'line-clamp-2' : 'line-clamp-4',
+                )}
               >
                 {title}
               </Text>
@@ -346,9 +385,15 @@ export default function ImagineShowcasePreview() {
     IMAGINE_MODES.find((mode) => mode.id === highlightedModeId) ||
     IMAGINE_MODES[0]
 
-  const displayPrompt =
-    activeItem?.prompt ||
-    String(activeMode.promptPlaceholder || '').replace(/^Example:\s*/i, '')
+  const displayPrompt = buildDisplayPrompt({
+    templatePrompt: activeItem?.prompt,
+    techniqueId: activeItem?.technique,
+    homeStyle: activeItem?.homeStyle,
+    fallback: String(activeMode.promptPlaceholder || '').replace(
+      /^Example:\s*/i,
+      '',
+    ),
+  })
 
   useEffect(() => {
     if (loadedRef.current) return

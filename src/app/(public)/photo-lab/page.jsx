@@ -244,9 +244,9 @@ export default function PhotoLabPage() {
 
           >
 
-            Select the tool you need — portrait, restore, enhance, object
+            Select the tool you need - portrait, restore, enhance, object
 
-            removal, or smart edit — upload your image, and generate a cleaner,
+            removal, or smart edit - upload your image, and generate a cleaner,
 
             sharper, more polished result in just a few clicks.
 

@@ -324,7 +324,7 @@ export default function SettingsPage() {
                     type="text"
                     autoComplete="name"
                     placeholder="Your name"
-                    hint="2–25 characters."
+                    hint="2-25 characters."
                     required
                     caseMode="sentence"
                     {...register('name', {

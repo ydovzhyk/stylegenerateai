@@ -9,7 +9,7 @@ export const PHOTO_QUALITIES = {
     id: 'standard',
     label: 'Standard',
     description:
-      'Everyday download at your photo size — balanced file weight and clarity.',
+      'Everyday download at your photo size - balanced file weight and clarity.',
   },
 
   premium: {

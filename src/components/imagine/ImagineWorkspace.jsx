@@ -8,6 +8,7 @@ import { ImagePlus, Maximize2, Sparkles } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
+import Select from '@/components/shared/select/Select'
 import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import InfoHint from '@/components/shared/info-hint/InfoHint'
@@ -24,6 +25,7 @@ import { getGenerationUsage } from '@/store/generation-usage/generation-usage-op
 import { queueAssistantNotice } from '@/store/assistant/assistant-slice'
 import { axiosGenerateImagine } from '@/services/api/imagine'
 import {
+  PAINTING_CANVAS_PRESETS,
   PAINTING_TECHNIQUES,
   TATTOO_REFERENCE_PROMPT_EXAMPLE,
   TATTOO_STYLES,
@@ -168,7 +170,10 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
   const [tattooWidth, setTattooWidth] = useState('5')
   const [tattooHeight, setTattooHeight] = useState('10')
   const [tattooStyle, setTattooStyle] = useState('custom')
-  const [technique, setTechnique] = useState('described')
+  const [technique, setTechnique] = useState('original')
+  const [paintingWidth, setPaintingWidth] = useState('0')
+  const [paintingHeight, setPaintingHeight] = useState('0')
+  const [paintingCanvasLabel, setPaintingCanvasLabel] = useState('')
   const [referenceFile, setReferenceFile] = useState(null)
   const [placeFile, setPlaceFile] = useState(null)
   const [renovationFile, setRenovationFile] = useState(null)
@@ -279,6 +284,8 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
 
     if (mode.id === 'painting') {
       formData.append('technique', technique)
+      formData.append('width', paintingWidth)
+      formData.append('height', paintingHeight)
       if (referenceFile) formData.append('reference', referenceFile)
     }
 
@@ -302,6 +309,8 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
       )
       const screen =
         data?.wallpaperScreen || data?.resultPayload?.wallpaperScreen || null
+      const paintingCanvas =
+        data?.paintingCanvas || data?.resultPayload?.paintingCanvas || null
       const output = data?.output || data?.resultPayload?.output || null
       if (screen?.width && screen?.height) {
         setWallpaperWidth(String(screen.width))
@@ -311,10 +320,21 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
             ? `${screen.device} · ${screen.width}×${screen.height}`
             : `${screen.width}×${screen.height}`,
         )
-      } else if (output?.width && output?.height) {
+      } else if (mode.id === 'wallpaper' && output?.width && output?.height) {
         setWallpaperScreenLabel(`${output.width}×${output.height}`)
       } else {
         setWallpaperScreenLabel('')
+      }
+      if (paintingCanvas?.width && paintingCanvas?.height) {
+        setPaintingCanvasLabel(
+          paintingCanvas.label
+            ? `${paintingCanvas.label} · ${paintingCanvas.width}×${paintingCanvas.height}`
+            : `${paintingCanvas.width}×${paintingCanvas.height}`,
+        )
+      } else if (mode.id === 'painting' && output?.width && output?.height) {
+        setPaintingCanvasLabel(`${output.width}×${output.height}`)
+      } else {
+        setPaintingCanvasLabel('')
       }
       dispatch(getGenerationUsage())
     } catch (generateError) {
@@ -372,9 +392,34 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
     homeStyleLabel ? `Style: ${homeStyleLabel}` : '',
     wallpaperThemeLabel ? `Theme: ${wallpaperThemeLabel}` : '',
     wallpaperScreenLabel ? `Screen: ${wallpaperScreenLabel}` : '',
+    paintingCanvasLabel ? `Canvas: ${paintingCanvasLabel}` : '',
   ]
     .filter(Boolean)
     .join(' · ')
+  const paintingLookOptions = PAINTING_TECHNIQUES.map((item) => ({
+    value: item.id,
+    label: item.label,
+  }))
+  const selectedPaintingLook =
+    paintingLookOptions.find((option) => option.value === technique) || null
+  const paintingCanvasOptions = PAINTING_CANVAS_PRESETS.map((item) => ({
+    value: item.id,
+    label: item.label,
+    width: item.width,
+    height: item.height,
+  }))
+  const selectedPaintingCanvas =
+    paintingCanvasOptions.find(
+      (option) =>
+        paintingWidth === String(option.width) &&
+        paintingHeight === String(option.height),
+    ) || null
+  const tattooStyleOptions = TATTOO_STYLES.map((item) => ({
+    value: item.id,
+    label: item.label,
+  }))
+  const selectedTattooStyle =
+    tattooStyleOptions.find((option) => option.value === tattooStyle) || null
 
   const pickPrimaryPhoto = () => {
     if (isHome) placeInputRef.current?.click()
@@ -401,7 +446,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
           Generate an idea
         </Text>
         <Text className="mt-3 max-w-2xl" color="muted" caseMode="sentence">
-          {mode.description}
+          {mode.workspaceHint || mode.description}
         </Text>
       </div>
 
@@ -422,7 +467,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                     align="end"
                   />
                 </div>
-                {/* top-3 + Info(14px) + top-3 — clears the absolute hint, mirrors edge inset below */}
+                {/* top-3 + Info(14px) + top-3 - clears the absolute hint, mirrors edge inset below */}
                 <div className="mt-[calc(0.75rem+14px+0.75rem)] grid grid-cols-2 gap-2">
                   <SourceButton
                     label="Your place"
@@ -500,15 +545,20 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
                     align="end"
                   />
                 </div>
-                <ChoiceGrid
-                  items={TATTOO_STYLES}
-                  activeId={tattooStyle}
-                  disabled={isGenerating}
-                  onSelect={setTattooStyle}
+                <Select
+                  id="tattoo-style"
+                  options={tattooStyleOptions}
+                  value={selectedTattooStyle}
+                  onChange={(option) => {
+                    if (!option?.value) return
+                    setTattooStyle(option.value)
+                  }}
+                  isDisabled={isGenerating}
+                  isSearchable={false}
+                  isClearable={false}
+                  placeholder="Select style"
+                  hideHelp
                 />
-                <Text as="p" variant="body" color="white" caseMode="sentence">
-                  Print size
-                </Text>
                 <div className="grid grid-cols-2 gap-2">
                   <SizeField
                     id="tattoo-width"
@@ -530,15 +580,71 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
 
             {mode.id === 'painting' ? (
               <div className="flex flex-col gap-3">
-                <Text as="p" variant="body" color="white" caseMode="sentence">
-                  Technique
-                </Text>
-                <ChoiceGrid
-                  items={PAINTING_TECHNIQUES}
-                  activeId={technique}
-                  disabled={isGenerating}
-                  onSelect={setTechnique}
+                <div className="flex items-center justify-between gap-3">
+                  <Text as="p" variant="body" color="white" caseMode="sentence">
+                    Look
+                  </Text>
+                  <InfoHint
+                    text="As original, as a photo, or as oil, pencil, or gouache. Name a painting or artist in the prompt, or upload a reference photo."
+                    label="Look hint"
+                    align="end"
+                  />
+                </div>
+                <Select
+                  id="painting-look"
+                  options={paintingLookOptions}
+                  value={selectedPaintingLook}
+                  onChange={(option) => {
+                    if (!option?.value) return
+                    setTechnique(option.value)
+                  }}
+                  isDisabled={isGenerating}
+                  isSearchable={false}
+                  isClearable={false}
+                  placeholder="Select look"
+                  hideHelp
                 />
+                <div className="flex items-center justify-between gap-3">
+                  <Text as="p" variant="body" color="white" caseMode="sentence">
+                    Canvas size
+                  </Text>
+                  <InfoHint
+                    text="Auto leaves both sizes at 0. A reference photo keeps its proportions. A named famous painting uses that work’s natural proportions. Otherwise the canvas is 1024×1024 square."
+                    label="Canvas size hint"
+                    align="end"
+                  />
+                </div>
+                <Select
+                  id="painting-canvas"
+                  options={paintingCanvasOptions}
+                  value={selectedPaintingCanvas}
+                  onChange={(option) => {
+                    if (!option) return
+                    setPaintingWidth(String(option.width ?? 0))
+                    setPaintingHeight(String(option.height ?? 0))
+                  }}
+                  isDisabled={isGenerating}
+                  isSearchable={false}
+                  isClearable={false}
+                  placeholder="Custom size"
+                  hideHelp
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <SizeField
+                    id="painting-width"
+                    label="Width"
+                    value={paintingWidth}
+                    suffix="px"
+                    onChange={setPaintingWidth}
+                  />
+                  <SizeField
+                    id="painting-height"
+                    label="Height"
+                    value={paintingHeight}
+                    suffix="px"
+                    onChange={setPaintingHeight}
+                  />
+                </div>
               </div>
             ) : null}
           </div>

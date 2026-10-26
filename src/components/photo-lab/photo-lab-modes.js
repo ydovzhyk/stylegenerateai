@@ -15,7 +15,7 @@ export const PHOTO_LAB_MODES = [
     title: 'Professional Portrait',
     label: 'LinkedIn / CV photo',
     description:
-      'Turn a casual photo into a LinkedIn-ready headshot — same person, professional outfit, and a modern office look.',
+      'Turn a casual photo into a LinkedIn-ready headshot - same person, professional outfit, and a modern office look.',
     icon: BriefcaseBusiness,
     accent: 'from-primary/30 to-cyan-400/20',
     promptPlaceholder:
@@ -27,7 +27,7 @@ export const PHOTO_LAB_MODES = [
     title: 'Restore & Colorize',
     label: 'Old photo repair',
     description:
-      'Bring old photos back — repair damage and fading, and optionally add natural color. Same photo, clearer memory.',
+      'Bring old photos back - repair damage and fading, and optionally add natural color. Same photo, clearer memory.',
     icon: Sparkles,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
@@ -45,14 +45,14 @@ export const PHOTO_LAB_MODES = [
     promptPlaceholder:
       'Example: put the hoodie from Detail 1 on me, and place the camera from Detail 2 on the table.',
     uploadHint:
-      'Upload the Main photo first, then Detail 1–5 if the edit needs them.',
+      'Upload the Main photo first, then Detail 1-5 if the edit needs them.',
   },
   {
     id: 'identity_transfer',
     title: 'Identity Transfer',
     label: 'Same shot, your face',
     description:
-      'Keep a reference photo 1:1 — pose, clothes, and scene stay the same — and put your face into it.',
+      'Keep a reference photo 1:1 - pose, clothes, and scene stay the same - and put your face into it.',
     icon: UserRound,
     accent: 'from-violet-400/20 to-primary/25',
     promptPlaceholder:
@@ -65,7 +65,7 @@ export const PHOTO_LAB_MODES = [
     title: 'Remove Objects',
     label: 'Clean distractions',
     description:
-      'Remove unwanted people, objects, or clutter — same photo, everything else stays as it was.',
+      'Remove unwanted people, objects, or clutter - same photo, everything else stays as it was.',
     icon: Eraser,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
@@ -78,7 +78,7 @@ export const PHOTO_LAB_MODES = [
     title: 'Enhance Quality',
     label: 'Sharper & clearer',
     description:
-      'Make soft, noisy, or hazy photos sharper and clearer — same shot, same person, same scene.',
+      'Make soft, noisy, or hazy photos sharper and clearer - same shot, same person, same scene.',
     icon: ImagePlus,
     accent: 'from-emerald-300/20 to-cyan-400/20',
     promptPlaceholder:
@@ -90,7 +90,7 @@ export const PHOTO_LAB_MODES = [
     title: 'Creative Retouch',
     label: 'Instagram polish',
     description:
-      'Keep the same photo — cleaner skin, even tone, and a premium Instagram-ready finish.',
+      'Keep the same photo - cleaner skin, even tone, and a premium Instagram-ready finish.',
     icon: Paintbrush,
     accent: 'from-fuchsia-400/20 to-primary/25',
     promptPlaceholder:

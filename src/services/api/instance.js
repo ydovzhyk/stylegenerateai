@@ -31,7 +31,7 @@ function isFormData(data) {
   return typeof FormData !== 'undefined' && data instanceof FormData
 }
 
-// Дістаємо ключі FormData (файли не логимо повністю — лише метадані)
+// Дістаємо ключі FormData (файли не логимо повністю - лише метадані)
 function dumpFormData(fd) {
   const out = []
   try {
@@ -128,7 +128,7 @@ export function setupInterceptors(store) {
       const originalRequest = error?.config
       const response = error?.response
 
-      // Якщо axios не дав response/config — це мережа/блок/відміна
+      // Якщо axios не дав response/config - це мережа/блок/відміна
       if (!originalRequest) {
         reportAxiosFailure(error)
         return Promise.reject(error)
@@ -147,7 +147,7 @@ export function setupInterceptors(store) {
         respMessage: response?.data?.message,
       })
 
-      // Якщо немає response — це не 401/403, а щось типу CORS/Network Error
+      // Якщо немає response - це не 401/403, а щось типу CORS/Network Error
       if (!response) {
         reportAxiosFailure(error)
         return Promise.reject(error)
@@ -160,7 +160,7 @@ export function setupInterceptors(store) {
       const isRefreshReq = url.includes('/auth/refresh')
       const isCurrentReq = url.includes('/auth/current')
 
-      // 1) Якщо refresh впав — чистимо стейт
+      // 1) Якщо refresh впав - чистимо стейт
       // (тут важливо зрозуміти, що це "кінцева" точка)
       if (isRefreshReq) {
         if (AXIOS_DEBUG)

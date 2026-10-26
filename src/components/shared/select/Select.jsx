@@ -24,7 +24,7 @@ function DropdownIndicator(props) {
 }
 
 /** Close only on page/document scroll. Do not close on nested scrollers
- * (e.g. create-your-look rail auto-scroll) — that opened-and-closed instantly. */
+ * (e.g. create-your-look rail auto-scroll) - that opened-and-closed instantly. */
 function shouldCloseMenuOnScroll(event) {
   const target = event?.target
   if (!(target instanceof Element)) return true
@@ -66,7 +66,7 @@ export default function Select({
   const showErrorState = Boolean(error) && !isActive
 
   // Wheel often scrolls the page under a short menu without a documentElement
-  // scroll target react-select recognizes — close on wheel outside a scrollable list.
+  // scroll target react-select recognizes - close on wheel outside a scrollable list.
   useEffect(() => {
     if (!menuIsOpen) return undefined
 

@@ -63,15 +63,8 @@ function mapPreviewItem(item) {
 }
 
 function buildMobileSequence(manItems = [], womanItems = []) {
-  const result = []
-  const maxLen = Math.max(manItems.length, womanItems.length)
-
-  for (let i = 0; i < maxLen; i += 1) {
-    if (manItems[i]) result.push(manItems[i])
-    if (womanItems[i]) result.push(womanItems[i])
-  }
-
-  return result
+  // Same as Imagine / Photo Lab: finish one group, then the next (not interleaved).
+  return [...manItems, ...womanItems]
 }
 
 function getAccentClasses(accent = 'primary') {
@@ -204,7 +197,7 @@ function PreviewPair({
                 onOpenPreview({
                   src: item.beforeSrc,
                   alt: `${item.title} ${beforeAltText}`,
-                  title: `${item.title} — ${beforeText}`,
+                  title: `${item.title} - ${beforeText}`,
                 })
             : undefined
         }
@@ -223,7 +216,7 @@ function PreviewPair({
                 onOpenPreview({
                   src: item.afterSrc,
                   alt: `${item.title} ${afterAltText}`,
-                  title: `${item.title} — ${afterText}`,
+                  title: `${item.title} - ${afterText}`,
                 })
             : undefined
         }

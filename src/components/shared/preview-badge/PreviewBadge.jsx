@@ -30,8 +30,8 @@ function ShineSweep() {
 
 /**
  * Shared preview / rail badge.
- * @param {'overlay'|'header'} variant — on-photo pill vs pair header chip
- * @param {'neutral'|'primary'|'cyan'} tone — border accent only (label is always white)
+ * @param {'overlay'|'header'} variant - on-photo pill vs pair header chip
+ * @param {'neutral'|'primary'|'cyan'} tone - border accent only (label is always white)
  */
 export default function PreviewBadge({
   children,

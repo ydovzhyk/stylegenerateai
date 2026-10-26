@@ -36,14 +36,14 @@ const SHOWCASE_MODE_ITEMS = [
     chipLabel: 'Professional look',
     title: 'Professional portrait',
     description:
-      'Same you in a clean business look — professional outfit and a modern office setting.',
+      'Same you in a clean business look - professional outfit and a modern office setting.',
   },
   {
     id: 'restore_colorize',
     chipLabel: 'Restored photo',
     title: 'Restore family memories',
     description:
-      'Repair damage and fading — keep the original look, or add natural color.',
+      'Repair damage and fading - keep the original look, or add natural color.',
   },
   {
     id: 'smart_edit',
@@ -56,21 +56,21 @@ const SHOWCASE_MODE_ITEMS = [
     chipLabel: 'With your face',
     title: 'Same shot, your face',
     description:
-      'Keep the reference pose, clothes, and scene — transfer your face into that photo.',
+      'Keep the reference pose, clothes, and scene - transfer your face into that photo.',
   },
   {
     id: 'remove_objects',
     chipLabel: 'Clean photo',
     title: 'Remove unwanted objects',
     description:
-      'Clear out distractions — keep the rest of the shot exactly as it was.',
+      'Clear out distractions - keep the rest of the shot exactly as it was.',
   },
   {
     id: 'enhance_quality',
     chipLabel: 'Enhanced photo',
     title: 'Sharper photo quality',
     description:
-      'Recover detail and cut haze or compression — same photo, easier to read.',
+      'Recover detail and cut haze or compression - same photo, easier to read.',
   },
   {
     id: 'creative_retouch',
@@ -120,17 +120,12 @@ function mapTemplateToShowcaseItem(template) {
 }
 
 function buildAutoShowcaseItems(templatesByMode = {}) {
-  const items = []
-
-  PHOTO_LAB_MODES.forEach((mode) => {
-    const modeTemplates = templatesByMode[mode.id] || []
-
-    modeTemplates.forEach((template) => {
-      items.push(mapTemplateToShowcaseItem(template))
-    })
-  })
-
-  return items
+  // Mode order matches showcase chips: all of mode A, then all of mode B, …
+  return SHOWCASE_MODE_ITEMS.flatMap((modeItem) =>
+    (templatesByMode[modeItem.id] || []).map((template) =>
+      mapTemplateToShowcaseItem(template),
+    ),
+  )
 }
 
 function buildPinnedShowcaseItems(templatesByMode = {}, modeId = '') {
@@ -311,7 +306,7 @@ function PreviewPair({
                 onOpenPreview({
                   src: item.beforeSrc,
                   alt: `${item.title} ${beforeAltText}`,
-                  title: `${item.title} — ${beforeLabel}`,
+                  title: `${item.title} - ${beforeLabel}`,
                 })
             : undefined
         }
@@ -331,7 +326,7 @@ function PreviewPair({
                 onOpenPreview({
                   src: item.afterSrc,
                   alt: `${item.title} ${afterAltText}`,
-                  title: `${item.title} — ${afterLabel}`,
+                  title: `${item.title} - ${afterLabel}`,
                 })
             : undefined
         }

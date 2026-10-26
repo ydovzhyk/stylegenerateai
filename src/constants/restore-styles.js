@@ -8,7 +8,7 @@ export const RESTORE_STYLE_META = {
   restore_only: {
     label: 'Restore only',
     shortLabel: 'Restore only',
-    description: 'Repair damage and improve clarity — keep the original tones.',
+    description: 'Repair damage and improve clarity - keep the original tones.',
     modalDescription:
       'Fix scratches, stains, and fading while keeping black-and-white, sepia, or faded color as it was.',
   },

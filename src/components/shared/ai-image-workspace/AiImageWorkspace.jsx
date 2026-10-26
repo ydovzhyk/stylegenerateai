@@ -1142,7 +1142,7 @@ export default function AiImageWorkspace({
     : template?.promptHint || promptHint
 
   const resolvedWorkspaceDescription = isRemoveObjectsMode
-    ? 'Upload your photo, paint a mask, describe what to remove, or both — then generate.'
+    ? 'Upload your photo, paint a mask, describe what to remove, or both - then generate.'
     : isEnhanceQualityMode
       ? 'Upload your photo, choose likeness and export size, then generate a cleaner version of the same photo.'
       : isPhotoStylesMode
@@ -1150,7 +1150,7 @@ export default function AiImageWorkspace({
         : isSmartEditMode
           ? 'Upload the Main photo, add Detail photos if the edit needs them, describe the change, then generate.'
           : isIdentityTransferMode
-          ? 'Upload a Reference photo, then a Photo with your face — keep the shot, transfer your identity.'
+          ? 'Upload a Reference photo, then a Photo with your face - keep the shot, transfer your identity.'
           : workspaceDescription
 
   const reviewFiles = uploadsForModeration()
@@ -1562,9 +1562,9 @@ export default function AiImageWorkspace({
             className="mt-2 max-w-[230px]"
           >
             {isIdentityTransferMode
-              ? 'Use the buttons above — Reference photo first, then Face photo.'
+              ? 'Use the buttons above - Reference photo first, then Face photo.'
               : isSmartEditMode
-                ? 'Use the buttons above — Main photo first, then Detail 1 and the rest if you need them.'
+                ? 'Use the buttons above - Main photo first, then Detail 1 and the rest if you need them.'
                 : isPhotoStylesMode
                   ? 'Use the buttons above to pick a style, then upload this photo.'
                   : 'Choose a clear portrait photo for the best result.'}

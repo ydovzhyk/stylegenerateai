@@ -19,7 +19,7 @@ const languages = {
     { lang: 'Czech', code: 'cs', ui: 'CS', flag: 'images/flags/cz.svg' },
     { lang: 'Danish', code: 'da', ui: 'DA', flag: 'images/flags/dk.svg' },
     { lang: 'Dutch', code: 'nl', ui: 'NL', flag: 'images/flags/nl.svg' },
-    { lang: 'Esperanto', code: 'eo', ui: 'EO', flag: 'images/flags/eu.svg' }, // якщо нема — заміниш/видалиш
+    { lang: 'Esperanto', code: 'eo', ui: 'EO', flag: 'images/flags/eu.svg' }, // якщо нема - заміниш/видалиш
     { lang: 'Estonian', code: 'et', ui: 'ET', flag: 'images/flags/ee.svg' },
     { lang: 'Finnish', code: 'fi', ui: 'FI', flag: 'images/flags/fi.svg' },
     { lang: 'French', code: 'fr', ui: 'FR', flag: 'images/flags/fr.svg' },

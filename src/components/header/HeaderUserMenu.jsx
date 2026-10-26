@@ -211,19 +211,19 @@ export default function HeaderUserMenu({ user }) {
         aria-haspopup="menu"
         aria-expanded={open}
         className={clsx(
-          'group flex min-h-[40px] items-center gap-3 rounded-2xl px-3 py-[7px] text-left transition-all duration-200',
+          'group flex h-[40px] items-center gap-2 rounded-2xl px-3 text-left transition-all duration-200',
           open
             ? 'border border-primary bg-white/[0.04] shadow-[0_0_0_4px_rgba(124,92,255,0.12)]'
             : 'border border-white/8 bg-white/[0.04] hover:border-white/12',
         )}
       >
-        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-primary/15 text-sm font-semibold text-primary-soft shadow-violet-soft">
+        <div className="relative flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-primary/15 text-xs font-semibold text-primary-soft shadow-violet-soft">
           {safeAvatar ? (
             <Photo
               src={safeAvatar}
               alt={safeName}
               fill
-              sizes="32px"
+              sizes="28px"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'

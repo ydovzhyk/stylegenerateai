@@ -581,7 +581,7 @@ export default function PhotoLabPreviewTester() {
     openImagePreview({
       src: activeSourcePreview,
       alt: 'Source preview',
-      title: `${selectedMode.title} — ${sourceLabel}`,
+      title: `${selectedMode.title} - ${sourceLabel}`,
     })
   }, [
     activeSourcePreview,
@@ -596,7 +596,7 @@ export default function PhotoLabPreviewTester() {
     openImagePreview({
       src: resultPreview,
       alt: 'Generated Photo Lab preview',
-      title: `${selectedMode.title} — Generated preview`,
+      title: `${selectedMode.title} - Generated preview`,
     })
   }, [openImagePreview, resultPreview, selectedMode.title])
 
@@ -767,7 +767,7 @@ export default function PhotoLabPreviewTester() {
               : isIdentityTransferMode
                 ? 'Identity Transfer uses a reference scene plus a face photo. Pick a scene preset and a face prototype, or upload your own photos.'
                 : isRemoveObjectsMode
-                ? 'Remove Objects uses one uploaded photo. Paint a mask, describe what to remove, or both — at least one is required.'
+                ? 'Remove Objects uses one uploaded photo. Paint a mask, describe what to remove, or both - at least one is required.'
                 : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
       </div>
@@ -1010,7 +1010,7 @@ export default function PhotoLabPreviewTester() {
               caseMode="sentence"
               className="mt-3"
             >
-              Active: {selectedPhotoQuality.label} —{' '}
+              Active: {selectedPhotoQuality.label} -{' '}
               {selectedPhotoQuality.description}
             </Text>
           </div>

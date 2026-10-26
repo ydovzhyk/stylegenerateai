@@ -8,7 +8,7 @@ import { useTranslate } from '@/utils/translate/translate'
 export default function NotFound() {
   const tTitle = useTranslate('Oops... this page is on vacation')
   const tDesc = useTranslate(
-    'Looks like you are lost. But don’t worry — we will help you find your way back.',
+    'Looks like you are lost. But don’t worry - we will help you find your way back.',
   )
   const tBackHome = useTranslate('Go to homepage')
 

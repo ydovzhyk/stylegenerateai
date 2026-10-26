@@ -56,7 +56,7 @@ export function resolveComparisonPreviewTarget(
     src: showBefore ? comparison.beforeUrl : comparison.afterUrl,
     alt: showBefore ? comparison.beforeLabel : comparison.afterLabel,
     title: title
-      ? `${title} — ${showBefore ? comparison.beforeLabel : comparison.afterLabel}`
+      ? `${title} - ${showBefore ? comparison.beforeLabel : comparison.afterLabel}`
       : showBefore
         ? comparison.beforeLabel
         : comparison.afterLabel,
