@@ -12,7 +12,15 @@ function normalizeUrl(url) {
 export function collectShowcaseItemUrls(item) {
   if (!item || typeof item !== 'object') return []
 
-  return [item.beforeSrc, item.afterSrc, item.faceSrc, item.exampleSrc]
+  const detailSrcs = Array.isArray(item.detailSrcs) ? item.detailSrcs : []
+
+  return [
+    item.beforeSrc,
+    item.afterSrc,
+    item.faceSrc,
+    item.exampleSrc,
+    ...detailSrcs,
+  ]
     .map(normalizeUrl)
     .filter(Boolean)
 }

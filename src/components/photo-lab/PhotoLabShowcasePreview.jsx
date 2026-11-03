@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import clsx from 'clsx'
 import Photo from '@/components/shared/photo/Photo'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trash2, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
@@ -103,6 +103,9 @@ function mapTemplateToShowcaseItem(template) {
   const modeId = String(template?.mode || '').trim()
   const modeMeta = getModeMeta(modeId)
   const labels = getModePreviewLabels(modeId)
+  const detailSrcs = Array.isArray(template?.detailImageUrls)
+    ? template.detailImageUrls.map((url) => String(url || '').trim()).filter(Boolean)
+    : []
 
   return {
     id: template?._id || template?.slug || `${modeId}-${template?.title}`,
@@ -113,6 +116,7 @@ function mapTemplateToShowcaseItem(template) {
     beforeSrc: String(template?.sourceImageUrl || '').trim(),
     afterSrc: String(template?.resultImageUrl || '').trim(),
     faceSrc: String(template?.faceImageUrl || '').trim(),
+    detailSrcs,
     beforeLabel: labels.before,
     afterLabel: labels.after,
     category: modeMeta?.label || modeMeta?.title || modeId,
@@ -172,6 +176,42 @@ function useRotatingIndex(length, delay, resetKey) {
   return [index, setIndex]
 }
 
+function DetailCardsStack({ stackSrcs = [], priority = false }) {
+  if (!stackSrcs.length) return null
+
+  return (
+    <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[30%] sm:bottom-4 sm:right-4">
+      <div className="relative aspect-[4/5] w-full">
+        {stackSrcs.map((stackSrc, index) => {
+          const offset = index * 7
+
+          return (
+            <div
+              key={`${stackSrc}-${index}`}
+              className="absolute inset-0 overflow-hidden rounded-2xl border border-white/25 bg-white shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+              style={{
+                zIndex: stackSrcs.length - index,
+                transform: `translate(${-offset}px, ${-offset}px)`,
+              }}
+            >
+              <div className="relative h-full w-full">
+                <Photo
+                  src={stackSrc}
+                  alt={`Preview card ${index + 1}`}
+                  fill
+                  sizes="160px"
+                  priority={priority && index === 0}
+                  className="!object-cover object-center"
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function PreviewImageCard({
   src,
   alt,
@@ -183,15 +223,39 @@ function PreviewImageCard({
   insetSrc = '',
   insetAlt = '',
   insetLabel = '',
+  detailSrcs = [],
   priority = false,
   onOpenPreview,
   openPreviewAriaLabel,
 }) {
   const reducedMotion = useReducedMotion()
   const { accentTone, hoverBorder } = getAccentClasses(accent)
-  const hasImage = Boolean(src)
   const hasInset = Boolean(insetSrc)
+  const details = Array.isArray(detailSrcs)
+    ? detailSrcs.map((url) => String(url || '').trim()).filter(Boolean).slice(0, 5)
+    : []
+  const hasDetails = details.length > 0
+  const detailsKey = details.join('|')
+  const [step, setStep] = useState(0)
+
+  useEffect(() => {
+    setStep(0)
+  }, [detailsKey, src])
+
+  const maxStep = details.length
+  const safeStep = Math.min(Math.max(step, 0), maxStep)
+  const displaySrc = safeStep === 0 ? src : details[safeStep - 1]
+  const remainingDetails = details.slice(safeStep)
+  const stackSrcs = remainingDetails.length > 0
+    ? remainingDetails
+    : hasDetails && src
+      ? [src]
+      : []
+  const canGoLeft = hasDetails && safeStep > 0
+  const canGoRight = hasDetails && safeStep < maxStep
+  const hasImage = Boolean(displaySrc)
   const isPreviewable = hasImage && typeof onOpenPreview === 'function'
+  const displayImageKey = `${imageKey || src || 'preview'}-step-${safeStep}`
 
   return (
     <motion.article
@@ -207,7 +271,7 @@ function PreviewImageCard({
         {isPreviewable ? (
           <button
             type="button"
-            onClick={onOpenPreview}
+            onClick={() => onOpenPreview({ src: displaySrc })}
             aria-label={openPreviewAriaLabel || `Open ${label} preview`}
             className="absolute inset-0 z-[1] cursor-zoom-in"
           />
@@ -215,11 +279,14 @@ function PreviewImageCard({
         {hasImage ? (
           <AnimatePresence initial={false}>
             <ShowcasePreviewImage
-              key={imageKey || src}
-              src={src}
+              key={displayImageKey}
+              src={displaySrc}
               alt={alt}
-              imageKey={imageKey || src}
+              imageKey={displayImageKey}
               priority={priority}
+              objectPositionClassName={
+                safeStep === 0 ? 'object-[50%_5%]' : 'object-center'
+              }
             />
           </AnimatePresence>
         ) : (
@@ -232,7 +299,49 @@ function PreviewImageCard({
           </div>
         ) : null}
 
-        {hasInset ? (
+        {hasDetails ? (
+          <>
+            <button
+              type="button"
+              aria-disabled={!canGoLeft}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                if (!canGoLeft) return
+                setStep((current) => Math.max(0, current - 1))
+              }}
+              aria-label="Previous photo"
+              className={`absolute left-3 top-1/2 z-[4] flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_6px_16px_rgba(0,0,0,0.35)] backdrop-blur-sm transition sm:left-4 sm:h-9 sm:w-9 ${
+                canGoLeft
+                  ? 'hover:border-white/25 hover:bg-black/70'
+                  : 'cursor-default opacity-35'
+              }`}
+            >
+              <ChevronLeft size={18} />
+            </button>
+
+            <button
+              type="button"
+              aria-disabled={!canGoRight}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                if (!canGoRight) return
+                setStep((current) => Math.min(maxStep, current + 1))
+              }}
+              aria-label="Next photo"
+              className={`absolute right-3 top-1/2 z-[4] flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-[0_6px_16px_rgba(0,0,0,0.35)] backdrop-blur-sm transition sm:right-4 sm:h-9 sm:w-9 ${
+                canGoRight
+                  ? 'hover:border-white/25 hover:bg-black/70'
+                  : 'cursor-default opacity-35'
+              }`}
+            >
+              <ChevronRight size={18} />
+            </button>
+
+            <DetailCardsStack stackSrcs={stackSrcs} priority={priority} />
+          </>
+        ) : hasInset ? (
           <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[30%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4">
             <div className="relative aspect-[4/5] w-full">
               <Photo
@@ -286,6 +395,8 @@ function PreviewPair({
   if (!item) return null
 
   const faceSrc = String(item.faceSrc || '').trim()
+  const detailSrcs = Array.isArray(item.detailSrcs) ? item.detailSrcs : []
+  const isSmartEdit = item.modeId === 'smart_edit'
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
@@ -295,16 +406,17 @@ function PreviewPair({
         label={beforeLabel}
         accent={accent}
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
-        insetSrc={faceSrc}
+        insetSrc={isSmartEdit ? '' : faceSrc}
         insetAlt={`${item.title} face`}
-        insetLabel={faceSrc ? faceInsetLabel : ''}
+        insetLabel={!isSmartEdit && faceSrc ? faceInsetLabel : ''}
+        detailSrcs={isSmartEdit ? detailSrcs : []}
         priority={priority}
         openPreviewAriaLabel={`${openPreviewText}: ${beforeLabel}`}
         onOpenPreview={
           onOpenPreview
-            ? () =>
+            ? ({ src } = {}) =>
                 onOpenPreview({
-                  src: item.beforeSrc,
+                  src: src || item.beforeSrc,
                   alt: `${item.title} ${beforeAltText}`,
                   title: `${item.title} - ${beforeLabel}`,
                 })
@@ -322,9 +434,9 @@ function PreviewPair({
         openPreviewAriaLabel={`${openPreviewText}: ${afterLabel}`}
         onOpenPreview={
           onOpenPreview
-            ? () =>
+            ? ({ src } = {}) =>
                 onOpenPreview({
-                  src: item.afterSrc,
+                  src: src || item.afterSrc,
                   alt: `${item.title} ${afterAltText}`,
                   title: `${item.title} - ${afterLabel}`,
                 })
@@ -423,6 +535,7 @@ export default function PhotoLabShowcasePreview() {
 
   const [pinnedModeId, setPinnedModeId] = useState(null)
   const [templateToDelete, setTemplateToDelete] = useState(null)
+  const [isDeletingTemplate, setIsDeletingTemplate] = useState(false)
   const [previewModal, setPreviewModal] = useState({
     open: false,
     src: '',
@@ -514,16 +627,22 @@ export default function PhotoLabShowcasePreview() {
   }, [])
 
   const handleConfirmDeleteTemplate = useCallback(async () => {
-    if (!templateToDelete?.templateId) return
+    if (!templateToDelete?.templateId || isDeletingTemplate) return
+
+    setIsDeletingTemplate(true)
 
     try {
-      await dispatch(deletePhotoLabTemplate(templateToDelete.templateId)).unwrap()
+      await dispatch(
+        deletePhotoLabTemplate(templateToDelete.templateId),
+      ).unwrap()
       setTemplateToDelete(null)
       setActiveIndex(0)
     } catch (error) {
       console.error(error)
+    } finally {
+      setIsDeletingTemplate(false)
     }
-  }, [dispatch, setActiveIndex, templateToDelete])
+  }, [dispatch, isDeletingTemplate, setActiveIndex, templateToDelete])
 
   return (
     <section className="gradient-border-card overflow-hidden p-4 sm:p-5 lg:p-6">
@@ -637,7 +756,8 @@ export default function PhotoLabShowcasePreview() {
               <button
                 type="button"
                 onClick={() => setTemplateToDelete(null)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+                disabled={isDeletingTemplate}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Close delete confirmation"
               >
                 <X size={16} />
@@ -655,6 +775,7 @@ export default function PhotoLabShowcasePreview() {
                 type="button"
                 variant="secondary"
                 onClick={() => setTemplateToDelete(null)}
+                disabled={isDeletingTemplate}
                 className="rounded-full px-5"
               >
                 Cancel
@@ -664,6 +785,8 @@ export default function PhotoLabShowcasePreview() {
                 type="button"
                 variant="primary"
                 onClick={handleConfirmDeleteTemplate}
+                loading={isDeletingTemplate}
+                disabled={isDeletingTemplate}
                 className="rounded-full px-5"
               >
                 Delete

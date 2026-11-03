@@ -180,6 +180,7 @@ export default function PhotoLabPreviewTester() {
   const dispatch = useDispatch()
   const mainInputRef = useRef(null)
   const referenceInputRef = useRef(null)
+  const smartEditSlotRef = useRef(0)
   const maskEditorRef = useRef(null)
 
   const [selectedModeId, setSelectedModeId] = useState(
@@ -239,9 +240,9 @@ export default function PhotoLabPreviewTester() {
   const isIdentityTransferMode = selectedModeId === IDENTITY_TRANSFER_MODE
   const isPhotoStylesMode = selectedModeId === PHOTO_STYLES_MODE
   const canUsePrototypeSource =
-    !isEnhanceQualityMode && !isRemoveObjectsMode
+    !isEnhanceQualityMode && !isRemoveObjectsMode && !isSmartEditMode
   const requiresUploadedSource =
-    isEnhanceQualityMode || isRemoveObjectsMode
+    isEnhanceQualityMode || isRemoveObjectsMode || isSmartEditMode
 
   const uploadedFilesForModeration = useMemo(() => {
     const files = []
@@ -348,12 +349,26 @@ export default function PhotoLabPreviewTester() {
     if (
       selectedModeId === ENHANCE_QUALITY_MODE ||
       selectedModeId === RESTORE_COLORIZE_MODE ||
-      selectedModeId === REMOVE_OBJECTS_MODE
+      selectedModeId === REMOVE_OBJECTS_MODE ||
+      selectedModeId === SMART_EDIT_MODE ||
+      selectedModeId === IDENTITY_TRANSFER_MODE
     ) {
+      // Slot roles differ per mode (Detail vs face) — reset supporting uploads.
       setReferenceSourceFiles([])
 
       if (referenceInputRef.current) {
         referenceInputRef.current.value = ''
+      }
+    }
+
+    if (selectedModeId === SMART_EDIT_MODE) {
+      // Match client: Smart Edit uses uploaded Main + Detail slots, not prototypes.
+      setMainSourceFile(null)
+      setResultPreview('')
+      setError('')
+
+      if (mainInputRef.current) {
+        mainInputRef.current.value = ''
       }
     }
 
@@ -441,7 +456,9 @@ export default function PhotoLabPreviewTester() {
               },
               ...referenceSourceFiles.map((file, index) => ({
                 type: 'reference',
-                label: `Reference ${index + 1}`,
+                label: isSmartEditMode
+                  ? `Detail ${index + 1}`
+                  : `Reference ${index + 1}`,
                 url: URL.createObjectURL(file),
               })),
             ]
@@ -457,14 +474,26 @@ export default function PhotoLabPreviewTester() {
     isIdentityTransferMode,
     isRestoreColorizeMode,
     isRemoveObjectsMode,
+    isSmartEditMode,
     mainSourceFile,
     referenceSourceFiles,
   ])
 
   const resolveSourceFiles = async () => {
-    if (isEnhanceQualityMode || isRemoveObjectsMode) {
+    if (isEnhanceQualityMode || isRemoveObjectsMode || isSmartEditMode) {
       if (!mainSourceFile) {
-        throw new Error('Upload a source photo before generating')
+        throw new Error(
+          isSmartEditMode
+            ? 'Upload the Main photo before generating'
+            : 'Upload a source photo before generating',
+        )
+      }
+
+      if (isSmartEditMode) {
+        return [mainSourceFile, ...referenceSourceFiles].slice(
+          0,
+          SMART_EDIT_MAX_TOTAL_IMAGES,
+        )
       }
 
       return [mainSourceFile]
@@ -764,11 +793,13 @@ export default function PhotoLabPreviewTester() {
             ? 'Enhance Quality uses one uploaded source photo. Test export size before saving showcase templates.'
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
-              : isIdentityTransferMode
-                ? 'Identity Transfer uses a reference scene plus a face photo. Pick a scene preset and a face prototype, or upload your own photos.'
-                : isRemoveObjectsMode
-                ? 'Remove Objects uses one uploaded photo. Paint a mask, describe what to remove, or both - at least one is required.'
-                : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
+              : isSmartEditMode
+                ? 'Smart Edit uses a Main photo plus optional Detail 1-5 references (clothes, objects, places). Describe the change in the edit prompt - required, same as the public page.'
+                : isIdentityTransferMode
+                  ? 'Identity Transfer uses a reference scene plus a face photo. Pick a scene preset and a face prototype, or upload your own photos.'
+                  : isRemoveObjectsMode
+                    ? 'Remove Objects uses one uploaded photo. Paint a mask, describe what to remove, or both - at least one is required.'
+                    : 'This admin workspace is for testing Photo Lab modes before connecting them to the public page. The first uploaded image is always sent as the primary identity source.'}
         </Text>
       </div>
 
@@ -1030,49 +1061,106 @@ export default function PhotoLabPreviewTester() {
                   isRestoreColorizeMode ||
                   isRemoveObjectsMode
                     ? 'Source photo'
-                    : 'Source images'}
+                    : isSmartEditMode
+                      ? 'Main + Detail photos'
+                      : 'Source images'}
                 </Text>
               </div>
 
-              <div
-                className={`mb-4 grid gap-3 ${isEnhanceQualityMode || isRestoreColorizeMode || isRemoveObjectsMode ? '' : 'sm:grid-cols-2'}`}
-              >
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => mainInputRef.current?.click()}
-                  disabled={isGenerating || isSavingTemplate}
-                  className="w-full"
+              {isSmartEditMode ? (
+                <div className="mb-4 grid grid-cols-2 gap-2">
+                  {[
+                    {
+                      key: 'main',
+                      label: 'Main photo',
+                      uploaded: Boolean(mainSourceFile),
+                      disabled: isGenerating || isSavingTemplate,
+                      onClick: () => mainInputRef.current?.click(),
+                    },
+                    ...Array.from(
+                      { length: SMART_EDIT_MAX_REFERENCE_IMAGES },
+                      (_, index) => ({
+                        key: `detail-${index + 1}`,
+                        label: `Detail ${index + 1}`,
+                        uploaded: Boolean(referenceSourceFiles[index]),
+                        disabled:
+                          isGenerating ||
+                          isSavingTemplate ||
+                          !mainSourceFile ||
+                          index > referenceSourceFiles.length,
+                        onClick: () => {
+                          smartEditSlotRef.current = index
+                          referenceInputRef.current?.click()
+                        },
+                      }),
+                    ),
+                  ].map((source) => (
+                    <Button
+                      key={source.key}
+                      type="button"
+                      variant="secondary"
+                      shape="soft"
+                      active={source.uploaded}
+                      disabled={source.disabled}
+                      fullWidth
+                      onClick={source.onClick}
+                      className="justify-start gap-3 px-4 py-3 font-medium"
+                      leftIcon={
+                        <span
+                          aria-hidden
+                          className={`h-4 w-4 shrink-0 rounded-full border ${
+                            source.uploaded
+                              ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                              : 'border-white/40 bg-transparent'
+                          }`}
+                        />
+                      }
+                    >
+                      {source.label}
+                    </Button>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className={`mb-4 grid gap-3 ${isEnhanceQualityMode || isRestoreColorizeMode || isRemoveObjectsMode ? '' : 'sm:grid-cols-2'}`}
                 >
-                  {isEnhanceQualityMode ||
-                  isRestoreColorizeMode ||
-                  isRemoveObjectsMode
-                    ? 'Upload photo'
-                    : isIdentityTransferMode
-                      ? 'Upload Reference photo'
-                      : 'Upload main photo'}
-                </Button>
-
-                {!isEnhanceQualityMode &&
-                !isRestoreColorizeMode &&
-                !isRemoveObjectsMode ? (
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => referenceInputRef.current?.click()}
-                    disabled={
-                      isGenerating ||
-                      isSavingTemplate ||
-                      (!isIdentityTransferMode && !mainSourceFile)
-                    }
+                    onClick={() => mainInputRef.current?.click()}
+                    disabled={isGenerating || isSavingTemplate}
                     className="w-full"
                   >
-                    {isIdentityTransferMode
-                      ? 'Upload Photo with your face'
-                      : 'Upload references'}
+                    {isEnhanceQualityMode ||
+                    isRestoreColorizeMode ||
+                    isRemoveObjectsMode
+                      ? 'Upload photo'
+                      : isIdentityTransferMode
+                        ? 'Upload Reference photo'
+                        : 'Upload main photo'}
                   </Button>
-                ) : null}
-              </div>
+
+                  {!isEnhanceQualityMode &&
+                  !isRestoreColorizeMode &&
+                  !isRemoveObjectsMode ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => referenceInputRef.current?.click()}
+                      disabled={
+                        isGenerating ||
+                        isSavingTemplate ||
+                        (!isIdentityTransferMode && !mainSourceFile)
+                      }
+                      className="w-full"
+                    >
+                      {isIdentityTransferMode
+                        ? 'Upload Photo with your face'
+                        : 'Upload references'}
+                    </Button>
+                  ) : null}
+                </div>
+              )}
 
               {!isUsingUploadedSource && canUsePrototypeSource ? (
                 <div className="mb-4 rounded-2xl border border-white/10 bg-background-soft/70 p-4">
@@ -1372,9 +1460,11 @@ export default function PhotoLabPreviewTester() {
                         ? 'This uploaded old photo will be restored and used as the before image when saving a showcase template.'
                         : isRemoveObjectsMode
                           ? 'Paint over the object or distraction you want removed. The red overlay is only a guide; the server receives a precise PNG mask. You can also skip the mask and describe what to remove in the prompt below.'
-                          : isIdentityTransferMode
-                            ? 'Showcase template will save three images: Reference (before), Photo with your face (inset), and the generated result (after).'
-                            : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
+                          : isSmartEditMode
+                            ? 'Showcase saves Main + Detail 1-5 on the before card as a stack, and the generated result as after.'
+                            : isIdentityTransferMode
+                              ? 'Showcase template will save three images: Reference (before), Photo with your face (inset), and the generated result (after).'
+                              : 'Main photo is sent first and used as the primary identity source. Reference photos are sent after it as supporting identity sources.'}
                   </Text>
 
                   <Text
@@ -1388,7 +1478,9 @@ export default function PhotoLabPreviewTester() {
                     isRestoreColorizeMode ||
                     isRemoveObjectsMode
                       ? `Selected: ${mainSourceFile?.name || 'Not selected'}`
-                      : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / ${SMART_EDIT_MAX_REFERENCE_IMAGES}`}
+                      : isSmartEditMode
+                        ? `Main: ${mainSourceFile?.name || 'Not selected'} · Details: ${referenceSourceFiles.length} / ${SMART_EDIT_MAX_REFERENCE_IMAGES}`
+                        : `Main: ${mainSourceFile?.name || 'Not selected'} · References: ${referenceSourceFiles.length} / ${SMART_EDIT_MAX_REFERENCE_IMAGES}`}
                   </Text>
 
                   <Button
@@ -1400,7 +1492,8 @@ export default function PhotoLabPreviewTester() {
                   >
                     {isEnhanceQualityMode ||
                     isRestoreColorizeMode ||
-                    isRemoveObjectsMode
+                    isRemoveObjectsMode ||
+                    isSmartEditMode
                       ? 'Remove photo'
                       : 'Use prototype instead'}
                   </Button>
@@ -1521,9 +1614,11 @@ export default function PhotoLabPreviewTester() {
                         ? 'Upload a source photo'
                         : isRestoreColorizeMode
                           ? 'Pick a restored preset or upload a photo'
-                          : isIdentityTransferMode
-                            ? 'Pick a scene preset or upload Reference + face'
-                            : 'Upload main source photo'}
+                          : isSmartEditMode
+                            ? 'Upload Main photo'
+                            : isIdentityTransferMode
+                              ? 'Pick a scene preset or upload Reference + face'
+                              : 'Upload main source photo'}
                     </Text>
 
                     <Text
@@ -1537,9 +1632,11 @@ export default function PhotoLabPreviewTester() {
                         ? 'Upload one dark, blurry, noisy, compressed, or hazy photo to test clarity cleanup.'
                         : isRestoreColorizeMode
                           ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
-                          : isIdentityTransferMode
-                            ? 'Image 1 = Reference scene. Image 2 = Face identity. Preset scenes are selected above by default.'
-                            : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
+                          : isSmartEditMode
+                            ? 'Use the buttons above - Main photo first, then Detail 1 and the rest if you need them.'
+                            : isIdentityTransferMode
+                              ? 'Image 1 = Reference scene. Image 2 = Face identity. Preset scenes are selected above by default.'
+                              : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
                     </Text>
                   </div>
                 )}
@@ -1554,17 +1651,20 @@ export default function PhotoLabPreviewTester() {
                 onChange={(e) => {
                   const file = Array.from(e.target.files || [])[0] || null
                   setMainSourceFile(file)
-                  setReferenceSourceFiles([])
+                  // Smart Edit keeps Detail slots when Main is replaced (same as client).
+                  if (!isSmartEditMode) {
+                    setReferenceSourceFiles([])
+                    if (referenceInputRef.current) {
+                      referenceInputRef.current.value = ''
+                    }
+                  }
                   setHasRemovalMask(false)
                   setMaskPaintActive(true)
                   setMaskTool('brush')
                   setResultPreview('')
                   setError('')
                   if (file) queueImageModeration(file)
-
-                  if (referenceInputRef.current) {
-                    referenceInputRef.current.value = ''
-                  }
+                  e.target.value = ''
                 }}
               />
 
@@ -1572,17 +1672,47 @@ export default function PhotoLabPreviewTester() {
                 ref={referenceInputRef}
                 type="file"
                 accept="image/*"
-                multiple={!isIdentityTransferMode}
+                multiple={!isIdentityTransferMode && !isSmartEditMode}
                 className="hidden"
                 onChange={(e) => {
+                  if (isSmartEditMode) {
+                    const file = Array.from(e.target.files || [])[0] || null
+                    const index = smartEditSlotRef.current
+
+                    if (
+                      !file ||
+                      index < 0 ||
+                      index >= SMART_EDIT_MAX_REFERENCE_IMAGES
+                    ) {
+                      e.target.value = ''
+                      return
+                    }
+
+                    queueImageModeration(file)
+                    setReferenceSourceFiles((prev) => {
+                      if (index > prev.length) return prev
+                      const next = [...prev]
+                      next[index] = file
+                      return next
+                    })
+                    setResultPreview('')
+                    setError('')
+                    e.target.value = ''
+                    return
+                  }
+
                   const maxFiles = isIdentityTransferMode
                     ? 1
                     : SMART_EDIT_MAX_REFERENCE_IMAGES
-                  const files = Array.from(e.target.files || []).slice(0, maxFiles)
+                  const files = Array.from(e.target.files || []).slice(
+                    0,
+                    maxFiles,
+                  )
                   setReferenceSourceFiles(files)
                   setResultPreview('')
                   setError('')
                   files.forEach((file) => queueImageModeration(file))
+                  e.target.value = ''
                 }}
               />
             </div>
@@ -1669,22 +1799,26 @@ export default function PhotoLabPreviewTester() {
               id="photo-lab-additional-prompt"
               as="textarea"
               rows={5}
-              label="Additional prompt"
+              label={isSmartEditMode ? 'Edit prompt' : 'Additional prompt'}
               placeholder={
                 isEnhanceQualityMode
                   ? 'Optional: reduce noise in shadows, preserve face identity, keep the same lighting...'
                   : isRemoveObjectsMode
                     ? 'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...'
-                    : isIdentityTransferMode
-                      ? 'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
-                      : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
+                    : isSmartEditMode
+                      ? 'Example: put the hoodie from Detail 1 on me, and place the camera from Detail 2 on the table.'
+                      : isIdentityTransferMode
+                        ? 'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
+                        : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
               }
               hint={
                 isRemoveObjectsMode
                   ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
-                  : isIdentityTransferMode
-                    ? 'Optional. Default hairstyle is from Reference; write “Keep my hairstyle” to use the face photo. Other edits can be added in the same prompt.'
-                    : 'Optional. This will be combined with the server-side Photo Lab prompt.'
+                  : isSmartEditMode
+                    ? 'Required. Describe the change. Detail photos are optional visual references for that change.'
+                    : isIdentityTransferMode
+                      ? 'Optional. Default hairstyle is from Reference; write “Keep my hairstyle” to use the face photo. Other edits can be added in the same prompt.'
+                      : 'Optional. This will be combined with the server-side Photo Lab prompt.'
               }
               caseMode="sentence"
               value={additionalPrompt}
