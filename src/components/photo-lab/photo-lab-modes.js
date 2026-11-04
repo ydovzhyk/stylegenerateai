@@ -45,7 +45,7 @@ export const PHOTO_LAB_MODES = [
     promptPlaceholder:
       'Example: put the hoodie from Detail 1 on me, and place the camera from Detail 2 on the table.',
     uploadHint:
-      'Upload the Main photo first, then Detail 1-5 if the edit needs them.',
+      'Upload the Main photo first, then Detail 1-5 if the edit needs them. A short edit prompt is required.',
   },
   {
     id: 'identity_transfer',

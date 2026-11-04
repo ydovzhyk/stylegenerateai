@@ -50,7 +50,7 @@ const NOTICE_GUIDES = [
   {
     includes: 'Smart Edit requires a short edit prompt',
     guidance:
-      'Smart Edit needs a short description of the change. Write what to edit, then press Generate again.',
+      'Smart Edit needs a short required prompt that explains the change. Detail photos are optional. Write the prompt, then press Generate again.',
   },
   {
     includes: 'Identity Transfer requires exactly two photos',

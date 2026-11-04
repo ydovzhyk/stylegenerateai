@@ -1138,7 +1138,9 @@ export default function AiImageWorkspace({
   const resolvedPromptHint = isPhotoLab
     ? isIdentityTransferMode
       ? 'Default: hairstyle from the Reference photo. To use your face-photo hairstyle, write “Keep my hairstyle”. You can add other edits too.'
-      : ''
+      : isSmartEditMode
+        ? 'Required. Write a short prompt that explains the change. Detail photos are optional references for that change.'
+        : ''
     : template?.promptHint || promptHint
 
   const resolvedWorkspaceDescription = isRemoveObjectsMode
@@ -1148,7 +1150,7 @@ export default function AiImageWorkspace({
       : isPhotoStylesMode
         ? 'Upload one photo, pick a style above the preview, then generate.'
         : isSmartEditMode
-          ? 'Upload the Main photo, add Detail photos if the edit needs them, describe the change, then generate.'
+          ? 'Upload the Main photo, add Detail photos if the edit needs them, write a short prompt that explains the change (required), then generate.'
           : isIdentityTransferMode
           ? 'Upload a Reference photo, then a Photo with your face - keep the shot, transfer your identity.'
           : workspaceDescription

@@ -60,7 +60,7 @@ Typical choices:
 
 - **Professional Portrait** - a casual photo into a LinkedIn / CV headshot.
 - **Restore & Colorize** - repair old, faded, or damaged pictures.
-- **Smart Edit** - change clothes, background, lighting, or details with a prompt.
+- **Smart Edit** - Main photo + optional Detail photos + a short required prompt that explains the change.
 - **Identity Transfer** - keep a reference shot 1:1 and put your face into it.
 - **Remove Objects** - clean people or clutter out of the frame.
 - **Enhance Quality** - sharper and clearer, same scene.
@@ -234,9 +234,13 @@ const PHOTO_LAB_MODE_GUIDES = {
 **Restore type** - **Restore only** repairs the photo and keeps the original tones. **Restore & colorize** also adds natural color.
 
 **Optional refinements** - extra wishes for tone or repair. Optional.`,
-  smart_edit: `**Main photo** - the photo to edit. Use the buttons above it.
+  smart_edit: `**Main photo** - the photo to edit. Upload it first.
 
-**Detail 1-5** - optional photos of clothes, objects, or a place. Add them in order, then describe the change in the edit prompt.`,
+**Detail 1-5** - optional. Add photos of clothes, objects, or a place only if the edit needs them as visual references.
+
+**Edit prompt** - required. Write a short prompt that explains the change. Example: put the outfit from Detail 1 on me.
+
+Then press Generate.`,
   identity_transfer: `**Photos** - upload **Reference photo** first (pose, clothes, and scene to keep 1:1), then a clear **Face photo** of you.
 
 Hairstyle comes from the reference by default. Write **Keep my hairstyle** in the prompt to keep yours.
