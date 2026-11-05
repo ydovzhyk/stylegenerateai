@@ -387,7 +387,6 @@ function PreviewPair({
   })
   const beforeAltText = useTranslate('before', { caseMode: 'lower' })
   const afterAltText = useTranslate('after', { caseMode: 'lower' })
-  const faceInsetLabel = useTranslate('Face', { caseMode: 'title' })
   const openPreviewText = useTranslate('Open image preview', {
     caseMode: 'sentence',
   })
@@ -397,6 +396,11 @@ function PreviewPair({
   const faceSrc = String(item.faceSrc || '').trim()
   const detailSrcs = Array.isArray(item.detailSrcs) ? item.detailSrcs : []
   const isSmartEdit = item.modeId === 'smart_edit'
+  const beforeExtras = isSmartEdit
+    ? detailSrcs
+    : faceSrc
+      ? [faceSrc]
+      : []
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
@@ -406,10 +410,10 @@ function PreviewPair({
         label={beforeLabel}
         accent={accent}
         imageKey={`before-${contentKey}-${item.beforeSrc}`}
-        insetSrc={isSmartEdit ? '' : faceSrc}
-        insetAlt={`${item.title} face`}
-        insetLabel={!isSmartEdit && faceSrc ? faceInsetLabel : ''}
-        detailSrcs={isSmartEdit ? detailSrcs : []}
+        insetSrc=""
+        insetAlt=""
+        insetLabel=""
+        detailSrcs={beforeExtras}
         priority={priority}
         openPreviewAriaLabel={`${openPreviewText}: ${beforeLabel}`}
         onOpenPreview={

@@ -60,6 +60,11 @@ import {
 } from '@/utils/moderation/moderate-image'
 import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 import { translateTextTo } from '@/utils/translate/translate'
+import {
+  PhotoStackDetailCards,
+  PhotoStackNavButtons,
+  usePhotoStackCarousel,
+} from '@/components/shared/photo-stack-carousel/PhotoStackCarouselControls'
 import { ImagePlus, Maximize2, Sparkles } from 'lucide-react'
 import clsx from 'clsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -163,6 +168,29 @@ export default function AiImageWorkspace({
     isPhotoLab && activeModeId === IDENTITY_TRANSFER_MODE
   const isPhotoStylesMode = isPhotoLab && activeModeId === PHOTO_STYLES_MODE
   const resolvedPictureStyle = pictureStyle || DEFAULT_PICTURE_STYLE
+
+  const photoStackExtras = useMemo(() => {
+    if (isSmartEditMode) {
+      return referencePreviews
+        .filter(Boolean)
+        .slice(0, SMART_EDIT_MAX_REFERENCE_IMAGES)
+    }
+    if (isIdentityTransferMode && facePreview) {
+      return [facePreview]
+    }
+    return []
+  }, [
+    facePreview,
+    isIdentityTransferMode,
+    isSmartEditMode,
+    referencePreviews,
+  ])
+
+  const photoStackCarousel = usePhotoStackCarousel({
+    mainSrc: clientPreview,
+    extraSrcs: photoStackExtras,
+    resetKey: `${activeModeId}|${clientPreview}`,
+  })
 
   const uploadsForModeration = () => {
     const files = []
@@ -539,7 +567,6 @@ export default function AiImageWorkspace({
       revokePreviewUrls(prev)
       return []
     })
-
     if (referenceInputRef.current) {
       referenceInputRef.current.value = ''
     }
@@ -1619,42 +1646,56 @@ export default function AiImageWorkspace({
     }
 
     if (clientPreview) {
+      const {
+        hasExtras,
+        safeStep,
+        displaySrc,
+        stackSrcs,
+        canGoLeft,
+        canGoRight,
+        goLeft,
+        goRight,
+      } = photoStackCarousel
+
+      let eyebrow = 'Uploaded photo'
+      let title = clientFile?.name || 'Uploaded photo'
+      let titleTranslate = !clientFile?.name
+
+      if (isIdentityTransferMode) {
+        if (!hasExtras || safeStep === 0) {
+          eyebrow = 'Reference photo'
+          title = clientFile?.name || 'Reference photo'
+          titleTranslate = !clientFile?.name
+        } else {
+          eyebrow = 'Face'
+          title = faceFile?.name || 'Photo with your face'
+          titleTranslate = !faceFile?.name
+        }
+      } else if (isSmartEditMode) {
+        if (!hasExtras || safeStep === 0) {
+          eyebrow = 'Main photo'
+          title = clientFile?.name || 'Main photo'
+          titleTranslate = !clientFile?.name
+        } else {
+          eyebrow = `Detail ${safeStep}`
+          title =
+            referenceFiles[safeStep - 1]?.name || `Detail ${safeStep}`
+          titleTranslate = !referenceFiles[safeStep - 1]?.name
+        }
+      }
+
       return renderPreviewCard({
-        src: clientPreview,
-        alt: isIdentityTransferMode
-          ? 'Reference photo'
-          : isSmartEditMode
-            ? 'Main photo'
-            : 'Uploaded photo',
-        eyebrow: isIdentityTransferMode
-          ? 'Reference photo'
-          : isSmartEditMode
-            ? 'Main photo'
-            : 'Uploaded photo',
-        title:
-          clientFile?.name ||
-          (isIdentityTransferMode
-            ? 'Reference photo'
-            : isSmartEditMode
-              ? 'Main photo'
-              : 'Uploaded photo'),
-        titleTranslate: !clientFile?.name,
+        src: displaySrc,
+        alt: eyebrow,
+        eyebrow,
+        title,
+        titleTranslate,
         borderClassName: 'border-dashed border-white/15',
         onPreview: () =>
           openImagePreview({
-            src: clientPreview,
-            alt: isIdentityTransferMode
-              ? 'Reference photo'
-              : isSmartEditMode
-                ? 'Main photo'
-                : 'Uploaded photo',
-            title:
-              clientFile?.name ||
-              (isIdentityTransferMode
-                ? 'Reference photo'
-                : isSmartEditMode
-                  ? 'Main photo'
-                  : 'Uploaded photo'),
+            src: displaySrc,
+            alt: eyebrow,
+            title,
           }),
         action: isIdentityTransferMode || isSmartEditMode ? null : (
           <Button
@@ -1669,28 +1710,16 @@ export default function AiImageWorkspace({
             Change photo
           </Button>
         ),
-        overlay: isIdentityTransferMode && facePreview ? (
-          <div className="pointer-events-none absolute bottom-[14%] right-3 z-[3] w-[28%] overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:bottom-4 sm:right-4">
-            <div className="relative aspect-[4/5] w-full">
-              <Photo
-                src={facePreview}
-                alt="Photo with your face"
-                fill
-                sizes="120px"
-                className="object-[center_18%]"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5">
-                <span
-                  className={clsx(
-                    'block truncate text-center text-[9px] uppercase tracking-[0.14em] text-white/85',
-                    PHOTO_OVERLAY_TEXT_OUTLINE,
-                  )}
-                >
-                  Face
-                </span>
-              </div>
-            </div>
-          </div>
+        overlay: hasExtras ? (
+          <>
+            <PhotoStackNavButtons
+              canGoLeft={canGoLeft}
+              canGoRight={canGoRight}
+              onLeft={goLeft}
+              onRight={goRight}
+            />
+            <PhotoStackDetailCards stackSrcs={stackSrcs} />
+          </>
         ) : null,
       })
     }

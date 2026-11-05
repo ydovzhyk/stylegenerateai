@@ -10,6 +10,11 @@ import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
+import {
+  PhotoStackDetailCards,
+  PhotoStackNavButtons,
+  usePhotoStackCarousel,
+} from '@/components/shared/photo-stack-carousel/PhotoStackCarouselControls'
 import PreviewBadge, {
   PHOTO_OVERLAY_TEXT_OUTLINE,
 } from '@/components/shared/preview-badge/PreviewBadge'
@@ -189,6 +194,13 @@ function SourceCard({
   const reducedMotion = useReducedMotion()
   const hasImage = Boolean(src)
   const hasCopy = Boolean(title || prompt)
+  const carousel = usePhotoStackCarousel({
+    mainSrc: src,
+    extraSrcs: src && exampleSrc ? [exampleSrc] : [],
+    resetKey: `${src}|${exampleSrc}`,
+  })
+  const displaySrc = carousel.displaySrc || src
+  const showingExample = carousel.hasExtras && carousel.safeStep > 0
 
   return (
     <motion.article
@@ -204,32 +216,34 @@ function SourceCard({
       )}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-[linear-gradient(160deg,rgba(124,92,255,0.18)_0%,rgba(8,10,18,0.2)_42%,rgba(3,6,18,0.72)_100%)]">
-        {hasImage && onOpenPreview ? (
+        {hasImage && (showingExample ? onOpenExamplePreview : onOpenPreview) ? (
           <button
             type="button"
-            onClick={onOpenPreview}
-            aria-label={openPreviewAriaLabel || 'Open photo preview'}
+            onClick={showingExample ? onOpenExamplePreview : onOpenPreview}
+            aria-label={
+              showingExample
+                ? openExampleAriaLabel || 'Open design example preview'
+                : openPreviewAriaLabel || 'Open photo preview'
+            }
             className="absolute inset-0 z-[1] cursor-zoom-in"
           />
         ) : null}
         {hasImage ? (
           <ShowcasePreviewImage
-            src={src}
-            alt={alt}
-            imageKey={src}
+            src={displaySrc}
+            alt={showingExample ? exampleLabel || alt : alt}
+            imageKey={`${displaySrc}-step-${carousel.safeStep}`}
             priority={priority}
             objectPositionClassName="object-center"
           />
         ) : null}
-        {hasCopy ? (
+        {hasCopy && !showingExample ? (
           <div
             className={clsx(
               'absolute z-[3] overflow-y-auto rounded-2xl border border-white/20 bg-black/55 px-3 py-2.5 backdrop-blur-md',
               hasImage
-                ? // Reference photo: keep top panel + scroll, ~15% shorter than before (42% → 35.7%)
-                  'left-3 right-3 top-3 max-h-[35.7%]'
-                : // No reference: fill card with equal inset on all sides
-                  'inset-3',
+                ? 'left-3 right-3 top-3 max-h-[35.7%]'
+                : 'inset-3',
             )}
           >
             {title ? (
@@ -262,14 +276,26 @@ function SourceCard({
             ) : null}
           </div>
         ) : null}
-        <PhotoInset
-          src={exampleSrc}
-          alt={exampleLabel}
-          label={exampleLabel}
-          priority={priority}
-          onClick={onOpenExamplePreview}
-          ariaLabel={openExampleAriaLabel}
-        />
+        {carousel.hasExtras ? (
+          <>
+            <PhotoStackNavButtons
+              canGoLeft={carousel.canGoLeft}
+              canGoRight={carousel.canGoRight}
+              onLeft={carousel.goLeft}
+              onRight={carousel.goRight}
+            />
+            <PhotoStackDetailCards stackSrcs={carousel.stackSrcs} />
+          </>
+        ) : exampleSrc ? (
+          <PhotoInset
+            src={exampleSrc}
+            alt={exampleLabel}
+            label={exampleLabel}
+            priority={priority}
+            onClick={onOpenExamplePreview}
+            ariaLabel={openExampleAriaLabel}
+          />
+        ) : null}
       </div>
     </motion.article>
   )

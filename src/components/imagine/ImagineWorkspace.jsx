@@ -16,6 +16,11 @@ import GenerationSaveCard from '@/components/shared/ai-image-workspace/Generatio
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import InfoHint from '@/components/shared/info-hint/InfoHint'
 import Photo from '@/components/shared/photo/Photo'
+import {
+  PhotoStackDetailCards,
+  PhotoStackNavButtons,
+  usePhotoStackCarousel,
+} from '@/components/shared/photo-stack-carousel/PhotoStackCarouselControls'
 import { PHOTO_OVERLAY_TEXT_OUTLINE } from '@/components/shared/preview-badge/PreviewBadge'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { getLogin } from '@/store/auth/auth-selectors'
@@ -250,6 +255,15 @@ export default function ImagineWorkspace({ mode }) {
   const referencePreview = useObjectUrl(referenceFile)
   const placePreview = useObjectUrl(placeFile)
   const designExamplePreview = useObjectUrl(renovationFile)
+
+  const uploadPreviewForCarousel =
+    mode?.id === 'home' ? placePreview : referencePreview
+  const homePhotoStackCarousel = usePhotoStackCarousel({
+    mainSrc: uploadPreviewForCarousel,
+    extraSrcs:
+      mode?.id === 'home' && designExamplePreview ? [designExamplePreview] : [],
+    resetKey: `${mode?.id || ''}|${uploadPreviewForCarousel}|${designExamplePreview || ''}`,
+  })
 
   const queueCheck = (file) => {
     if (!file) return
@@ -845,60 +859,61 @@ export default function ImagineWorkspace({ mode }) {
                 type="button"
                 onClick={() =>
                   openImagePreview({
-                    src: uploadPreview,
-                    alt: uploadLabel,
-                    title: uploadFile?.name || uploadLabel,
+                    src: homePhotoStackCarousel.displaySrc || uploadPreview,
+                    alt:
+                      isHome && homePhotoStackCarousel.safeStep > 0
+                        ? 'Design example'
+                        : uploadLabel,
+                    title:
+                      isHome && homePhotoStackCarousel.safeStep > 0
+                        ? renovationFile?.name || 'Design example'
+                        : uploadFile?.name || uploadLabel,
                   })
                 }
                 className="absolute inset-0 z-[1] cursor-zoom-in"
-                aria-label={`Open image preview: ${uploadLabel}`}
+                aria-label={`Open image preview: ${
+                  isHome && homePhotoStackCarousel.safeStep > 0
+                    ? 'Design example'
+                    : uploadLabel
+                }`}
               />
               <Photo
-                src={uploadPreview}
-                alt={uploadLabel}
+                src={homePhotoStackCarousel.displaySrc || uploadPreview}
+                alt={
+                  isHome && homePhotoStackCarousel.safeStep > 0
+                    ? 'Design example'
+                    : uploadLabel
+                }
                 fill
                 sizes="(max-width: 1024px) 90vw, 420px"
                 className="object-center"
               />
-              {isHome && designExamplePreview ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    openImagePreview({
-                      src: designExamplePreview,
-                      alt: 'Design example',
-                      title: renovationFile?.name || 'Design example',
-                    })
-                  }
-                  className="absolute bottom-[18%] right-3 z-[3] w-[28%] cursor-zoom-in overflow-hidden rounded-2xl border border-white/25 bg-black/40 shadow-[0_10px_28px_rgba(0,0,0,0.45)] sm:bottom-4 sm:right-4"
-                  aria-label="Open image preview: Design example"
-                >
-                  <span className="relative block aspect-[4/5] w-full">
-                    <Photo
-                      src={designExamplePreview}
-                      alt="Design example"
-                      fill
-                      sizes="120px"
-                      className="object-center"
-                    />
-                    <span
-                      className={clsx(
-                        'absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-1.5 py-1.5 text-center text-[9px] uppercase tracking-[0.14em] text-white/85',
-                        PHOTO_OVERLAY_TEXT_OUTLINE,
-                      )}
-                    >
-                      Design example
-                    </span>
-                  </span>
-                </button>
+              {homePhotoStackCarousel.hasExtras ? (
+                <>
+                  <PhotoStackNavButtons
+                    canGoLeft={homePhotoStackCarousel.canGoLeft}
+                    canGoRight={homePhotoStackCarousel.canGoRight}
+                    onLeft={homePhotoStackCarousel.goLeft}
+                    onRight={homePhotoStackCarousel.goRight}
+                  />
+                  <PhotoStackDetailCards
+                    stackSrcs={homePhotoStackCarousel.stackSrcs}
+                  />
+                </>
               ) : null}
               <button
                 type="button"
                 onClick={() =>
                   openImagePreview({
-                    src: uploadPreview,
-                    alt: uploadLabel,
-                    title: uploadFile?.name || uploadLabel,
+                    src: homePhotoStackCarousel.displaySrc || uploadPreview,
+                    alt:
+                      isHome && homePhotoStackCarousel.safeStep > 0
+                        ? 'Design example'
+                        : uploadLabel,
+                    title:
+                      isHome && homePhotoStackCarousel.safeStep > 0
+                        ? renovationFile?.name || 'Design example'
+                        : uploadFile?.name || uploadLabel,
                   })
                 }
                 className="absolute right-3 top-3 z-[3] hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 backdrop-blur-md transition hover:bg-black/40 hover:text-white group-hover:inline-flex"
@@ -914,7 +929,9 @@ export default function ImagineWorkspace({ mode }) {
                   caseMode="sentence"
                   className={PHOTO_OVERLAY_TEXT_OUTLINE}
                 >
-                  {uploadLabel}
+                  {isHome && homePhotoStackCarousel.safeStep > 0
+                    ? 'Design example'
+                    : uploadLabel}
                 </Text>
                 <Text
                   as="p"
@@ -923,7 +940,9 @@ export default function ImagineWorkspace({ mode }) {
                   translate={false}
                   className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
                 >
-                  {uploadFile?.name || uploadLabel}
+                  {isHome && homePhotoStackCarousel.safeStep > 0
+                    ? renovationFile?.name || 'Design example'
+                    : uploadFile?.name || uploadLabel}
                 </Text>
                 <div className="pointer-events-auto mt-3">
                   <Button
