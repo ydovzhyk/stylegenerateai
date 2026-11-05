@@ -27,6 +27,10 @@ import {
 } from '@/config/generation-pricing'
 
 export function getLockedText({ planKey, isLogin, lockedReason }) {
+  if (planKey === 'admin') {
+    return ''
+  }
+
   if (lockedReason === 'sign_in_required' || (!isLogin && planKey === 'visitor')) {
     return 'Sign in to unlock this option.'
   }
@@ -40,10 +44,14 @@ export function getLockedText({ planKey, isLogin, lockedReason }) {
   }
 
   if (planKey === 'free') {
-    return 'Upgrade to a paid plan to unlock this option.'
+    return 'Upgrade to a paid plan to unlock Print.'
   }
 
-  return 'This option is not available for your plan.'
+  if (planKey === 'visitor') {
+    return 'Sign in to unlock this option.'
+  }
+
+  return ''
 }
 
 export function getPlanHint({ planKey, activePlan, creditCost }) {
@@ -101,7 +109,10 @@ export default function useGenerationPlanAccess({
   }, [productKey, modeKey, planKey])
 
   const allowedQualities = useMemo(
-    () => getAvailableOptionIds(planOptions.options, 'photoQuality'),
+    () =>
+      getAvailableOptionIds(planOptions.options, 'photoQuality').filter(
+        (id) => id !== 'draft',
+      ),
     [planOptions.options],
   )
 
@@ -122,21 +133,10 @@ export default function useGenerationPlanAccess({
   }, [planOptions.options])
 
   const defaultPhotoQuality = useMemo(() => {
-    if (
-      modeKey === 'enhance_quality' &&
-      allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
-    ) {
-      return DEFAULT_PHOTO_QUALITY
-    }
-
-    if (allowedQualities.includes('draft')) {
-      return 'draft'
-    }
-
     return allowedQualities.includes(DEFAULT_PHOTO_QUALITY)
       ? DEFAULT_PHOTO_QUALITY
       : allowedQualities[0] || DEFAULT_PHOTO_QUALITY
-  }, [allowedQualities, modeKey])
+  }, [allowedQualities])
 
   const defaultOutputFormat = allowedFormats.includes(DEFAULT_OUTPUT_FORMAT)
     ? DEFAULT_OUTPUT_FORMAT
@@ -211,6 +211,7 @@ export default function useGenerationPlanAccess({
     defaultGeneratedImageFormat,
   ])
 
+  // Export size is chosen before Generate and billed with the generation.
   const generationQuote = useMemo(() => {
     const selections = {
       photoQuality,
@@ -223,13 +224,19 @@ export default function useGenerationPlanAccess({
       modeKey,
       selections,
     })
-  }, [
-    planKey,
-    productKey,
-    modeKey,
-    photoQuality,
-    outputFormat,
-  ])
+  }, [planKey, productKey, modeKey, photoQuality, outputFormat])
+
+  const exportQuote = useMemo(() => {
+    return quoteGeneration({
+      planKey,
+      productKey,
+      modeKey,
+      selections: {
+        photoQuality,
+        outputFormat,
+      },
+    })
+  }, [planKey, productKey, modeKey, photoQuality, outputFormat])
 
   const getOptionLockedReason = useCallback(
     (groupKey, optionId) => {
@@ -323,6 +330,13 @@ export default function useGenerationPlanAccess({
     generatedImageFormats: Object.values(GENERATED_IMAGE_FORMATS),
 
     creditCost: generationQuote.totalCredits,
+    /** @deprecated Export size is billed on generate; download is format-only. */
+    exportCreditCost: 0,
+    qualityCreditCost: Math.max(
+      0,
+      Number(getQualityCredits(photoQuality) || 0),
+    ),
+    exportQuote,
     creditBreakdown: generationQuote.breakdown,
     generationQuote,
     canGenerate: generationQuote.allowed === true,

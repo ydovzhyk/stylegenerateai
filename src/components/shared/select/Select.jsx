@@ -50,6 +50,7 @@ export default function Select({
   required = false,
   menuPlacement = 'bottom',
   hideHelp = false,
+  controlMinHeight = 40,
 
   classNamePrefix = 'sg-select',
   components,
@@ -94,6 +95,14 @@ export default function Select({
     [components],
   )
 
+  const resolvedControlMinHeight = Math.max(40, Number(controlMinHeight) || 40)
+  const valuePaddingY =
+    resolvedControlMinHeight >= 52
+      ? '0.375rem'
+      : resolvedControlMinHeight > 40
+        ? '0.25rem'
+        : '0'
+
   const styles = useMemo(
     () => ({
       menuPortal: (base) => ({
@@ -103,7 +112,7 @@ export default function Select({
 
       control: (base) => ({
         ...base,
-        minHeight: '40px',
+        minHeight: `${resolvedControlMinHeight}px`,
         borderRadius: '1rem',
         background: 'rgba(255, 255, 255, 0.04)',
         border: isActive
@@ -129,7 +138,7 @@ export default function Select({
 
       valueContainer: (base) => ({
         ...base,
-        padding: '0 0.875rem',
+        padding: `${valuePaddingY} 0.875rem`,
       }),
 
       placeholder: (base) => ({
@@ -220,7 +229,13 @@ export default function Select({
         fontSize: '0.875rem',
       }),
     }),
-    [showErrorState, isActive, isDisabled],
+    [
+      showErrorState,
+      isActive,
+      isDisabled,
+      resolvedControlMinHeight,
+      valuePaddingY,
+    ],
   )
 
   return (

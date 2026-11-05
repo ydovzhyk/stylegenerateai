@@ -71,7 +71,7 @@ export default function PhotoLabMaskToolbar({
 
   return (
     <div
-      className={`rounded-2xl border border-white/10 bg-background-soft/70 p-4 ${className}`}
+      className={`min-w-0 rounded-2xl border border-white/10 bg-background-soft/70 p-4 ${className}`}
     >
       {showTitle ? (
         <Text
@@ -153,7 +153,7 @@ export default function PhotoLabMaskToolbar({
         })}
       </div>
 
-      <div className="mt-3 flex w-full items-center justify-center gap-2">
+      <div className="mt-3 flex w-full min-w-0 items-center justify-center gap-1.5 sm:gap-2">
         <Button
           type="button"
           variant="secondary"
@@ -177,7 +177,7 @@ export default function PhotoLabMaskToolbar({
           }
           disabled={disabled}
           aria-label="Zoom level"
-          className="h-1.5 w-full min-w-[120px] max-w-[220px] cursor-pointer appearance-none rounded-full bg-white/10 accent-[#7c5cff] disabled:cursor-not-allowed disabled:opacity-40"
+          className="h-1.5 w-full min-w-0 max-w-[220px] flex-1 cursor-pointer appearance-none rounded-full bg-white/10 accent-[#7c5cff] disabled:cursor-not-allowed disabled:opacity-40"
         />
 
         <Button

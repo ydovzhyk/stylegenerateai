@@ -75,25 +75,27 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "sign_in_required",
-                "label": "Standard"
+                "available": true,
+                "credits": 0,
+                "label": "Standard",
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
                 "available": false,
                 "credits": null,
                 "lockedReason": "sign_in_required",
-                "label": "Premium"
+                "label": "Premium",
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
                 "available": false,
                 "credits": null,
                 "lockedReason": "sign_in_required",
-                "label": "Print"
+                "label": "Print",
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             },
             "outputFormat": {
@@ -154,25 +156,26 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
                 "available": true,
                 "credits": 1,
                 "label": "Standard",
-                "description": "Everyday export at your photo size."
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Premium"
+                "available": true,
+                "credits": 2,
+                "label": "Premium",
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
                 "available": false,
                 "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Print"
+                "lockedReason": "plan_basic_required",
+                "label": "Print",
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             },
             "outputFormat": {
@@ -231,25 +234,25 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
                 "available": true,
                 "credits": 1,
                 "label": "Standard",
-                "description": "Everyday export at your photo size."
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Premium"
+                "available": true,
+                "credits": 2,
+                "label": "Premium",
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Print"
+                "available": true,
+                "credits": 4,
+                "label": "Print",
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             },
             "outputFormat": {
@@ -306,25 +309,25 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
                 "available": true,
                 "credits": 1,
                 "label": "Standard",
-                "description": "Everyday export at your photo size."
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
                 "available": true,
-                "credits": 1,
+                "credits": 2,
                 "label": "Premium",
-                "description": "High-quality export for saving and editing."
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
                 "available": true,
-                "credits": 2,
+                "credits": 4,
                 "label": "Print",
-                "description": "2× upscale to PNG for large prints and archive use."
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             },
             "outputFormat": {
@@ -384,25 +387,27 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "sign_in_required",
-                "label": "Standard"
+                "available": true,
+                "credits": 0,
+                "label": "Standard",
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
                 "available": false,
                 "credits": null,
                 "lockedReason": "sign_in_required",
-                "label": "Premium"
+                "label": "Premium",
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
                 "available": false,
                 "credits": null,
                 "lockedReason": "sign_in_required",
-                "label": "Print"
+                "label": "Print",
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             }
           }
@@ -422,25 +427,26 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
                 "available": true,
                 "credits": 1,
                 "label": "Standard",
-                "description": "Everyday export at your photo size."
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Premium"
+                "available": true,
+                "credits": 2,
+                "label": "Premium",
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
                 "available": false,
                 "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Print"
+                "lockedReason": "plan_basic_required",
+                "label": "Print",
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             }
           }
@@ -460,25 +466,25 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
                 "available": true,
                 "credits": 1,
                 "label": "Standard",
-                "description": "Everyday export at your photo size."
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Premium"
+                "available": true,
+                "credits": 2,
+                "label": "Premium",
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "plan_pro_required",
-                "label": "Print"
+                "available": true,
+                "credits": 4,
+                "label": "Print",
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             }
           }
@@ -498,25 +504,25 @@
                 "available": true,
                 "credits": 0,
                 "label": "Draft",
-                "description": "Lightweight export preview for quick checks."
+                "description": "Internal billing tier (not shown in Export size)."
               },
               "standard": {
                 "available": true,
                 "credits": 1,
                 "label": "Standard",
-                "description": "Everyday export at your photo size."
+                "description": "Phone-ready generation size for everyday use and sharing."
               },
               "premium": {
                 "available": true,
-                "credits": 1,
+                "credits": 2,
                 "label": "Premium",
-                "description": "High-quality export for saving and editing."
+                "description": "Higher native resolution for wallpapers and small prints."
               },
               "print": {
                 "available": true,
-                "credits": 2,
+                "credits": 4,
                 "label": "Print",
-                "description": "2× upscale to PNG for large prints and archive use."
+                "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
               }
             }
           }
@@ -550,26 +556,28 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks.",
+                    "description": "Internal billing tier (not shown in Export size).",
                     "includedInPresetPrice": true
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -591,25 +599,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -650,25 +659,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -707,25 +716,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -769,25 +778,27 @@
                   "draft": {
                     "available": true,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "outputFormat": {
@@ -828,25 +839,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "outputFormat": {
@@ -905,25 +917,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "outputFormat": {
@@ -980,25 +992,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "outputFormat": {
@@ -1062,26 +1074,28 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks.",
+                    "description": "Internal billing tier (not shown in Export size).",
                     "includedInPresetPrice": true
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -1103,25 +1117,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1162,25 +1177,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1219,25 +1234,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1284,26 +1299,28 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks.",
+                    "description": "Internal billing tier (not shown in Export size).",
                     "includedInPresetPrice": true
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -1325,25 +1342,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1384,25 +1402,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1441,25 +1459,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1506,26 +1524,28 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks.",
+                    "description": "Internal billing tier (not shown in Export size).",
                     "includedInPresetPrice": true
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -1547,25 +1567,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1606,25 +1627,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1663,25 +1684,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1725,25 +1746,27 @@
                   "draft": {
                     "available": true,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -1765,25 +1788,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1824,25 +1848,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1881,25 +1905,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -1943,25 +1967,27 @@
                   "draft": {
                     "available": true,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -1983,25 +2009,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -2042,25 +2069,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -2099,25 +2126,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -2164,26 +2191,28 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks.",
+                    "description": "Internal billing tier (not shown in Export size).",
                     "includedInPresetPrice": true
                   },
                   "standard": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
-                    "label": "Standard"
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Premium"
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
                     "lockedReason": "sign_in_required",
-                    "label": "Print"
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 }
               }
@@ -2205,25 +2234,26 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": false,
                     "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -2264,25 +2294,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Premium"
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "plan_pro_required",
-                    "label": "Print"
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {
@@ -2321,25 +2351,25 @@
                     "available": true,
                     "credits": 0,
                     "label": "Draft",
-                    "description": "Lightweight export preview for quick checks."
+                    "description": "Internal billing tier (not shown in Export size)."
                   },
                   "standard": {
                     "available": true,
                     "credits": 1,
                     "label": "Standard",
-                    "description": "Everyday export at your photo size."
+                    "description": "Phone-ready generation size for everyday use and sharing."
                   },
                   "premium": {
                     "available": true,
-                    "credits": 1,
+                    "credits": 2,
                     "label": "Premium",
-                    "description": "High-quality export for saving and editing."
+                    "description": "Higher native resolution for wallpapers and small prints."
                   },
                   "print": {
                     "available": true,
-                    "credits": 2,
+                    "credits": 4,
                     "label": "Print",
-                    "description": "2× upscale to PNG for large prints and archive use."
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
                   }
                 },
                 "generatedImageFormat": {

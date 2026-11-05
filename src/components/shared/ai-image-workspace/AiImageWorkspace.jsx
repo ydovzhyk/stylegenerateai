@@ -4,8 +4,10 @@ import BeforeAfterComparisonSlider, {
   ComparisonPreviewBadge,
   resolveComparisonPreviewTarget,
 } from '@/components/shared/before-after-comparison/BeforeAfterComparisonSlider'
+import ExportSizeChangeConfirmModal from '@/components/shared/ai-image-workspace/ExportSizeChangeConfirmModal'
+import ExportSizeSelect from '@/components/shared/ai-image-workspace/ExportSizeSelect'
 import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
-import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
+import GenerationSaveCard from '@/components/shared/ai-image-workspace/GenerationSaveCard'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import PhotoLabMaskEditor, {
   PHOTO_LAB_MASK_BRUSH_SIZES,
@@ -16,6 +18,7 @@ import PhotoLabMaskToolbar, {
 import RestoreStyleToolbar from '@/components/photo-lab/RestoreStyleToolbar'
 import PictureStyleToolbar from '@/components/photo-lab/PictureStyleToolbar'
 import Button from '@/components/shared/button/Button'
+import InfoHint from '@/components/shared/info-hint/InfoHint'
 import Input from '@/components/shared/input/Input'
 import Photo from '@/components/shared/photo/Photo'
 import { PHOTO_OVERLAY_TEXT_OUTLINE } from '@/components/shared/preview-badge/PreviewBadge'
@@ -25,13 +28,15 @@ import {
   DEFAULT_PICTURE_STYLE,
   PHOTO_STYLES_MODE,
 } from '@/constants/picture-styles'
-import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
 import { resolveGallerySourceType } from '@/constants/gallery-sections'
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { useLanguage } from '@/providers/languageContext'
-import { axiosCreateGeneratedImageFile } from '@/services/api/generated-image'
+import {
+  axiosDiscardGenerationJob,
+  axiosExportGenerationJob,
+} from '@/services/api/generation-job'
 import {
   axiosDiscardPrintExportJob,
   axiosDownloadPrintExportFile,
@@ -56,7 +61,7 @@ import languagesAndCodes from '@/utils/translate/languagesAndCodes'
 import { translateTextTo } from '@/utils/translate/translate'
 import { ImagePlus, Maximize2, Sparkles } from 'lucide-react'
 import clsx from 'clsx'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 const DEFAULT_ACTION_CARD_LABELS = {}
@@ -119,6 +124,7 @@ export default function AiImageWorkspace({
   const [extraPrompt, setExtraPrompt] = useState('')
   const [generatedPreview, setGeneratedPreview] = useState('')
   const [generatedFile, setGeneratedFile] = useState(null)
+  const [generationJobId, setGenerationJobId] = useState('')
   const [printExport, setPrintExport] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -140,6 +146,7 @@ export default function AiImageWorkspace({
     alt: '',
     title: '',
   })
+  const [pendingExportSize, setPendingExportSize] = useState(null)
 
   const { languageIndex } = useLanguage()
 
@@ -236,7 +243,8 @@ export default function AiImageWorkspace({
     isFormatAllowed,
     isQualityAllowed,
     creditCost,
-    isAiModelAllowed,
+    planKey,
+    getOptionLockedReason,
     generatedImageFormat,
     setGeneratedImageFormat,
     generatedImageFormats,
@@ -324,6 +332,50 @@ export default function AiImageWorkspace({
     dispatch(setReadyTemplateMessage(message))
   }, [dispatch, isPhotoLab, printExport?.jobId, printExport?.status])
 
+  const clearGeneratedResult = useCallback(() => {
+    if (generationJobId) {
+      void axiosDiscardGenerationJob(
+        generationJobId,
+        isLogin ? '' : visitorId,
+      ).catch(() => null)
+    }
+
+    setGeneratedPreview('')
+    setGeneratedFile(null)
+    setGenerationJobId('')
+    setPrintExport(null)
+    lastPrintExportErrorRef.current = ''
+    lastPrintExportReadyRef.current = ''
+    setSaveToGallery(false)
+    setImageTitle('')
+    setComparisonSliderPosition(100)
+  }, [generationJobId, isLogin, visitorId])
+
+  const handleExportSizeChange = useCallback(
+    (nextId) => {
+      if (!nextId || nextId === photoQuality) return
+
+      if (generatedPreview || generationJobId) {
+        setPendingExportSize(nextId)
+        return
+      }
+
+      setPhotoQuality(nextId)
+    },
+    [generatedPreview, generationJobId, photoQuality, setPhotoQuality],
+  )
+
+  const handleCancelExportSizeChange = useCallback(() => {
+    setPendingExportSize(null)
+  }, [])
+
+  const handleConfirmExportSizeChange = useCallback(() => {
+    if (!pendingExportSize) return
+    clearGeneratedResult()
+    setPhotoQuality(pendingExportSize)
+    setPendingExportSize(null)
+  }, [clearGeneratedResult, pendingExportSize, setPhotoQuality])
+
   const applyGenerationResult = (result) => {
     const previewUrl =
       result?.previewUrl ||
@@ -333,7 +385,15 @@ export default function AiImageWorkspace({
 
     if (!previewUrl) return
 
+    if (generationJobId && generationJobId !== result?.jobId) {
+      void axiosDiscardGenerationJob(
+        generationJobId,
+        isLogin ? '' : visitorId,
+      ).catch(() => null)
+    }
+
     setGeneratedPreview(previewUrl)
+    setGenerationJobId(String(result?.jobId || '').trim())
     setImageTitle(
       template?.title
         ? `${template.title} result`
@@ -342,7 +402,7 @@ export default function AiImageWorkspace({
           : 'My generated look',
     )
     setSaveToGallery(false)
-    setPrintExport(result?.printExport || null)
+    setPrintExport(null)
 
     requestAnimationFrame(() => {
       scrollToResult()
@@ -427,8 +487,15 @@ export default function AiImageWorkspace({
     })
     setLoading(false)
     setSaveLoading(false)
+    if (generationJobId) {
+      void axiosDiscardGenerationJob(
+        generationJobId,
+        isLogin ? '' : visitorId,
+      ).catch(() => null)
+    }
     setGeneratedPreview('')
     setGeneratedFile(null)
+    setGenerationJobId('')
     setPrintExport(null)
     lastPrintExportErrorRef.current = ''
     lastPrintExportReadyRef.current = ''
@@ -690,7 +757,7 @@ export default function AiImageWorkspace({
         }
 
         formData.append('extraPrompt', normalizedExtraPrompt)
-        formData.append('photoQuality', photoQuality)
+        formData.append('photoQuality', photoQuality || 'standard')
         if (showOutputFormat && outputFormat) {
           formData.append('outputFormat', outputFormat)
         }
@@ -750,7 +817,7 @@ export default function AiImageWorkspace({
 
       formData.append('extraPrompt', normalizedExtraPrompt)
       formData.append('outputFormat', outputFormat)
-      formData.append('photoQuality', photoQuality)
+      formData.append('photoQuality', photoQuality || 'standard')
       formData.append('isRegeneration', generatedPreview ? 'true' : 'false')
 
       if (!isLogin && visitorId) {
@@ -787,25 +854,6 @@ export default function AiImageWorkspace({
     if (isIdentityTransferMode && !canRunIdentityTransfer) return
 
     runGeneration()
-  }
-
-  const downloadGeneratedImage = (
-    downloadUrl = generatedPreview,
-    forcedFormat = generatedImageFormat,
-  ) => {
-    if (!downloadUrl) return
-
-    const fileFormat = getGeneratedImageFormat(forcedFormat)
-
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = `${imageTitle?.trim() || 'generated-image'}.${
-      fileFormat.extension
-    }`
-
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
   }
 
   const buildPreviewFile = (normalizedTitle) => {
@@ -877,22 +925,14 @@ export default function AiImageWorkspace({
     }, 1000)
   }
 
-  const fetchPrintExportBlob = async (normalizedTitle) => {
-    const { blob } = await axiosDownloadPrintExportFile(printExport.jobId, {
-      visitorId: isLogin ? '' : visitorId,
-      title: normalizedTitle,
-    })
-
-    return blob
-  }
-
   const handleDownloadGeneratedImage = async () => {
-    if (!generatedPreview) return
+    if (!generatedPreview || !generationJobId) return
 
+    const isPrintQuality = photoQuality === 'print'
     const isPrintExportReady =
       printExport?.status === 'ready' && Boolean(printExport?.downloadUrl)
 
-    if (printExport && !isPrintExportReady) return
+    if (printExport && !isPrintExportReady && isPrintQuality) return
 
     const fallbackTitle = template?.title
       ? `${template.title} result`
@@ -901,69 +941,93 @@ export default function AiImageWorkspace({
         : 'My generated look'
 
     const normalizedTitle = String(imageTitle || '').trim() || fallbackTitle
+    const visitor = isLogin ? '' : visitorId
 
     setSaveLoading(true)
 
     try {
-      if (isPrintExportReady) {
-        const printBlob = await fetchPrintExportBlob(normalizedTitle)
+      if (isPrintQuality && isPrintExportReady) {
+        const printBlob = await axiosDownloadPrintExportFile(
+          printExport.jobId,
+          {
+            visitorId: visitor,
+            title: normalizedTitle,
+          },
+        ).then((result) => result.blob)
+
+        const printFormat = generatedImageFormat || 'png'
+        const printExtension =
+          printFormat === 'jpeg' || printFormat === 'jpg' ? 'jpg' : printFormat
 
         if (isLogin && saveToGallery) {
           const saveFormData = buildGeneratedImageFormData(true).formData
-
-          saveFormData.set('fileFormat', 'png')
+          saveFormData.set('fileFormat', printFormat)
           saveFormData.set('printExportJobId', printExport.jobId)
           saveFormData.delete('image')
-
           await dispatch(createGeneratedImage(saveFormData)).unwrap()
         }
 
-        downloadFromBlob(printBlob, normalizedTitle, 'png')
+        downloadFromBlob(printBlob, normalizedTitle, printExtension)
 
         if (!isLogin || !saveToGallery) {
-          await axiosDiscardPrintExportJob(
-            printExport.jobId,
-            isLogin ? '' : visitorId,
-          )
+          await axiosDiscardPrintExportJob(printExport.jobId, visitor)
           setPrintExport(null)
+        }
+
+        if (isLogin || visitorId) {
+          dispatch(getGenerationUsage())
         }
 
         return
       }
 
-      if (!isLogin) {
-        downloadGeneratedImage()
+      // Same endpoint for Draft / Standard / Premium / Print (Print returns 202 + job).
+      const exported = await axiosExportGenerationJob(generationJobId, {
+        photoQuality,
+        fileFormat: generatedImageFormat || 'png',
+        title: normalizedTitle,
+        visitorId: visitor,
+      })
+
+      if (exported?.printExport) {
+        setPrintExport(exported.printExport)
+        const message =
+          'Preparing print file… Download will start when ready.'
+        if (isPhotoLab) {
+          dispatch(setPhotoLabMessage(message))
+        } else {
+          dispatch(setReadyTemplateMessage(message))
+        }
         return
       }
 
-      if (saveToGallery) {
-        const { formData: saveFormData } = buildGeneratedImageFormData(true)
+      const blob = exported?.blob
+      if (!blob) {
+        throw new Error('Export file is missing')
+      }
+
+      const exportFormat = exported?.fileFormat || generatedImageFormat || 'png'
+      const extension =
+        exportFormat === 'jpeg' || exportFormat === 'jpg' ? 'jpg' : exportFormat
+
+      if (isLogin && saveToGallery) {
+        const saveFormData = buildGeneratedImageFormData(true).formData
+        saveFormData.set(
+          'image',
+          new File([blob], `${normalizedTitle}.${extension}`, {
+            type: blob.type || `image/${exportFormat}`,
+          }),
+        )
+        saveFormData.set('fileFormat', generatedImageFormat || exportFormat)
+        saveFormData.set('photoQuality', photoQuality || '')
         await dispatch(createGeneratedImage(saveFormData)).unwrap()
       }
 
-      const { formData: downloadFormData, normalizedTitle: downloadTitle } =
-        buildGeneratedImageFormData(false)
+      downloadFromBlob(blob, normalizedTitle, extension)
 
-      const convertedImage =
-        await axiosCreateGeneratedImageFile(downloadFormData)
-
-      const fileFormat = getGeneratedImageFormat(
-        convertedImage?.fileFormat || generatedImageFormat,
-      )
-
-      const objectUrl = URL.createObjectURL(convertedImage.blob)
-
-      const link = document.createElement('a')
-      link.href = objectUrl
-      link.download = `${downloadTitle}.${fileFormat.extension}`
-
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-
-      setTimeout(() => {
-        URL.revokeObjectURL(objectUrl)
-      }, 1000)
+      if (isLogin || visitorId) {
+        dispatch(getGenerationUsage())
+      }
     } catch (error) {
       const errorMessage =
         String(error?.data?.message || error?.message || '').trim() ||
@@ -1135,9 +1199,12 @@ export default function AiImageWorkspace({
         'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
       : template?.promptPlaceholder || promptPlaceholder
 
+  const identityTransferPromptHint =
+    'Default: hairstyle from the Reference photo. To use your face-photo hairstyle, write “Keep my hairstyle”. You can add other edits too.'
+
   const resolvedPromptHint = isPhotoLab
     ? isIdentityTransferMode
-      ? 'Default: hairstyle from the Reference photo. To use your face-photo hairstyle, write “Keep my hairstyle”. You can add other edits too.'
+      ? ''
       : isSmartEditMode
         ? 'Required. Write a short prompt that explains the change. Detail photos are optional references for that change.'
         : ''
@@ -1146,7 +1213,7 @@ export default function AiImageWorkspace({
   const resolvedWorkspaceDescription = isRemoveObjectsMode
     ? 'Upload your photo, paint a mask, describe what to remove, or both - then generate.'
     : isEnhanceQualityMode
-      ? 'Upload your photo, choose likeness and export size, then generate a cleaner version of the same photo.'
+      ? 'Upload your photo, choose Export size above the prompt, then generate a cleaner version of the same photo.'
       : isPhotoStylesMode
         ? 'Upload one photo, pick a style above the preview, then generate.'
         : isSmartEditMode
@@ -1197,16 +1264,7 @@ export default function AiImageWorkspace({
                 : actionCardLabels.descriptionDisabled,
   }
 
-  // Photo Lab always keeps the first column so layout stays 3-up even when a
-  // mode has no saved showcase templates yet (e.g. new Identity Transfer).
-  const showSelectionPreview = isPhotoLab
-    ? Boolean(template)
-    : Boolean(
-        template?.previewUrl ||
-          template?.afterPreviewUrl ||
-          template?.beforePreviewUrl,
-      )
-
+  // Kept for possible admin/debug reuse; workspace no longer shows mode preview.
   const renderSelectionPreviewCard = ({ onPreview, action } = {}) => {
     if (selectionComparison) {
       return (
@@ -1354,33 +1412,134 @@ export default function AiImageWorkspace({
     )
   }
 
-  const showRemoveObjectsWorkspace = isRemoveObjectsMode && clientFile
-  const showRestoreStyleWorkspace =
-    isRestoreColorizeMode &&
-    Boolean(clientFile) &&
-    onRestoreStyleChange &&
-    restoreStyle
+  // Mode settings stay mounted for the mode (no jump after upload).
+  // Only the remove-objects mask canvas still waits for a photo.
+  const showRemoveObjectsSettings = isRemoveObjectsMode
+  const showRemoveObjectsMaskFrame = isRemoveObjectsMode && Boolean(clientFile)
+  const showRestoreStyleSettings =
+    isRestoreColorizeMode && Boolean(onRestoreStyleChange) && Boolean(restoreStyle)
   const showIdentitySourceWorkspace = isIdentityTransferMode
   const showSmartEditSourceWorkspace = isSmartEditMode
   const showPictureStyleWorkspace = isPhotoStylesMode
-  const showExpandedPhotoWorkspace =
-    showRemoveObjectsWorkspace ||
-    showRestoreStyleWorkspace ||
+  const hasPhotoLabModeSettings =
+    showRemoveObjectsSettings ||
+    showRestoreStyleSettings ||
     showIdentitySourceWorkspace ||
     showSmartEditSourceWorkspace ||
     showPictureStyleWorkspace
 
-  const toolbarColumnClassName = showSelectionPreview
-    ? 'md:col-start-1 lg:col-start-2 lg:row-start-1'
-    : 'md:col-start-1 lg:row-start-1'
+  const renderPromptEditor = (className = '') => (
+    <div
+      className={clsx(
+        'flex flex-1 flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5',
+        className,
+      )}
+    >
+      {isIdentityTransferMode ? (
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <Text
+            as="p"
+            variant="section-title"
+            color="white"
+            caseMode="sentence"
+            className="text-lg font-semibold md:text-xl"
+          >
+            {resolvedPromptLabel}
+          </Text>
+          <InfoHint
+            placement="bottom"
+            align="end"
+            text={identityTransferPromptHint}
+            label="Optional refinements hint"
+            widthClassName="w-[260px]"
+          />
+        </div>
+      ) : null}
 
-  const uploadPhotoColumnClassName = showSelectionPreview
-    ? 'md:col-start-1 lg:col-start-2 lg:row-start-2'
-    : 'md:col-start-1 lg:row-start-2'
+      <Input
+        as="textarea"
+        rows={5}
+        label={isIdentityTransferMode ? undefined : resolvedPromptLabel}
+        labelClassName="text-lg font-semibold text-white md:text-xl"
+        placeholder={resolvedPromptPlaceholder}
+        hint={resolvedPromptHint}
+        value={extraPrompt}
+        onChange={(e) => setExtraPrompt(e.target.value)}
+        caseMode="sentence"
+        className="flex h-full min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1"
+        inputClassName="h-full min-h-0 flex-1 resize-none"
+        helpClassName={resolvedPromptHint ? undefined : 'hidden'}
+      />
+    </div>
+  )
 
-  const resultPhotoColumnClassName = showSelectionPreview
-    ? 'md:col-start-2 lg:col-start-3 lg:row-start-2'
-    : 'md:col-start-2 lg:row-start-2'
+  const renderPhotoLabModeSettings = () => {
+    if (showRemoveObjectsSettings) {
+      return (
+        <div className="flex min-w-0 flex-col gap-3">
+          <PhotoLabMaskToolbar
+            showTitle={false}
+            maskEditorRef={maskEditorRef}
+            maskTool={maskTool}
+            onMaskToolChange={setMaskTool}
+            maskPaintActive={maskPaintActive}
+            onMaskPaintActiveChange={setMaskPaintActive}
+            maskBrushSize={maskBrushSize}
+            onMaskBrushSizeChange={setMaskBrushSize}
+            maskZoomState={maskZoomState}
+            disabled={loading || !clientFile}
+            onClearMask={() => {
+              setHasRemovalMask(false)
+              setGeneratedPreview('')
+            }}
+          />
+
+          {clientFile && !maskPaintActive && maskZoomState.zoom > 1 ? (
+            <Text
+              as="p"
+              variant="caption"
+              color="muted"
+              caseMode="sentence"
+              className="text-center"
+            >
+              Drag the photo to move it. Tap Brush to paint again.
+            </Text>
+          ) : null}
+        </div>
+      )
+    }
+
+    if (showRestoreStyleSettings) {
+      return (
+        <RestoreStyleToolbar
+          restoreStyle={restoreStyle}
+          onRestoreStyleChange={onRestoreStyleChange}
+          disabled={loading}
+          showTitle={false}
+        />
+      )
+    }
+
+    if (showIdentitySourceWorkspace) {
+      return renderIdentityTransferSources()
+    }
+
+    if (showSmartEditSourceWorkspace) {
+      return renderSmartEditSources()
+    }
+
+    if (showPictureStyleWorkspace) {
+      return (
+        <PictureStyleToolbar
+          pictureStyle={resolvedPictureStyle}
+          onPictureStyleChange={onPictureStyleChange}
+          disabled={loading || !onPictureStyleChange}
+        />
+      )
+    }
+
+    return null
+  }
 
   const renderStandardResultPreview = () =>
     generatedPreview
@@ -1564,11 +1723,11 @@ export default function AiImageWorkspace({
             className="mt-2 max-w-[230px]"
           >
             {isIdentityTransferMode
-              ? 'Use the buttons above - Reference photo first, then Face photo.'
+              ? 'Use the source buttons - Reference photo first, then Face photo.'
               : isSmartEditMode
-                ? 'Use the buttons above - Main photo first, then Detail 1 and the rest if you need them.'
+                ? 'Use the source buttons - Main photo first, then Detail 1 and the rest if you need them.'
                 : isPhotoStylesMode
-                  ? 'Use the buttons above to pick a style, then upload this photo.'
+                  ? 'Pick a style in the settings column, then upload this photo.'
                   : 'Choose a clear portrait photo for the best result.'}
           </Text>
         </button>
@@ -1816,126 +1975,43 @@ export default function AiImageWorkspace({
         </Text>
       </div>
 
-      <div
-        className={clsx(
-          'mb-5 grid items-stretch gap-5',
-          showExpandedPhotoWorkspace
-            ? clsx('grid-cols-1 md:grid-cols-2', showSelectionPreview && 'lg:grid-cols-3')
-            : clsx('md:grid-cols-2', showSelectionPreview && 'lg:grid-cols-3'),
-        )}
-      >
-        {showExpandedPhotoWorkspace ? (
-          <>
-            {showSelectionPreview ? (
-              <div className="hidden min-w-0 lg:col-start-1 lg:row-start-2 lg:block">
-                {renderSelectionPreviewCard({
-                  onPreview: ({ src, alt, title }) =>
-                    openImagePreview({ src, alt, title }),
-                })}
+      <div className="mb-5 grid items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="relative h-full min-h-[240px] min-w-0 md:col-span-2 lg:col-span-1">
+          <div className="flex h-full min-h-0 flex-col gap-4 lg:absolute lg:inset-0">
+            {hasPhotoLabModeSettings ? (
+              <div className="relative z-10 min-w-0 shrink-0 overflow-visible">
+                {renderPhotoLabModeSettings()}
               </div>
             ) : null}
-
-            {showRemoveObjectsWorkspace ? (
-              <div
-                className={clsx('flex min-w-0 flex-col gap-3', toolbarColumnClassName)}
-              >
-                <PhotoLabMaskToolbar
-                  showTitle={false}
-                  maskEditorRef={maskEditorRef}
-                  maskTool={maskTool}
-                  onMaskToolChange={setMaskTool}
-                  maskPaintActive={maskPaintActive}
-                  onMaskPaintActiveChange={setMaskPaintActive}
-                  maskBrushSize={maskBrushSize}
-                  onMaskBrushSizeChange={setMaskBrushSize}
-                  maskZoomState={maskZoomState}
-                  disabled={loading}
-                  onClearMask={() => {
-                    setHasRemovalMask(false)
-                    setGeneratedPreview('')
-                  }}
-                />
-
-                {!maskPaintActive && maskZoomState.zoom > 1 ? (
-                  <Text
-                    as="p"
-                    variant="caption"
-                    color="muted"
-                    caseMode="sentence"
-                    className="text-center"
-                  >
-                    Drag the photo to move it. Tap Brush to paint again.
-                  </Text>
-                ) : null}
-              </div>
-            ) : null}
-
-            {showRestoreStyleWorkspace ? (
-              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
-                <RestoreStyleToolbar
-                  restoreStyle={restoreStyle}
-                  onRestoreStyleChange={onRestoreStyleChange}
-                  disabled={loading}
-                  showTitle={false}
-                />
-              </div>
-            ) : null}
-
-            {showIdentitySourceWorkspace ? (
-              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
-                {renderIdentityTransferSources()}
-              </div>
-            ) : null}
-
-            {showSmartEditSourceWorkspace ? (
-              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
-                {renderSmartEditSources()}
-              </div>
-            ) : null}
-
-            {showPictureStyleWorkspace ? (
-              <div className={clsx('min-w-0 overflow-visible', toolbarColumnClassName)}>
-                <PictureStyleToolbar
-                  pictureStyle={resolvedPictureStyle}
-                  onPictureStyleChange={onPictureStyleChange}
-                  disabled={loading || !onPictureStyleChange}
-                />
-              </div>
-            ) : null}
-
-            <div className={clsx('min-w-0', uploadPhotoColumnClassName)}>
-              {showRemoveObjectsWorkspace
-                ? renderRemoveObjectsMaskFrame()
-                : renderStandardUploadPhotoCard()}
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
+              <ExportSizeSelect
+                photoQuality={photoQuality}
+                setPhotoQuality={handleExportSizeChange}
+                photoQualities={photoQualities}
+                isQualityAllowed={isQualityAllowed}
+                getOptionLockedReason={getOptionLockedReason}
+                planKey={planKey}
+                isLogin={isLogin}
+                disabled={loading}
+              />
+              {renderPromptEditor(
+                hasPhotoLabModeSettings ? 'min-h-[160px]' : 'min-h-[240px]',
+              )}
             </div>
+          </div>
+        </div>
 
-            <div
-              ref={resultRef}
-              className={clsx('min-w-0', resultPhotoColumnClassName)}
-            >
-              {showRemoveObjectsWorkspace
-                ? renderRemoveObjectsResultPreview()
-                : renderStandardResultPreview()}
-            </div>
-          </>
-        ) : (
-          <>
-            {showSelectionPreview ? (
-              <div className="hidden lg:block">
-                {renderSelectionPreviewCard({
-                  onPreview: ({ src, alt, title }) =>
-                    openImagePreview({ src, alt, title }),
-                })}
-              </div>
-            ) : null}
+        <div className="min-w-0">
+          {showRemoveObjectsMaskFrame
+            ? renderRemoveObjectsMaskFrame()
+            : renderStandardUploadPhotoCard()}
+        </div>
 
-            {renderStandardUploadPhotoCard()}
-
-            <div ref={resultRef} className="flex min-h-0 flex-col">
-              {renderStandardResultPreview()}
-            </div>
-          </>
-        )}
+        <div ref={resultRef} className="min-w-0">
+          {isRemoveObjectsMode
+            ? renderRemoveObjectsResultPreview()
+            : renderStandardResultPreview()}
+        </div>
 
         <input
           ref={inputRef}
@@ -1946,50 +2022,26 @@ export default function AiImageWorkspace({
         />
       </div>
 
-      <div className="grid items-stretch gap-5 lg:grid-cols-3">
-        <div className="flex h-full min-h-[360px] flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5">
-          <Input
-            as="textarea"
-            rows={5}
-            label={resolvedPromptLabel}
-            labelClassName="text-lg font-semibold text-white md:text-xl"
-            placeholder={resolvedPromptPlaceholder}
-            hint={resolvedPromptHint}
-            value={extraPrompt}
-            onChange={(e) => setExtraPrompt(e.target.value)}
-            caseMode="sentence"
-            className="flex h-full min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1"
-            inputClassName="h-full min-h-0 flex-1 resize-none"
-            helpClassName={resolvedPromptHint ? undefined : 'hidden'}
-          />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <GenerationOptionsPanel
-            extraPrompt={extraPrompt}
-            setExtraPrompt={setExtraPrompt}
-            outputFormat={outputFormat}
-            setOutputFormat={setOutputFormat}
-            photoQuality={photoQuality}
-            setPhotoQuality={setPhotoQuality}
-            outputFormats={outputFormats}
-            photoQualities={photoQualities}
-            isFormatAllowed={isFormatAllowed}
-            isQualityAllowed={isQualityAllowed}
-            lockedText={lockedText}
-            showPrompt={false}
-            showOutputFormat={showOutputFormat}
-            photoQualityLabel="Export size"
-          />
-        </div>
-
+      <div className="grid items-stretch gap-5 lg:grid-cols-2">
         <GenerationActionCard
           generatedPreview={generatedPreview}
           loading={loading}
           disabled={isGenerateDisabled}
           onGenerate={handleGenerateClick}
-          onDownload={handleDownloadGeneratedImage}
           planHint={planHint}
+          showOutputFormat={showOutputFormat}
+          outputFormat={outputFormat}
+          setOutputFormat={setOutputFormat}
+          outputFormats={outputFormats}
+          isFormatAllowed={isFormatAllowed}
+          lockedText={lockedText}
+          creditCost={creditCost}
+          {...resolvedActionCardLabels}
+        />
+
+        <GenerationSaveCard
+          active={Boolean(generatedPreview)}
+          onDownload={handleDownloadGeneratedImage}
           isLogin={isLogin}
           saveToGallery={saveToGallery}
           setSaveToGallery={setSaveToGallery}
@@ -2001,20 +2053,6 @@ export default function AiImageWorkspace({
           generatedImageFormats={generatedImageFormats}
           isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
           formatLockedText={lockedText}
-          creditCost={creditCost}
-          printExportProcessing={printExport?.status === 'processing'}
-          printExportProgress={
-            printExport?.status === 'processing'
-              ? typeof printExport?.progress === 'number'
-                ? printExport.progress
-                : 0
-              : null
-          }
-          downloadDisabled={
-            Boolean(printExport) && printExport?.status !== 'ready'
-          }
-          isPrintExport={photoQuality === 'print'}
-          {...resolvedActionCardLabels}
         />
       </div>
 
@@ -2024,6 +2062,17 @@ export default function AiImageWorkspace({
         src={previewModal.src}
         alt={previewModal.alt}
         title={previewModal.title}
+      />
+
+      <ExportSizeChangeConfirmModal
+        open={Boolean(pendingExportSize)}
+        nextLabel={
+          photoQualities.find((item) => item.id === pendingExportSize)?.label ||
+          pendingExportSize ||
+          ''
+        }
+        onCancel={handleCancelExportSizeChange}
+        onConfirm={handleConfirmExportSizeChange}
       />
     </section>
   )

@@ -102,7 +102,7 @@ export const PHOTO_LAB_MODES = [
     title: 'Photo Styles',
     label: 'Restyle your photo',
     description:
-      'Turn one photo into a coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.',
+      'Turn one photo into a coloring page, cartoon, sticker, clipart, or a professional studio shot.',
     icon: Palette,
     accent: 'from-sky-300/25 to-primary/25',
     promptPlaceholder:

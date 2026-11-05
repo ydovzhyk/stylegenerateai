@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import clsx from 'clsx'
@@ -9,20 +9,28 @@ import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
-import GenerationOptionsPanel from '@/components/shared/ai-image-workspace/GenerationOptionsPanel'
+import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
+import ExportSizeChangeConfirmModal from '@/components/shared/ai-image-workspace/ExportSizeChangeConfirmModal'
+import ExportSizeSelect from '@/components/shared/ai-image-workspace/ExportSizeSelect'
+import GenerationSaveCard from '@/components/shared/ai-image-workspace/GenerationSaveCard'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import InfoHint from '@/components/shared/info-hint/InfoHint'
 import Photo from '@/components/shared/photo/Photo'
 import { PHOTO_OVERLAY_TEXT_OUTLINE } from '@/components/shared/preview-badge/PreviewBadge'
-import BeforeAfterComparisonSlider, {
-  ComparisonPreviewBadge,
-  resolveComparisonPreviewTarget,
-} from '@/components/shared/before-after-comparison/BeforeAfterComparisonSlider'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
 import { getLogin } from '@/store/auth/auth-selectors'
 import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
 import { queueAssistantNotice } from '@/store/assistant/assistant-slice'
+import {
+  axiosDiscardGenerationJob,
+  axiosExportGenerationJob,
+} from '@/services/api/generation-job'
+import {
+  axiosDiscardPrintExportJob,
+  axiosDownloadPrintExportFile,
+  axiosGetPrintExportJob,
+} from '@/services/api/print-export'
 import { axiosGenerateImagine } from '@/services/api/imagine'
 import {
   PAINTING_CANVAS_PRESETS,
@@ -142,18 +150,19 @@ function ChoiceGrid({ items, activeId, onSelect, disabled }) {
   )
 }
 
-export default function ImagineWorkspace({ mode, examplePreview = null }) {
+export default function ImagineWorkspace({ mode }) {
   const dispatch = useDispatch()
   const isLogin = useSelector(getLogin)
   const visitorId = useSelector(getVisitorId)
   const {
     creditCost,
     planHint,
+    planKey,
     photoQuality,
     setPhotoQuality,
     photoQualities,
     isQualityAllowed,
-    lockedText,
+    getOptionLockedReason,
   } = useGenerationPlanAccess({
     productKey: 'imagine',
   })
@@ -179,6 +188,10 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
   const [renovationFile, setRenovationFile] = useState(null)
   const [imageChecks, setImageChecks] = useState({})
   const [previewUrl, setPreviewUrl] = useState('')
+  const [generationJobId, setGenerationJobId] = useState('')
+  const [printExport, setPrintExport] = useState(null)
+  const [imageTitle, setImageTitle] = useState('')
+  const [saveLoading, setSaveLoading] = useState(false)
   const [homeStyleLabel, setHomeStyleLabel] = useState('')
   const [wallpaperThemeLabel, setWallpaperThemeLabel] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -189,7 +202,50 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
     alt: '',
     title: '',
   })
-  const [comparisonSliderPosition, setComparisonSliderPosition] = useState(100)
+  const [pendingExportSize, setPendingExportSize] = useState(null)
+
+  const clearGeneratedResult = useCallback(() => {
+    if (generationJobId) {
+      void axiosDiscardGenerationJob(
+        generationJobId,
+        isLogin ? '' : visitorId,
+      ).catch(() => null)
+    }
+
+    setPreviewUrl('')
+    setGenerationJobId('')
+    setPrintExport(null)
+    setImageTitle('')
+    setHomeStyleLabel('')
+    setWallpaperThemeLabel('')
+    setWallpaperScreenLabel('')
+    setPaintingCanvasLabel('')
+  }, [generationJobId, isLogin, visitorId])
+
+  const handleExportSizeChange = useCallback(
+    (nextId) => {
+      if (!nextId || nextId === photoQuality) return
+
+      if (previewUrl || generationJobId) {
+        setPendingExportSize(nextId)
+        return
+      }
+
+      setPhotoQuality(nextId)
+    },
+    [generationJobId, photoQuality, previewUrl, setPhotoQuality],
+  )
+
+  const handleCancelExportSizeChange = useCallback(() => {
+    setPendingExportSize(null)
+  }, [])
+
+  const handleConfirmExportSizeChange = useCallback(() => {
+    if (!pendingExportSize) return
+    clearGeneratedResult()
+    setPhotoQuality(pendingExportSize)
+    setPendingExportSize(null)
+  }, [clearGeneratedResult, pendingExportSize, setPhotoQuality])
 
   const referencePreview = useObjectUrl(referenceFile)
   const placePreview = useObjectUrl(placeFile)
@@ -234,9 +290,104 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
     dispatch(queueAssistantNotice({ message }))
   }
 
+  useEffect(() => {
+    if (!printExport?.jobId || printExport.status !== 'processing') {
+      return undefined
+    }
+
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const status = await axiosGetPrintExportJob(
+          printExport.jobId,
+          isLogin ? '' : visitorId,
+        )
+        if (cancelled) return
+        setPrintExport((current) => ({
+          ...current,
+          ...status,
+        }))
+      } catch {
+        // Keep polling until TTL / user action.
+      }
+    }
+
+    const timer = setInterval(poll, 2000)
+    void poll()
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [printExport?.jobId, printExport?.status, isLogin, visitorId])
+
   const openImagePreview = ({ src, alt, title }) => {
     if (!src) return
     setPreviewModal({ open: true, src, alt, title })
+  }
+
+  const downloadFromBlob = (blob, title, extension) => {
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = objectUrl
+    link.download = `${title}.${extension}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+  }
+
+  const handleDownload = async () => {
+    if (!previewUrl || !generationJobId || saveLoading) return
+
+    const normalizedTitle =
+      String(imageTitle || '').trim() ||
+      (mode?.label ? `${mode.label} result` : 'imagine-result')
+    const visitor = isLogin ? '' : visitorId
+    const isPrintQuality = photoQuality === 'print'
+
+    setSaveLoading(true)
+    try {
+      if (isPrintQuality && printExport?.status === 'ready' && printExport?.jobId) {
+        const { blob } = await axiosDownloadPrintExportFile(printExport.jobId, {
+          visitorId: visitor,
+          title: normalizedTitle,
+        })
+        downloadFromBlob(blob, normalizedTitle, 'png')
+        await axiosDiscardPrintExportJob(printExport.jobId, visitor).catch(
+          () => null,
+        )
+        setPrintExport(null)
+        if (isLogin || visitorId) dispatch(getGenerationUsage())
+        return
+      }
+
+      const exported = await axiosExportGenerationJob(generationJobId, {
+        photoQuality,
+        fileFormat: 'png',
+        title: normalizedTitle,
+        visitorId: visitor,
+      })
+
+      if (exported?.printExport) {
+        setPrintExport(exported.printExport)
+        toast.info('Preparing print file… Download will start when ready.')
+        return
+      }
+
+      if (!exported?.blob) {
+        throw new Error('Export file is missing')
+      }
+
+      const exportFormat = exported?.fileFormat || 'png'
+      const extension =
+        exportFormat === 'jpeg' || exportFormat === 'jpg' ? 'jpg' : exportFormat
+      downloadFromBlob(exported.blob, normalizedTitle, extension)
+      if (isLogin || visitorId) dispatch(getGenerationUsage())
+    } catch (err) {
+      reportError(err?.message || 'Failed to download image')
+    } finally {
+      setSaveLoading(false)
+    }
   }
 
   const handleGenerate = async () => {
@@ -258,7 +409,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
     const formData = new FormData()
     formData.append('mode', mode.id)
     formData.append('prompt', prompt.trim())
-    formData.append('photoQuality', photoQuality || 'draft')
+    formData.append('photoQuality', photoQuality || 'standard')
 
     if (!isLogin && visitorId) {
       formData.append('visitorId', visitorId)
@@ -298,7 +449,16 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
       if (!nextPreview) {
         throw new Error('Generation failed. Please try again.')
       }
+      if (generationJobId && generationJobId !== data?.jobId) {
+        void axiosDiscardGenerationJob(
+          generationJobId,
+          isLogin ? '' : visitorId,
+        ).catch(() => null)
+      }
       setPreviewUrl(nextPreview)
+      setGenerationJobId(String(data?.jobId || '').trim())
+      setPrintExport(null)
+      setImageTitle(mode?.label ? `${mode.label} result` : 'Imagine result')
       const nextStyle =
         data?.homeStyle?.label || data?.resultPayload?.homeStyle?.label || ''
       setHomeStyleLabel(nextStyle)
@@ -426,19 +586,6 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
     else referenceInputRef.current?.click()
   }
 
-  const exampleBefore = String(examplePreview?.beforeUrl || '').trim()
-  const exampleAfter = String(examplePreview?.afterUrl || '').trim()
-  const exampleTitle = String(examplePreview?.title || '').trim() || mode.title
-  const exampleComparison =
-    exampleBefore && exampleAfter
-      ? {
-          beforeUrl: exampleBefore,
-          afterUrl: exampleAfter,
-          beforeLabel: 'Your photo',
-          afterLabel: 'Generated',
-        }
-      : null
-
   return (
     <section className="gradient-border-card p-5 sm:p-6 lg:p-7">
       <div className="mb-6">
@@ -451,322 +598,244 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
       </div>
 
       <div className="mb-5 grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <div className="flex min-w-0 flex-col gap-3 self-start overflow-visible md:col-start-1 lg:col-start-2 lg:row-start-1">
-          <div
-            className={clsx(
-              'relative overflow-visible rounded-2xl border border-white/10 bg-background-soft/70',
-              isHome ? 'px-3 pb-3' : 'p-4',
-            )}
-          >
-            {isHome ? (
-              <>
-                <div className="absolute right-3 top-3 z-20">
-                  <InfoHint
-                    text="Your place is required. A design example is optional, even from another house or room. The result is one photo of your place."
-                    label="Your place hint"
-                    align="end"
-                  />
-                </div>
-                {/* top-3 + Info(14px) + top-3 - clears the absolute hint, mirrors edge inset below */}
-                <div className="mt-[calc(0.75rem+14px+0.75rem)] grid grid-cols-2 gap-2">
-                  <SourceButton
-                    label="Your place"
-                    uploaded={Boolean(placeFile)}
+        <div className="relative h-full min-h-[240px] min-w-0 md:col-span-2 lg:col-span-1">
+          <div className="flex h-full min-h-0 flex-col gap-4 lg:absolute lg:inset-0">
+            <div
+              className={clsx(
+                'relative z-10 min-w-0 shrink-0 overflow-visible rounded-2xl border border-white/10 bg-background-soft/70',
+                isHome ? 'px-3 pb-3' : 'p-4',
+              )}
+            >
+              {isHome ? (
+                <>
+                  <div className="absolute right-3 top-3 z-20">
+                    <InfoHint
+                      placement="bottom"
+                      text="Your place is required. A design example is optional, even from another house or room. The result is one photo of your place."
+                      label="Your place hint"
+                      align="end"
+                    />
+                  </div>
+                  <div className="mt-[calc(0.75rem+14px+0.75rem)] grid grid-cols-2 gap-2">
+                    <SourceButton
+                      label="Your place"
+                      uploaded={Boolean(placeFile)}
+                      disabled={isGenerating}
+                      onClick={() => placeInputRef.current?.click()}
+                    />
+                    <SourceButton
+                      label="Design example"
+                      uploaded={Boolean(renovationFile)}
+                      disabled={isGenerating || !placeFile}
+                      onClick={() => renovationInputRef.current?.click()}
+                    />
+                  </div>
+                </>
+              ) : null}
+
+              {mode.id === 'wallpaper' ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Text as="p" variant="body" color="white" caseMode="sentence">
+                      Screen size
+                    </Text>
+                    <InfoHint
+                      placement="bottom"
+                      text="Leave both sizes at 0. A reference photo keeps its size and scene. With no photo, a device in the prompt sets the screen, or the wallpaper is 1920×1080."
+                      label="Screen size hint"
+                      align="end"
+                    />
+                  </div>
+                  <ChoiceGrid
+                    items={WALLPAPER_PRESETS}
+                    activeId={
+                      WALLPAPER_PRESETS.find(
+                        (preset) =>
+                          wallpaperWidth === String(preset.width) &&
+                          wallpaperHeight === String(preset.height),
+                      )?.id
+                    }
                     disabled={isGenerating}
-                    onClick={() => placeInputRef.current?.click()}
+                    onSelect={(presetId) => {
+                      const preset = WALLPAPER_PRESETS.find((item) => item.id === presetId)
+                      if (!preset) return
+                      setWallpaperWidth(String(preset.width))
+                      setWallpaperHeight(String(preset.height))
+                    }}
                   />
-                  <SourceButton
-                    label="Design example"
-                    uploaded={Boolean(renovationFile)}
-                    disabled={isGenerating || !placeFile}
-                    onClick={() => renovationInputRef.current?.click()}
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <SizeField
+                      id="wallpaper-width"
+                      label="Width"
+                      value={wallpaperWidth}
+                      suffix="px"
+                      onChange={setWallpaperWidth}
+                    />
+                    <SizeField
+                      id="wallpaper-height"
+                      label="Height"
+                      value={wallpaperHeight}
+                      suffix="px"
+                      onChange={setWallpaperHeight}
+                    />
+                  </div>
                 </div>
-              </>
-            ) : null}
+              ) : null}
 
-            {mode.id === 'wallpaper' ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Text as="p" variant="body" color="white" caseMode="sentence">
-                    Screen size
-                  </Text>
-                  <InfoHint
-                    text="Leave both sizes at 0. A reference photo keeps its size and scene. With no photo, a device in the prompt sets the screen, or the wallpaper is 1920×1080."
-                    label="Screen size hint"
-                    align="end"
+              {mode.id === 'tattoo' ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Text as="p" variant="body" color="white" caseMode="sentence">
+                      Tattoo style
+                    </Text>
+                    <InfoHint
+                      placement="bottom"
+                      text="With a reference photo, choose Custom and write: Make this same subject a clean sketch. Other styles redraw the subject in that technique."
+                      label="Tattoo style hint"
+                      align="end"
+                    />
+                  </div>
+                  <Select
+                    id="tattoo-style"
+                    options={tattooStyleOptions}
+                    value={selectedTattooStyle}
+                    onChange={(option) => {
+                      if (!option?.value) return
+                      setTattooStyle(option.value)
+                    }}
+                    isDisabled={isGenerating}
+                    isSearchable={false}
+                    isClearable={false}
+                    placeholder="Select style"
+                    hideHelp
                   />
+                  <div className="grid grid-cols-2 gap-2">
+                    <SizeField
+                      id="tattoo-width"
+                      label="Width"
+                      value={tattooWidth}
+                      suffix="cm"
+                      onChange={setTattooWidth}
+                    />
+                    <SizeField
+                      id="tattoo-height"
+                      label="Height"
+                      value={tattooHeight}
+                      suffix="cm"
+                      onChange={setTattooHeight}
+                    />
+                  </div>
                 </div>
-                <ChoiceGrid
-                  items={WALLPAPER_PRESETS}
-                  activeId={
-                    WALLPAPER_PRESETS.find(
-                      (preset) =>
-                        wallpaperWidth === String(preset.width) &&
-                        wallpaperHeight === String(preset.height),
-                    )?.id
-                  }
-                  disabled={isGenerating}
-                  onSelect={(presetId) => {
-                    const preset = WALLPAPER_PRESETS.find((item) => item.id === presetId)
-                    if (!preset) return
-                    setWallpaperWidth(String(preset.width))
-                    setWallpaperHeight(String(preset.height))
-                  }}
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <SizeField
-                    id="wallpaper-width"
-                    label="Width"
-                    value={wallpaperWidth}
-                    suffix="px"
-                    onChange={setWallpaperWidth}
-                  />
-                  <SizeField
-                    id="wallpaper-height"
-                    label="Height"
-                    value={wallpaperHeight}
-                    suffix="px"
-                    onChange={setWallpaperHeight}
-                  />
-                </div>
-              </div>
-            ) : null}
+              ) : null}
 
-            {mode.id === 'tattoo' ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Text as="p" variant="body" color="white" caseMode="sentence">
-                    Tattoo style
-                  </Text>
-                  <InfoHint
-                    text="With a reference photo, choose Custom and write: Make this same subject a clean sketch. Other styles redraw the subject in that technique."
-                    label="Tattoo style hint"
-                    align="end"
+              {mode.id === 'painting' ? (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Text as="p" variant="body" color="white" caseMode="sentence">
+                      Look
+                    </Text>
+                    <InfoHint
+                      placement="bottom"
+                      text="As original, as a photo, or as oil, pencil, or gouache. Name a painting or artist in the prompt, or upload a reference photo."
+                      label="Look hint"
+                      align="end"
+                    />
+                  </div>
+                  <Select
+                    id="painting-look"
+                    options={paintingLookOptions}
+                    value={selectedPaintingLook}
+                    onChange={(option) => {
+                      if (!option?.value) return
+                      setTechnique(option.value)
+                    }}
+                    isDisabled={isGenerating}
+                    isSearchable={false}
+                    isClearable={false}
+                    placeholder="Select look"
+                    hideHelp
                   />
+                  <div className="flex items-center justify-between gap-3">
+                    <Text as="p" variant="body" color="white" caseMode="sentence">
+                      Canvas size
+                    </Text>
+                    <InfoHint
+                      placement="bottom"
+                      text="Auto leaves both sizes at 0. A reference photo keeps its proportions. A named famous painting uses that work’s natural proportions. Otherwise the canvas is 1024×1024 square."
+                      label="Canvas size hint"
+                      align="end"
+                    />
+                  </div>
+                  <Select
+                    id="painting-canvas"
+                    options={paintingCanvasOptions}
+                    value={selectedPaintingCanvas}
+                    onChange={(option) => {
+                      if (!option) return
+                      setPaintingWidth(String(option.width ?? 0))
+                      setPaintingHeight(String(option.height ?? 0))
+                    }}
+                    isDisabled={isGenerating}
+                    isSearchable={false}
+                    isClearable={false}
+                    placeholder="Custom size"
+                    hideHelp
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <SizeField
+                      id="painting-width"
+                      label="Width"
+                      value={paintingWidth}
+                      suffix="px"
+                      onChange={setPaintingWidth}
+                    />
+                    <SizeField
+                      id="painting-height"
+                      label="Height"
+                      value={paintingHeight}
+                      suffix="px"
+                      onChange={setPaintingHeight}
+                    />
+                  </div>
                 </div>
-                <Select
-                  id="tattoo-style"
-                  options={tattooStyleOptions}
-                  value={selectedTattooStyle}
-                  onChange={(option) => {
-                    if (!option?.value) return
-                    setTattooStyle(option.value)
-                  }}
-                  isDisabled={isGenerating}
-                  isSearchable={false}
-                  isClearable={false}
-                  placeholder="Select style"
-                  hideHelp
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <SizeField
-                    id="tattoo-width"
-                    label="Width"
-                    value={tattooWidth}
-                    suffix="cm"
-                    onChange={setTattooWidth}
-                  />
-                  <SizeField
-                    id="tattoo-height"
-                    label="Height"
-                    value={tattooHeight}
-                    suffix="cm"
-                    onChange={setTattooHeight}
-                  />
-                </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
 
-            {mode.id === 'painting' ? (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-3">
-                  <Text as="p" variant="body" color="white" caseMode="sentence">
-                    Look
-                  </Text>
-                  <InfoHint
-                    text="As original, as a photo, or as oil, pencil, or gouache. Name a painting or artist in the prompt, or upload a reference photo."
-                    label="Look hint"
-                    align="end"
-                  />
-                </div>
-                <Select
-                  id="painting-look"
-                  options={paintingLookOptions}
-                  value={selectedPaintingLook}
-                  onChange={(option) => {
-                    if (!option?.value) return
-                    setTechnique(option.value)
-                  }}
-                  isDisabled={isGenerating}
-                  isSearchable={false}
-                  isClearable={false}
-                  placeholder="Select look"
-                  hideHelp
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
+              <ExportSizeSelect
+                photoQuality={photoQuality}
+                setPhotoQuality={handleExportSizeChange}
+                photoQualities={photoQualities}
+                isQualityAllowed={isQualityAllowed}
+                getOptionLockedReason={getOptionLockedReason}
+                planKey={planKey}
+                isLogin={isLogin}
+                disabled={isGenerating}
+              />
+              <div className="flex min-h-[160px] flex-1 flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5">
+                <Input
+                  id="imagine-prompt"
+                  as="textarea"
+                  rows={5}
+                  label={promptOptional ? 'Optional prompt' : 'Prompt'}
+                  labelClassName="text-lg font-semibold text-white md:text-xl"
+                  placeholder={promptPlaceholder}
+                  value={prompt}
+                  onChange={(event) => setPrompt(event.target.value)}
+                  caseMode="sentence"
+                  className="flex h-full min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1"
+                  inputClassName="h-full min-h-0 flex-1 resize-none"
+                  helpClassName="hidden"
                 />
-                <div className="flex items-center justify-between gap-3">
-                  <Text as="p" variant="body" color="white" caseMode="sentence">
-                    Canvas size
-                  </Text>
-                  <InfoHint
-                    text="Auto leaves both sizes at 0. A reference photo keeps its proportions. A named famous painting uses that work’s natural proportions. Otherwise the canvas is 1024×1024 square."
-                    label="Canvas size hint"
-                    align="end"
-                  />
-                </div>
-                <Select
-                  id="painting-canvas"
-                  options={paintingCanvasOptions}
-                  value={selectedPaintingCanvas}
-                  onChange={(option) => {
-                    if (!option) return
-                    setPaintingWidth(String(option.width ?? 0))
-                    setPaintingHeight(String(option.height ?? 0))
-                  }}
-                  isDisabled={isGenerating}
-                  isSearchable={false}
-                  isClearable={false}
-                  placeholder="Custom size"
-                  hideHelp
-                />
-                <div className="grid grid-cols-2 gap-2">
-                  <SizeField
-                    id="painting-width"
-                    label="Width"
-                    value={paintingWidth}
-                    suffix="px"
-                    onChange={setPaintingWidth}
-                  />
-                  <SizeField
-                    id="painting-height"
-                    label="Height"
-                    value={paintingHeight}
-                    suffix="px"
-                    onChange={setPaintingHeight}
-                  />
-                </div>
               </div>
-            ) : null}
+            </div>
           </div>
-        </div>
-
-        <div className="hidden min-w-0 lg:col-start-1 lg:row-start-2 lg:block">
-        <div className={`${PREVIEW_FRAME_CLASS} border-white/10`}>
-          {exampleComparison ? (
-            <>
-              <BeforeAfterComparisonSlider
-                beforeSrc={exampleComparison.beforeUrl}
-                afterSrc={exampleComparison.afterUrl}
-                beforeLabel={exampleComparison.beforeLabel}
-                afterLabel={exampleComparison.afterLabel}
-                objectPosition="50% 50%"
-                onPositionChange={setComparisonSliderPosition}
-                showLabels={false}
-                className="absolute inset-0"
-              />
-              <button
-                type="button"
-                onClick={() =>
-                  openImagePreview(
-                    resolveComparisonPreviewTarget(
-                      exampleComparison,
-                      comparisonSliderPosition,
-                      { title: exampleTitle },
-                    ),
-                  )
-                }
-                className="absolute right-3 top-3 z-[3] hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/80 opacity-0 backdrop-blur-md transition hover:bg-black/40 hover:text-white group-hover:opacity-100 lg:inline-flex"
-                aria-label="Open image preview"
-              >
-                <Maximize2 size={15} />
-              </button>
-              <ComparisonPreviewBadge
-                beforeLabel={exampleComparison.beforeLabel}
-                afterLabel={exampleComparison.afterLabel}
-                position={comparisonSliderPosition}
-                shineSeed={`${mode.id}-${exampleComparison.afterUrl}`}
-                wrapperClassName="pointer-events-none absolute bottom-4 right-4 z-[5]"
-              />
-            </>
-          ) : exampleAfter ? (
-            <>
-              <button
-                type="button"
-                onClick={() =>
-                  openImagePreview({
-                    src: exampleAfter,
-                    alt: exampleTitle,
-                    title: exampleTitle,
-                  })
-                }
-                className="absolute inset-0 z-[1] cursor-zoom-in"
-                aria-label="Open image preview: Generated"
-              />
-              <Photo
-                src={exampleAfter}
-                alt={exampleTitle}
-                fill
-                sizes="(max-width: 1024px) 90vw, 420px"
-                className="object-center"
-              />
-            </>
-          ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-white/[0.04] via-transparent to-primary/10 px-5 text-center">
-              <Text as="p" variant="caption" color="soft" caseMode="sentence">
-                Selected mode
-              </Text>
-              <Text as="p" variant="body" color="white" caseMode="sentence" className="mt-2">
-                {mode.title}
-              </Text>
-              <Text
-                as="p"
-                variant="caption"
-                color="muted"
-                caseMode="sentence"
-                className="mt-4 max-w-[220px]"
-              >
-                A before and after example will appear here when one is saved.
-              </Text>
-            </div>
-          )}
-
-          {exampleAfter ? (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[4] bg-gradient-to-t from-black/80 via-black/45 to-transparent p-4">
-              <Text
-                as="p"
-                variant="caption"
-                color="soft"
-                caseMode="sentence"
-                className={PHOTO_OVERLAY_TEXT_OUTLINE}
-              >
-                Selected mode
-              </Text>
-              <Text
-                as="p"
-                variant="body"
-                color="white"
-                className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
-              >
-                {exampleTitle}
-              </Text>
-              <Text
-                as="p"
-                variant="caption"
-                color="muted"
-                caseMode="sentence"
-                className={clsx('mt-1 line-clamp-1', PHOTO_OVERLAY_TEXT_OUTLINE)}
-              >
-                {mode.title}
-              </Text>
-            </div>
-          ) : null}
-        </div>
         </div>
 
         <div
           className={clsx(
             PREVIEW_FRAME_CLASS,
-            'md:col-start-1 lg:col-start-2 lg:row-start-2',
+            'min-w-0',
             uploadPreview ? 'border-white/10' : 'border-dashed border-white/15',
           )}
         >
@@ -908,7 +977,7 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
         <div
           className={clsx(
             PREVIEW_FRAME_CLASS,
-            'md:col-start-2 lg:col-start-3 lg:row-start-2',
+            'min-w-0',
             previewUrl ? 'border-white/10' : 'border-dashed border-white/15',
           )}
         >
@@ -990,95 +1059,39 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
         </div>
       </div>
 
-      <div className="grid items-stretch gap-5 lg:grid-cols-3">
-        <div className="flex h-full min-h-[360px] flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5">
-          <Input
-            id="imagine-prompt"
-            as="textarea"
-            rows={5}
-            label={promptOptional ? 'Optional prompt' : 'Prompt'}
-            labelClassName="text-lg font-semibold text-white md:text-xl"
-            placeholder={promptPlaceholder}
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            caseMode="sentence"
-            className="flex h-full min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1"
-            inputClassName="h-full min-h-0 flex-1 resize-none"
-            helpClassName="hidden"
-          />
-        </div>
+      <div className="grid items-stretch gap-5 lg:grid-cols-2">
+        <GenerationActionCard
+          generatedPreview={previewUrl}
+          loading={isGenerating}
+          disabled={
+            checkPending || checkFlagged || checkFailed || !inputsReady
+          }
+          onGenerate={handleGenerate}
+          planHint={planHint}
+          creditCost={creditCost}
+          titleReady={previewUrl ? 'Ready to try again' : 'Ready to generate'}
+          descriptionReady={
+            blockedHint ||
+            error ||
+            'Start AI generation with the settings above.'
+          }
+          descriptionDisabled={
+            blockedHint || 'Complete the required inputs before generating.'
+          }
+          buttonGenerate="Generate"
+          buttonRegenerate="Regenerate"
+        />
 
-        <div className="flex flex-col gap-3">
-          <GenerationOptionsPanel
-            showPrompt={false}
-            showOutputFormat={false}
-            photoQuality={photoQuality}
-            setPhotoQuality={setPhotoQuality}
-            photoQualities={photoQualities}
-            isQualityAllowed={isQualityAllowed}
-            lockedText={lockedText}
-            photoQualityLabel="Export size"
-          />
-        </div>
-
-        <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[26px] border border-white/10 bg-white/[0.025] p-5 text-center">
-          <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-cyan-300">
-            <Sparkles size={24} />
-          </span>
-          <Text as="p" variant="body" color="white" caseMode="sentence">
-            {previewUrl ? 'Ready to try again' : 'Ready to generate'}
-          </Text>
-          <Text
-            as="p"
-            variant="caption"
-            color="muted"
-            caseMode="sentence"
-            className="mt-2 max-w-[220px]"
-          >
-            {blockedHint || 'Start AI generation with the settings in this panel.'}
-          </Text>
-          {error ? (
-            <Text
-              as="p"
-              variant="caption"
-              color="muted"
-              caseMode="sentence"
-              className="mt-2 max-w-[220px]"
-            >
-              {error}
-            </Text>
-          ) : null}
-          <Button
-            type="button"
-            variant="primary"
-            loading={isGenerating}
-            loadingText="Generating..."
-            disabled={
-              checkPending || checkFlagged || checkFailed || !inputsReady
-            }
-            onClick={handleGenerate}
-            className="mt-5 h-[44px] w-full rounded-full px-7"
-          >
-            <span className="inline-flex items-center gap-2">
-              <Sparkles size={16} />
-              {previewUrl ? 'Regenerate' : 'Generate'}
-              {creditCost != null ? (
-                <span className="text-white/75">{`· ${creditCost} credits`}</span>
-              ) : null}
-            </span>
-          </Button>
-          {planHint ? (
-            <Text
-              as="p"
-              variant="caption"
-              color="faint"
-              caseMode="sentence"
-              className="mt-4 max-w-[220px]"
-            >
-              {planHint}
-            </Text>
-          ) : null}
-        </div>
+        <GenerationSaveCard
+          active={Boolean(previewUrl)}
+          onDownload={handleDownload}
+          isLogin={isLogin}
+          imageTitle={imageTitle}
+          setImageTitle={setImageTitle}
+          saveLoading={saveLoading}
+          showFileFormat={false}
+          showGallerySave={false}
+        />
       </div>
 
       <input
@@ -1125,6 +1138,17 @@ export default function ImagineWorkspace({ mode, examplePreview = null }) {
         src={previewModal.src}
         alt={previewModal.alt}
         title={previewModal.title}
+      />
+
+      <ExportSizeChangeConfirmModal
+        open={Boolean(pendingExportSize)}
+        nextLabel={
+          photoQualities.find((item) => item.id === pendingExportSize)?.label ||
+          pendingExportSize ||
+          ''
+        }
+        onCancel={handleCancelExportSizeChange}
+        onConfirm={handleConfirmExportSizeChange}
       />
     </section>
   )

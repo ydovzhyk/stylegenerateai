@@ -1,25 +1,18 @@
 'use client'
 
-import { useMemo } from 'react'
-import { Download, Lock, RotateCcw, Sparkles } from 'lucide-react'
+import { RotateCcw, Sparkles } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
-import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
-import InfoHint, { HoverTip } from '@/components/shared/info-hint/InfoHint'
-import { useTranslate } from '@/utils/translate/translate'
+import { Lock } from 'lucide-react'
+import { useMemo } from 'react'
 
-const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
+const SECTION_TITLE_LABEL_CLASS = 'text-lg font-semibold text-white md:text-xl'
 
-function formatFileFormatOption(option) {
+function formatLockedOptionLabel(option) {
   return (
     <span className="flex w-full items-center justify-between gap-3">
-      <span className="flex min-w-0 flex-col text-left">
-        <span className="font-medium">{option.label}</span>
-        {option.description ? (
-          <span className="mt-0.5 text-xs text-white/55">{option.description}</span>
-        ) : null}
-      </span>
+      <span>{option.label}</span>
       {option.isLocked ? <Lock size={14} className="shrink-0 opacity-70" /> : null}
     </span>
   )
@@ -30,21 +23,14 @@ export default function GenerationActionCard({
   loading,
   disabled,
   onGenerate,
-  onDownload,
   planHint,
 
-  isLogin = false,
-  saveToGallery = false,
-  setSaveToGallery,
-  imageTitle = '',
-  setImageTitle,
-  saveLoading = false,
-
-  generatedImageFormat = 'png',
-  setGeneratedImageFormat,
-  generatedImageFormats = [],
-  isGeneratedImageFormatAllowed,
-  formatLockedText = 'Upgrade to a paid plan to unlock this file format.',
+  showOutputFormat = false,
+  outputFormat,
+  setOutputFormat,
+  outputFormats = [],
+  isFormatAllowed,
+  lockedText,
 
   titleReady = 'Ready to generate',
   descriptionReady = 'Start AI generation with your uploaded photo.',
@@ -52,62 +38,28 @@ export default function GenerationActionCard({
   buttonGenerate = 'Generate',
   buttonRegenerate = 'Regenerate',
   buttonGenerating = 'Generating...',
-  buttonDownload = 'Download',
-  buttonDownloadProcessing = 'Processing…',
-  printExportProcessingHint = "We're preparing your file format. Please wait - this may take a little while.",
   creditCost = null,
-  printExportProcessing = false,
-  printExportProgress = null,
-  downloadDisabled = false,
-  isPrintExport = false,
-  downloadOptionsTitle = 'Download options',
 }) {
-  const canDownload = Boolean(generatedPreview)
-  const isActionLoading = loading || saveLoading
   const description = disabled ? descriptionDisabled : descriptionReady
-  const translatedDownloadLabel = useTranslate(buttonDownload, {
-    caseMode: 'sentence',
-  })
-  const translatedProcessingLabel = useTranslate(buttonDownloadProcessing, {
-    caseMode: 'sentence',
-  })
 
-  const hasUnlockedFileFormats =
-    isLogin &&
-    generatedImageFormats.some((format) =>
-      isGeneratedImageFormatAllowed
-        ? isGeneratedImageFormatAllowed(format.id)
-        : format.id === generatedImageFormat,
-    )
-
-  const canChooseFileFormat =
-    hasUnlockedFileFormats &&
-    generatedImageFormats.length > 1 &&
-    !isPrintExport
-
-  const fileFormatOptions = useMemo(
+  const outputFormatOptions = useMemo(
     () =>
-      generatedImageFormats.map((format) => {
-        const locked = isGeneratedImageFormatAllowed
-          ? !isGeneratedImageFormatAllowed(format.id)
-          : false
+      outputFormats.map((item) => {
+        const locked =
+          typeof isFormatAllowed === 'function' ? !isFormatAllowed(item.id) : false
 
         return {
-          value: format.id,
-          label: format.label,
-          description: format.description,
+          value: item.id,
+          label: item.label,
           isLocked: locked,
           isDisabled: locked,
         }
       }),
-    [generatedImageFormats, isGeneratedImageFormatAllowed],
+    [outputFormats, isFormatAllowed],
   )
 
-  const selectedFileFormat =
-    fileFormatOptions.find((option) => option.value === generatedImageFormat) ||
-    null
-
-  const hasLockedFileFormats = fileFormatOptions.some((option) => option.isLocked)
+  const selectedOutputFormat =
+    outputFormatOptions.find((option) => option.value === outputFormat) || null
 
   return (
     <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[26px] border border-white/10 bg-white/[0.025] p-5 text-center">
@@ -115,22 +67,39 @@ export default function GenerationActionCard({
         {generatedPreview ? <RotateCcw size={24} /> : <Sparkles size={24} />}
       </span>
 
-      {!generatedPreview ? (
-        <>
-          <Text as="p" variant="body" color="white" caseMode="sentence">
-            {titleReady}
-          </Text>
+      <Text as="p" variant="body" color="white" caseMode="sentence">
+        {titleReady}
+      </Text>
 
-          <Text
-            as="p"
-            variant="caption"
-            color="muted"
-            caseMode="sentence"
-            className="mt-2 max-w-[190px]"
-          >
-            {description}
-          </Text>
-        </>
+      <Text
+        as="p"
+        variant="caption"
+        color="muted"
+        caseMode="sentence"
+        className="mt-2 max-w-[190px]"
+      >
+        {description}
+      </Text>
+
+      {showOutputFormat ? (
+        <div className="mt-5 w-full text-left">
+          <Select
+            id="generation-output-format"
+            label="Output format"
+            labelClassName={SECTION_TITLE_LABEL_CLASS}
+            options={outputFormatOptions}
+            value={selectedOutputFormat}
+            onChange={(option) => {
+              if (!option?.value || option.isLocked) return
+              setOutputFormat?.(option.value)
+            }}
+            isOptionDisabled={(option) => Boolean(option.isLocked)}
+            formatOptionLabel={formatLockedOptionLabel}
+            placeholder="Select format"
+            hideHelp
+            hint={lockedText}
+          />
+        </div>
       ) : null}
 
       <Button
@@ -138,147 +107,20 @@ export default function GenerationActionCard({
         variant="primary"
         loading={loading}
         loadingText={buttonGenerating}
-        disabled={disabled || saveLoading}
+        disabled={disabled}
         onClick={onGenerate}
-        className={
-          generatedPreview
-            ? 'h-[44px] w-full rounded-full px-7'
-            : 'mt-5 h-[44px] w-full rounded-full px-7'
-        }
+        className="mt-5 h-[44px] w-auto rounded-full px-7"
       >
         <span className="inline-flex items-center gap-2">
           {generatedPreview ? <RotateCcw size={16} /> : <Sparkles size={16} />}
           {generatedPreview ? buttonRegenerate : buttonGenerate}
-          {creditCost != null && !generatedPreview ? (
-            <span className="text-white/75">· {creditCost} credits</span>
-          ) : null}
-          {creditCost != null && generatedPreview ? (
+          {creditCost != null ? (
             <span className="text-white/75">· {creditCost} credits</span>
           ) : null}
         </span>
       </Button>
 
-      {canDownload ? (
-        <div className="mt-5 w-full rounded-[22px] border border-white/10 bg-white/[0.035] p-4 text-left">
-          <Text variant="section-title" color="white" className="mb-2">
-            {downloadOptionsTitle}
-          </Text>
-
-          <Input
-            id="generated-image-title"
-            label="Image title"
-            labelClassName={SUB_BLOCK_LABEL_CLASS}
-            placeholder="My generated look"
-            value={imageTitle}
-            onChange={(e) => setImageTitle?.(e.target.value)}
-            inputClassName="h-[40px]"
-          />
-
-          {isLogin ? (
-            <div className="mt-[-10px]">
-              {canChooseFileFormat ? (
-                <div className="mb-4">
-                  <Select
-                    id="generated-image-format"
-                    label="Save file format"
-                    labelClassName={SUB_BLOCK_LABEL_CLASS}
-                    options={fileFormatOptions}
-                    value={selectedFileFormat}
-                    onChange={(option) => {
-                      if (!option?.value || option.isLocked) return
-                      setGeneratedImageFormat?.(option.value)
-                    }}
-                    isOptionDisabled={(option) => Boolean(option.isLocked)}
-                    formatOptionLabel={formatFileFormatOption}
-                    placeholder="Select file format"
-                    hideHelp={!hasLockedFileFormats}
-                    hint={hasLockedFileFormats ? formatLockedText : undefined}
-                    menuPlacement="top"
-                  />
-                </div>
-              ) : null}
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input
-                    id="save-generated-image"
-                    type="checkbox"
-                    checked={saveToGallery}
-                    onChange={(e) => setSaveToGallery?.(e.target.checked)}
-                    className="h-4 w-4 accent-primary"
-                  />
-
-                  <label
-                    htmlFor="save-generated-image"
-                    className="cursor-pointer"
-                  >
-                    <Text
-                      as="span"
-                      variant="sub-block-label"
-                      color="white"
-                      caseMode="sentence"
-                    >
-                      Save to gallery
-                    </Text>
-                  </label>
-                </div>
-
-                <InfoHint
-                  text="The image will be saved before downloading."
-                  label="Save to gallery hint"
-                  align="end"
-                />
-              </div>
-            </div>
-          ) : (
-            <Text
-              as="p"
-              variant="caption"
-              color="muted"
-              caseMode="sentence"
-              className="mt-4"
-            >
-              Sign in to save this image to your gallery.
-            </Text>
-          )}
-
-          {printExportProcessing ? (
-            <HoverTip text={printExportProcessingHint} className="mt-5 block w-full">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled
-                translate={false}
-                className="h-[44px] w-full rounded-full px-7"
-              >
-                <span className="inline-flex items-center justify-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  <span>{translatedProcessingLabel}</span>
-                  <span className="tabular-nums">
-                    {Math.max(0, printExportProgress ?? 0)}%
-                  </span>
-                </span>
-              </Button>
-            </HoverTip>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              loading={saveLoading}
-              disabled={isActionLoading || downloadDisabled}
-              onClick={onDownload}
-              className="mt-5 h-[44px] w-full rounded-full px-7"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Download size={16} />
-                {translatedDownloadLabel}
-              </span>
-            </Button>
-          )}
-        </div>
-      ) : null}
-
-      {!generatedPreview && planHint ? (
+      {planHint ? (
         <Text
           as="p"
           variant="caption"

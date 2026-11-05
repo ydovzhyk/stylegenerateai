@@ -1,5 +1,21 @@
 import { instance } from './instance'
 
+export const axiosCreatePrintExportJob = async ({
+  generationJobId,
+  visitorId,
+  title,
+  fileFormat,
+} = {}) => {
+  const { data } = await instance.post('/print-export', {
+    generationJobId,
+    visitorId: visitorId || undefined,
+    title: title || undefined,
+    fileFormat: fileFormat || undefined,
+  })
+
+  return data
+}
+
 export const axiosGetPrintExportJob = async (jobId, visitorId) => {
   const params = {
     _ts: Date.now(),

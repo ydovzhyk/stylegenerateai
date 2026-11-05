@@ -13,6 +13,7 @@ const ALIGN_CLASS = {
 function TipBubble({
   children,
   align = 'center',
+  placement = 'top',
   tone = 'muted',
   widthClassName = 'w-[210px]',
   textAlign = 'left',
@@ -21,7 +22,8 @@ function TipBubble({
   return (
     <span
       className={clsx(
-        'pointer-events-none absolute bottom-full z-20 mb-3 rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-xs leading-relaxed opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/info-tip:opacity-100',
+        'pointer-events-none absolute z-[80] rounded-2xl border border-white/10 bg-[#151821] px-3 py-2 text-xs leading-relaxed opacity-0 shadow-2xl shadow-black/30 transition-opacity group-hover/info-tip:opacity-100',
+        placement === 'bottom' ? 'top-full mt-3' : 'bottom-full mb-3',
         showOnFocus && 'group-focus-within/info-tip:opacity-100',
         ALIGN_CLASS[align] || ALIGN_CLASS.center,
         widthClassName,
@@ -39,6 +41,7 @@ export function HoverTip({
   text,
   children,
   align = 'center',
+  placement = 'top',
   tone = 'accent',
   widthClassName = 'w-[210px]',
   textAlign = 'left',
@@ -66,6 +69,7 @@ export function HoverTip({
         {children}
         <TipBubble
           align={align}
+          placement={placement}
           tone={tone}
           widthClassName={widthClassName}
           textAlign={textAlign}
@@ -83,6 +87,7 @@ export default function InfoHint({
   text,
   label = 'More info',
   align = 'center',
+  placement = 'top',
   tone = 'muted',
   widthClassName = 'w-[210px]',
   textAlign = 'left',
@@ -93,6 +98,7 @@ export default function InfoHint({
     <HoverTip
       text={text}
       align={align}
+      placement={placement}
       tone={tone}
       widthClassName={widthClassName}
       textAlign={textAlign}

@@ -65,7 +65,7 @@ Typical choices:
 - **Remove Objects** - clean people or clutter out of the frame.
 - **Enhance Quality** - sharper and clearer, same scene.
 - **Creative Retouch** - even skin, cleared blemishes, and groomed hair on the same photo, not a full remake.
-- **Photo Styles** - turn one photo into a coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.
+- **Photo Styles** - turn one photo into a coloring page, cartoon, sticker, clipart, or a professional studio shot.
 
 Tell me which mode you picked (or want), and I will walk you through it.`,
     '/imagine': `Imagine starts from a description.
@@ -215,7 +215,7 @@ export function getLookSettingsText(templateTitle, pricingCopy = '') {
 
 **Output format** - the frame: Portrait 2:3, Square 1:1, or Landscape 3:2.
 
-**Export size** - Draft, Standard, Premium, or Print.
+**Export size** - choose above the prompt before Generate: Standard = phone-ready; Premium = higher native resolution; Print = max native size (up to ~3840 on the long edge). File format (PNG / JPG / WebP) is chosen later on Download.
 
 ${pricing}`
 }
@@ -255,7 +255,7 @@ Paint a mask over what to remove, and/or describe it in **Additional prompt**. Y
   creative_retouch: `**Your photo** - a portrait, lifestyle, or social photo. Same scene. The finish evens skin on the face and hands, clears blemishes, and grooms the existing hair. It is not a new face, pose, or hairstyle.
 
 **Optional refinements** - extra wishes for skin or tone. Optional.`,
-  photo_styles: `**Style** - pick one with the buttons above the photo: coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.
+  photo_styles: `**Style** - pick one with the buttons above the photo: coloring page, cartoon, sticker, clipart, or a professional studio shot.
 
 **Your photo** - one photo of the person, animal, or object to restyle.
 
@@ -263,7 +263,7 @@ Paint a mask over what to remove, and/or describe it in **Additional prompt**. Y
 }
 
 function getSharedPhotoLabSettingsText() {
-  return `**Export size** - Draft, Standard, Premium, or Print.`
+  return `**Export size** - choose above the prompt before Generate: Standard = phone-ready, Premium = higher native resolution, Print = max native size (up to ~3840). Pick PNG / JPG / WebP on Download.`
 }
 
 export function getPhotoLabModeSettingsText(modeId, pricingCopy = '') {
@@ -341,6 +341,8 @@ export function getImagineModeSettingsText(modeId, pricingCopy = '') {
 
 ${guide}
 
+**Export size** - choose above the prompt before Generate: Standard = phone-ready, Premium = higher native resolution, Print = max native size (up to ~3840). File format is chosen on Download.
+
 ${pricing}`
 }
 
@@ -367,13 +369,15 @@ If you are not happy with it, change **one** thing and press **Regenerate** (thi
 - a clearer photo - face visible, decent light, not tiny, dark, or heavily filtered
 - ${retryTarget}
 
-When you like the result, use **Download options** next to the preview.
+When you like the result, use **Download options** next to Generate.
+
+**Export size** was already chosen above the prompt (and billed on Generate). To change it, pick a new size and regenerate.
 
 **Image title** - the name for the downloaded file and, if you save it, for My Gallery.
 
-**Save file format** - PNG (best quality), JPG (smaller file), or WEBP (modern). PNG is always available. JPG and WEBP need a paid plan. If you chose Print, this picker is hidden while the print file is prepared.
+**Save file format** - PNG (best quality), JPG (smaller file), or WEBP (modern). PNG is always available; JPG and WEBP need a paid plan.
 
 ${gallery}
 
-**Download** - saves the file to your device. If you see a progress spinner after Print, wait until it finishes.`
+**Download** - saves the file to your device at the Export size you generated.`
 }

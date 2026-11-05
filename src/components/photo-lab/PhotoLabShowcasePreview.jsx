@@ -84,7 +84,7 @@ const SHOWCASE_MODE_ITEMS = [
     chipLabel: 'Styled photo',
     title: 'Restyle your photo',
     description:
-      'Coloring page, cartoon, sticker, clipart, drawing, painting, or a professional studio shot.',
+      'Coloring page, cartoon, sticker, clipart, or a professional studio shot.',
   },
 ]
 

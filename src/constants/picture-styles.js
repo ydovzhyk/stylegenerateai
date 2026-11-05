@@ -22,16 +22,6 @@ export const PICTURE_STYLES = [
     shortLabel: 'Clipart',
   },
   {
-    id: 'drawing',
-    label: 'Your photo as a drawing',
-    shortLabel: 'Drawing',
-  },
-  {
-    id: 'painting',
-    label: 'Your photo as a painting',
-    shortLabel: 'Painting',
-  },
-  {
     id: 'professional_snapshot',
     label: 'Your snapshot, made professional',
     shortLabel: 'Studio shot',

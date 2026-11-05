@@ -65,6 +65,56 @@ export const axiosDiscardGenerationJob = async (jobId, visitorId) => {
   return data
 }
 
+export const axiosExportGenerationJob = async (
+  jobId,
+  { photoQuality, fileFormat, title, visitorId } = {},
+) => {
+  const response = await instance.post(
+    `/generation-jobs/${jobId}/export`,
+    {
+      photoQuality,
+      fileFormat: fileFormat || undefined,
+      title: title || undefined,
+      visitorId: visitorId || undefined,
+    },
+    {
+      responseType: 'blob',
+      validateStatus: (status) =>
+        (status >= 200 && status < 300) || status === 202,
+    },
+  )
+
+  const contentType = String(response.headers['content-type'] || '')
+  const raw = response.data
+
+  // Print export returns 202 JSON (sometimes as a Blob when responseType=blob).
+  if (
+    response.status === 202 ||
+    contentType.includes('application/json')
+  ) {
+    if (raw && typeof raw === 'object' && !(raw instanceof Blob) && !ArrayBuffer.isView(raw)) {
+      return raw
+    }
+
+    const text =
+      typeof raw?.text === 'function'
+        ? await raw.text()
+        : typeof raw === 'string'
+          ? raw
+          : raw
+            ? new TextDecoder().decode(raw)
+            : ''
+
+    return text ? JSON.parse(text) : {}
+  }
+
+  return {
+    blob: raw,
+    contentType,
+    fileFormat: response.headers['x-generated-image-format'],
+  }
+}
+
 function discardGenerationJobInBackground(jobId, visitorId = '') {
   if (!jobId) return
 
@@ -85,7 +135,7 @@ export async function waitForGenerationJob(
     const status = await axiosGetGenerationJob(jobId, visitorId)
 
     if (status?.status === 'ready') {
-      discardGenerationJobInBackground(jobId, visitorId)
+      // Keep the job until download/export or TTL — master buffer is needed for Export size.
       return status
     }
 
@@ -132,12 +182,7 @@ export async function resolveGenerationResponse(data, context) {
   }
 
   if (data?.status === 'ready') {
-    if (data.previewUrl) {
-      discardGenerationJobInBackground(
-        data.jobId,
-        resolvePollContext(context).visitorId,
-      )
-    }
+    // Keep the job for deferred export/download; TTL still cleans up.
     return data
   }
 
