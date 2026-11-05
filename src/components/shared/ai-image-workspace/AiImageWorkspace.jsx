@@ -8,6 +8,7 @@ import ExportSizeChangeConfirmModal from '@/components/shared/ai-image-workspace
 import ExportSizeSelect from '@/components/shared/ai-image-workspace/ExportSizeSelect'
 import GenerationActionCard from '@/components/shared/ai-image-workspace/GenerationActionCard'
 import GenerationSaveCard from '@/components/shared/ai-image-workspace/GenerationSaveCard'
+import OutputFormatSelect from '@/components/shared/ai-image-workspace/OutputFormatSelect'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import PhotoLabMaskEditor, {
   PHOTO_LAB_MASK_BRUSH_SIZES,
@@ -1994,6 +1995,18 @@ export default function AiImageWorkspace({
                 isLogin={isLogin}
                 disabled={loading}
               />
+              {showOutputFormat ? (
+                <OutputFormatSelect
+                  outputFormat={outputFormat}
+                  setOutputFormat={setOutputFormat}
+                  outputFormats={outputFormats}
+                  isFormatAllowed={isFormatAllowed}
+                  getOptionLockedReason={getOptionLockedReason}
+                  planKey={planKey}
+                  isLogin={isLogin}
+                  disabled={loading}
+                />
+              ) : null}
               {renderPromptEditor(
                 hasPhotoLabModeSettings ? 'min-h-[160px]' : 'min-h-[240px]',
               )}
@@ -2029,12 +2042,6 @@ export default function AiImageWorkspace({
           disabled={isGenerateDisabled}
           onGenerate={handleGenerateClick}
           planHint={planHint}
-          showOutputFormat={showOutputFormat}
-          outputFormat={outputFormat}
-          setOutputFormat={setOutputFormat}
-          outputFormats={outputFormats}
-          isFormatAllowed={isFormatAllowed}
-          lockedText={lockedText}
           creditCost={creditCost}
           {...resolvedActionCardLabels}
         />

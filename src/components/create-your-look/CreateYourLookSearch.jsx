@@ -197,11 +197,12 @@ export default function CreateYourLookSearch() {
     setPage(nextPage)
   }, [localSelectedCategory, visibleCategories, pageSize])
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const normalizedQuery = String(localQuery || '').trim()
-    const normalizedCategory = localSelectedCategory || 'All'
+  const runSearch = async ({
+    query = localQuery,
+    category = localSelectedCategory,
+  } = {}) => {
+    const normalizedQuery = String(query || '').trim()
+    const normalizedCategory = category || 'All'
 
     let searchQuery = normalizedQuery
 
@@ -232,6 +233,24 @@ export default function CreateYourLookSearch() {
         mode: 'replace',
       }),
     )
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    await runSearch()
+  }
+
+  const handleCategorySelect = async (categoryValue) => {
+    if (yourLookSearchLoading) return
+
+    const nextCategory = categoryValue || 'All'
+    setLocalSelectedCategory(nextCategory)
+
+    if (nextCategory === 'All') {
+      setPage(0)
+    }
+
+    await runSearch({ category: nextCategory })
   }
 
   return (
@@ -266,24 +285,36 @@ export default function CreateYourLookSearch() {
         onSubmit={handleSubmit}
         className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.02] p-4 sm:p-5"
       >
-        <Input
-          id="create-your-look-search"
-          type="text"
-          placeholder="Search styles, moods, looks..."
-          value={localQuery}
-          onChange={(e) => setLocalQuery(e.target.value)}
-          inputClassName="h-[40px] rounded-full w-full md:w-1/2"
-          caseMode="sentence"
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            id="create-your-look-search"
+            type="text"
+            placeholder="Search styles, moods, looks..."
+            value={localQuery}
+            onChange={(e) => setLocalQuery(e.target.value)}
+            className="w-full sm:max-w-md"
+            inputClassName="h-[40px] w-full rounded-full"
+            helpClassName="hidden"
+            caseMode="sentence"
+          />
 
-        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            type="submit"
+            variant="primary"
+            loading={yourLookSearchLoading}
+            size="sm"
+            className="h-[40px] w-full shrink-0 rounded-full px-6 sm:w-auto"
+          >
+            Search
+          </Button>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2.5">
           <Button
             type="button"
             variant={localSelectedCategory === 'All' ? 'primary' : 'secondary'}
-            onClick={() => {
-              setLocalSelectedCategory('All')
-              setPage(0)
-            }}
+            onClick={() => handleCategorySelect('All')}
+            disabled={yourLookSearchLoading}
             size="sm"
             className="rounded-full px-5"
           >
@@ -316,9 +347,8 @@ export default function CreateYourLookSearch() {
                 key={item.value}
                 type="button"
                 variant={isActive ? 'primary' : 'secondary'}
-                onClick={() => {
-                  setLocalSelectedCategory(item.value)
-                }}
+                onClick={() => handleCategorySelect(item.value)}
+                disabled={yourLookSearchLoading}
                 size="sm"
                 className="rounded-full px-5"
               >
@@ -349,18 +379,6 @@ export default function CreateYourLookSearch() {
               <ChevronRight size={16} />
             </Button>
           ) : null}
-        </div>
-
-        <div className="mt-4 flex justify-start border-t border-white/8 pt-4">
-          <Button
-            type="submit"
-            variant="primary"
-            loading={yourLookSearchLoading}
-            size="sm"
-            className="rounded-full px-6"
-          >
-            Search
-          </Button>
         </div>
       </form>
 
