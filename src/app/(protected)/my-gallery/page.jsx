@@ -4,11 +4,10 @@ import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import GallerySectionSlider from '@/components/gallery/GallerySectionSlider'
-import Button from '@/components/shared/button/Button'
+import ConfirmModal from '@/components/shared/confirm-modal/ConfirmModal'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import Text from '@/components/shared/text/Text'
 import { GALLERY_SECTIONS } from '@/constants/gallery-sections'
-import { MODAL_OVERLAY_ELEVATED_CLASS } from '@/constants/modal-overlay'
 import {
   deleteGeneratedImage,
   fetchGeneratedImages,
@@ -149,49 +148,19 @@ export default function MyGalleryPage() {
         </Text>
       ) : null}
 
-      {pendingDeleteItem ? (
-        <div className={MODAL_OVERLAY_ELEVATED_CLASS}>
-          <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-background p-5 shadow-2xl sm:p-6">
-            <Text as="h3" variant="h3" color="white" caseMode="sentence">
-              Delete saved image?
-            </Text>
-
-            <Text
-              as="p"
-              variant="body-sm"
-              color="muted"
-              caseMode="sentence"
-              className="mt-3"
-            >
-              This will remove the preview and full export from your gallery.
-            </Text>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={closeDeleteModal}
-                disabled={Boolean(deleteLoadingId)}
-                fullWidth
-                className="min-h-12 rounded-2xl sm:w-auto"
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleConfirmDelete}
-                loading={Boolean(deleteLoadingId)}
-                disabled={Boolean(deleteLoadingId)}
-                fullWidth
-                className="min-h-12 rounded-2xl sm:w-auto"
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmModal
+        open={Boolean(pendingDeleteItem)}
+        elevated
+        title="Delete saved image?"
+        description="This will remove the preview and full export from your gallery."
+        detail={pendingDeleteItem?.title || null}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmDelete}
+        onCancel={closeDeleteModal}
+        confirmLoading={Boolean(deleteLoadingId)}
+        closeAriaLabel="Close delete confirmation"
+      />
 
       <ImagePreviewModal
         open={previewModal.open}

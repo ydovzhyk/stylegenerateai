@@ -12,13 +12,15 @@ export default function GenerationActionCard({
   planHint,
 
   titleReady = 'Ready to generate',
+  titleDisabled = 'Almost ready',
   descriptionReady = 'Start AI generation with your uploaded photo.',
-  descriptionDisabled = 'Upload your photo first to continue.',
+  descriptionDisabled = 'Upload your photo to continue.',
   buttonGenerate = 'Generate',
   buttonRegenerate = 'Regenerate',
   buttonGenerating = 'Generating...',
   creditCost = null,
 }) {
+  const title = disabled ? titleDisabled : titleReady
   const description = disabled ? descriptionDisabled : descriptionReady
 
   return (
@@ -28,7 +30,7 @@ export default function GenerationActionCard({
       </span>
 
       <Text as="p" variant="body" color="white" caseMode="sentence">
-        {titleReady}
+        {title}
       </Text>
 
       <Text
@@ -36,7 +38,7 @@ export default function GenerationActionCard({
         variant="caption"
         color="muted"
         caseMode="sentence"
-        className="mt-2 max-w-[190px]"
+        className="mt-2 max-w-[260px]"
       >
         {description}
       </Text>

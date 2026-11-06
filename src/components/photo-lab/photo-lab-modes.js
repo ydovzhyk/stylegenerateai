@@ -19,7 +19,7 @@ export const PHOTO_LAB_MODES = [
     icon: BriefcaseBusiness,
     accent: 'from-primary/30 to-cyan-400/20',
     promptPlaceholder:
-      'Example: soft smile, light blazer, natural office background.',
+      'Example: Soft smile, light blazer, natural office background.',
     uploadHint: 'Upload a clear face or upper-body photo.',
   },
   {
@@ -31,7 +31,7 @@ export const PHOTO_LAB_MODES = [
     icon: Sparkles,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
-      'Example: softer faded edges, cleaner scratches, warmer natural tones.',
+      'Example: Softer faded edges, cleaner scratches, warmer natural tones.',
     uploadHint: 'Upload an old, blurry, damaged, or black-and-white photo.',
   },
   {
@@ -43,9 +43,9 @@ export const PHOTO_LAB_MODES = [
     icon: WandSparkles,
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: put the hoodie from Detail 1 on me, and place the camera from Detail 2 on the table.',
+      'Example: Dress the woman in the orange hooded puffer jacket from the reference. Fit it naturally to her body. Keep the result photorealistic.',
     uploadHint:
-      'Upload the Main photo first, then Detail 1-5 if the edit needs them. A short edit prompt is required.',
+      'Upload the Main photo, add Detail photos (up to 5), then write the user prompt.',
   },
   {
     id: 'identity_transfer',
@@ -69,7 +69,7 @@ export const PHOTO_LAB_MODES = [
     icon: Eraser,
     accent: 'from-rose-400/20 to-primary/25',
     promptPlaceholder:
-      "Example: remove the seagulls near the man's feet...",
+      "Example: Remove the seagulls near the man's feet.",
     uploadHint:
       'Upload a photo, then paint what to remove and/or describe it.',
   },
@@ -82,7 +82,7 @@ export const PHOTO_LAB_MODES = [
     icon: ImagePlus,
     accent: 'from-emerald-300/20 to-cyan-400/20',
     promptPlaceholder:
-      'Example: clearer background details, less noise in shadows.',
+      'Example: Clearer background details, less noise in shadows.',
     uploadHint: 'Upload a soft, noisy, compressed, or hazy photo.',
   },
   {
@@ -94,7 +94,7 @@ export const PHOTO_LAB_MODES = [
     icon: Paintbrush,
     accent: 'from-fuchsia-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: softer skin on arms, cleaner shirt, warmer evening tones.',
+      'Example: Softer skin on arms, cleaner shirt, warmer evening tones.',
     uploadHint: 'Upload a portrait, lifestyle, or social media photo.',
   },
   {
@@ -106,7 +106,7 @@ export const PHOTO_LAB_MODES = [
     icon: Palette,
     accent: 'from-sky-300/25 to-primary/25',
     promptPlaceholder:
-      'Example: thicker outlines, or keep a hint of the outdoor background.',
+      'Example: Thicker outlines, or keep a hint of the outdoor background.',
     uploadHint:
       'Upload one photo, then pick a style with the buttons above the preview.',
   },

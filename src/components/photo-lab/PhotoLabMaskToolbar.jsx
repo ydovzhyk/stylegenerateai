@@ -71,7 +71,7 @@ export default function PhotoLabMaskToolbar({
 
   return (
     <div
-      className={`min-w-0 rounded-2xl border border-white/10 bg-background-soft/70 p-4 ${className}`}
+      className={`min-w-0 overflow-visible ${className}`}
     >
       {showTitle ? (
         <Text

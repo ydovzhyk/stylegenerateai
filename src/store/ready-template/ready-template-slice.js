@@ -368,9 +368,19 @@ const readyTemplate = createSlice({
           state.hasMoreSearchResults = payload?.hasMore || false
 
           if (mode === 'append') {
+            const existingIds = new Set(
+              state.yourLookSearchTemplates.map((item) => String(item?._id || '')),
+            )
+            const uniqueNext = nextTemplates.filter((item) => {
+              const id = String(item?._id || '')
+              if (!id || existingIds.has(id)) return false
+              existingIds.add(id)
+              return true
+            })
+
             state.yourLookSearchTemplates = [
               ...state.yourLookSearchTemplates,
-              ...nextTemplates,
+              ...uniqueNext,
             ]
             return
           }

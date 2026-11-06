@@ -25,6 +25,10 @@ import {
   WALLPAPER_PRESETS,
 } from '@/constants/imagine'
 import {
+  USER_PROMPT_TEXTAREA_INPUT_CLASSNAME,
+  USER_PROMPT_TEXTAREA_ROWS,
+} from '@/constants/user-prompt'
+import {
   PHOTO_CHECK_FAILED_MESSAGE,
   PHOTO_CHECK_PENDING_MESSAGE,
   PHOTO_FLAGGED_MESSAGE,
@@ -783,13 +787,11 @@ export default function ImaginePreviewTester() {
             <Input
               id="imagine-preview-prompt"
               as="textarea"
-              rows={5}
-              label={
-                selectedMode.id === 'home' || selectedMode.id === 'wallpaper'
-                  ? 'Optional prompt'
-                  : 'Prompt'
-              }
+              rows={USER_PROMPT_TEXTAREA_ROWS}
+              autoGrow
+              label="User prompt"
               placeholder={selectedMode.promptPlaceholder}
+              inputClassName={USER_PROMPT_TEXTAREA_INPUT_CLASSNAME}
               caseMode="sentence"
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}

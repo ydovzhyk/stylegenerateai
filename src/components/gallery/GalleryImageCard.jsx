@@ -6,7 +6,9 @@ import Button from '@/components/shared/button/Button'
 import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
 import { getGeneratedImageFormat } from '@/constants/generated-image-formats'
+import { getPhotoQualityLabel } from '@/constants/photo-quality'
 import { axiosDownloadGeneratedImageFile } from '@/services/api/generated-image'
+import { formatFileSize } from '@/utils/files/formatFileSize'
 
 export const GALLERY_CARD_SHELL_CLASS =
   'relative w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-sm'
@@ -21,6 +23,16 @@ function buildDownloadFileName(title, extension) {
   return `${safeTitle}.${extension}`
 }
 
+function buildGalleryMetaParts(item) {
+  const qualityLabel = getPhotoQualityLabel(
+    item?.generationParams?.photoQuality || item?.photoQuality,
+  )
+  const fileSizeLabel = formatFileSize(item?.fileSizeBytes)
+  const formatLabel = getGeneratedImageFormat(item?.format)?.label || ''
+
+  return [qualityLabel, fileSizeLabel, formatLabel].filter(Boolean)
+}
+
 export default function GalleryImageCard({
   item,
   deleting = false,
@@ -29,6 +41,7 @@ export default function GalleryImageCard({
 }) {
   const [downloading, setDownloading] = useState(false)
   const previewSrc = item?.previewUrl || item?.imageUrl || ''
+  const metaParts = buildGalleryMetaParts(item)
 
   const handleDownload = async () => {
     if (!item?._id || downloading) return
@@ -101,6 +114,17 @@ export default function GalleryImageCard({
       >
         {item?.title || 'Untitled'}
       </Text>
+
+      {metaParts.length > 0 ? (
+        <Text
+          as="p"
+          color="muted"
+          caseMode="sentence"
+          className="mt-1 text-xs"
+        >
+          {metaParts.join(' · ')}
+        </Text>
+      ) : null}
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Button

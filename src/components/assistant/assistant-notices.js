@@ -48,9 +48,19 @@ const NOTICE_GUIDES = [
       'This account does not have an active plan for that option. Open Pricing and choose a plan that includes it.',
   },
   {
+    includes: 'Smart Edit requires a Main photo and at least one Detail photo',
+    guidance:
+      'Upload the Main photo and at least one Detail photo, write the user prompt, then press Generate again.',
+  },
+  {
+    includes: 'Smart Edit requires a short user prompt',
+    guidance:
+      'Write a short user prompt that explains the change, then press Generate again.',
+  },
+  {
     includes: 'Smart Edit requires a short edit prompt',
     guidance:
-      'Smart Edit needs a short required prompt that explains the change. Detail photos are optional. Write the prompt, then press Generate again.',
+      'Write a short user prompt that explains the change, then press Generate again.',
   },
   {
     includes: 'Identity Transfer requires exactly two photos',

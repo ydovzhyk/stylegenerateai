@@ -5,15 +5,15 @@ import { useDispatch, useSelector } from 'react-redux'
 import clsx from 'clsx'
 import Photo from '@/components/shared/photo/Photo'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { ChevronLeft, ChevronRight, Trash2, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
+import ConfirmModal from '@/components/shared/confirm-modal/ConfirmModal'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import ShowcasePreviewImage from '@/components/shared/showcase-preview-image/ShowcasePreviewImage'
 import PreviewBadge, {
   PHOTO_OVERLAY_TEXT_OUTLINE,
 } from '@/components/shared/preview-badge/PreviewBadge'
-import { MODAL_OVERLAY_CLASS } from '@/constants/modal-overlay'
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { useTranslate } from '@/utils/translate/translate'
 import {
@@ -737,68 +737,18 @@ export default function PhotoLabShowcasePreview() {
         title={previewModal.title}
       />
 
-      {templateToDelete ? (
-        <div className={MODAL_OVERLAY_CLASS}>
-          <div className="w-full max-w-[420px] rounded-[24px] border border-white/10 bg-[#10121a] p-5 shadow-[0_24px_90px_rgba(0,0,0,0.45)]">
-            <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-                <Text as="h3" variant="h3" color="white" caseMode="sentence">
-                  Delete template?
-          </Text>
-
-          <Text
-            as="p"
-                  variant="body-sm"
-            color="muted"
-            caseMode="sentence"
-                  className="mt-2"
-                >
-                  This action cannot be undone.
-                </Text>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setTemplateToDelete(null)}
-                disabled={isDeletingTemplate}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/70 transition hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Close delete confirmation"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-              <Text as="p" variant="body-sm" color="white" caseMode="sentence">
-                {templateToDelete.title || 'Selected template'}
-          </Text>
-        </div>
-
-            <div className="mt-5 flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => setTemplateToDelete(null)}
-                disabled={isDeletingTemplate}
-                className="rounded-full px-5"
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleConfirmDeleteTemplate}
-                loading={isDeletingTemplate}
-                disabled={isDeletingTemplate}
-                className="rounded-full px-5"
-              >
-                Delete
-              </Button>
-        </div>
-      </div>
-    </div>
-      ) : null}
+      <ConfirmModal
+        open={Boolean(templateToDelete)}
+        title="Delete template?"
+        description="This action cannot be undone."
+        detail={templateToDelete?.title || 'Selected template'}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={handleConfirmDeleteTemplate}
+        onCancel={() => setTemplateToDelete(null)}
+        confirmLoading={isDeletingTemplate}
+        closeAriaLabel="Close delete confirmation"
+      />
     </section>
   )
 }

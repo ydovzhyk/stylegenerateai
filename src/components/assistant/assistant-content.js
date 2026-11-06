@@ -3,6 +3,9 @@ import { IMAGINE_MODES } from '@/constants/imagine'
 
 export const PRODUCT_NAME = 'AI Style Generator'
 
+export const EXPORT_SIZE_ASSISTANT_HINT =
+  '**Export size** - choose above the prompt before Generate: Standard = phone-ready, Premium = higher native resolution, Print = max native size (up to ~3840). Pick PNG / JPG / WebP on Download.'
+
 export const ASSISTANT_CONTENT = {
   welcomeBubble:
     'Hi, I am here. Ask me and I will tell you more about what you can do.',
@@ -60,7 +63,7 @@ Typical choices:
 
 - **Professional Portrait** - a casual photo into a LinkedIn / CV headshot.
 - **Restore & Colorize** - repair old, faded, or damaged pictures.
-- **Smart Edit** - Main photo + optional Detail photos + a short required prompt that explains the change.
+- **Smart Edit** - Main photo + Detail photos + a short required user prompt that explains the change.
 - **Identity Transfer** - keep a reference shot 1:1 and put your face into it.
 - **Remove Objects** - clean people or clutter out of the frame.
 - **Enhance Quality** - sharper and clearer, same scene.
@@ -203,19 +206,19 @@ export function getLookTemplateBubbleText(templateTitle) {
 export function getLookSettingsText(templateTitle, pricingCopy = '') {
   const title = String(templateTitle || '').trim()
   const lead = title
-    ? `You picked **${title}**. Next, upload your photo and review the settings under the extra prompt.`
-    : 'You picked a look. Next, upload your photo and review the settings under the extra prompt.'
+    ? `You picked **${title}**. Next, upload your photo and review the settings under the user prompt.`
+    : 'You picked a look. Next, upload your photo and review the settings under the user prompt.'
   const pricing = String(pricingCopy || '').trim()
 
   return `${lead}
 
 **Your photo** - a clear portrait of yourself: face visible, decent light. Avoid tiny, dark, or heavily filtered shots.
 
-**Additional prompt** - optional extra wishes (outfit, mood, background). Leave it empty if the template is enough. This does not change the credit price.
+**User prompt** - optional extra wishes (outfit, mood, background). Leave it empty if the template is enough. This does not change the credit price.
 
 **Output format** - the frame: Portrait 2:3, Square 1:1, or Landscape 3:2.
 
-**Export size** - choose above the prompt before Generate: Standard = phone-ready; Premium = higher native resolution; Print = max native size (up to ~3840 on the long edge). File format (PNG / JPG / WebP) is chosen later on Download.
+${EXPORT_SIZE_ASSISTANT_HINT}
 
 ${pricing}`
 }
@@ -228,42 +231,42 @@ export function getPhotoLabModeBubbleText(modeId) {
 const PHOTO_LAB_MODE_GUIDES = {
   professional_portrait: `**Your photo** - a clear face or upper-body shot, decent light.
 
-**Optional refinements** - extra wishes such as smile, blazer, or background. Optional.`,
+**User prompt** - optional extra wishes such as smile, blazer, or background.`,
   restore_colorize: `**Your photo** - an old, blurry, damaged, faded, or black-and-white picture.
 
 **Restore type** - **Restore only** repairs the photo and keeps the original tones. **Restore & colorize** also adds natural color.
 
-**Optional refinements** - extra wishes for tone or repair. Optional.`,
+**User prompt** - optional extra wishes for tone or repair.`,
   smart_edit: `**Main photo** - the photo to edit. Upload it first.
 
-**Detail 1-5** - optional. Add photos of clothes, objects, or a place only if the edit needs them as visual references.
+**Detail photos** - add up to 5 reference photos in one go (clothes, objects, places) for the model to use as visual sources.
 
-**Edit prompt** - required. Write a short prompt that explains the change. Example: put the outfit from Detail 1 on me.
+**User prompt** - required. Describe the change clearly. Example: Dress the woman in the orange hooded puffer jacket from the reference. Fit it naturally to her body. Keep the result photorealistic.
 
 Then press Generate.`,
   identity_transfer: `**Photos** - upload **Reference photo** first (pose, clothes, and scene to keep 1:1), then a clear **Face photo** of you.
 
-Hairstyle comes from the reference by default. Write **Keep my hairstyle** in the prompt to keep yours.
+Hairstyle comes from the reference by default. Write **Keep my hairstyle** in the user prompt to keep yours.
 
-**Optional refinements** - extra wishes. Optional.`,
+**User prompt** - optional extra wishes.`,
   remove_objects: `**Your photo** - the shot to clean.
 
-Paint a mask over what to remove, and/or describe it in **Additional prompt**. You need at least a mask or a short description.`,
+Paint a mask over what to remove, and/or describe it in **User prompt**. You need at least a mask or a short description.`,
   enhance_quality: `**Your photo** - a soft, noisy, compressed, or hazy shot. The scene stays the same.
 
-**Optional refinements** - extra wishes for sharpness or haze. Optional.`,
+**User prompt** - optional extra wishes for sharpness or haze.`,
   creative_retouch: `**Your photo** - a portrait, lifestyle, or social photo. Same scene. The finish evens skin on the face and hands, clears blemishes, and grooms the existing hair. It is not a new face, pose, or hairstyle.
 
-**Optional refinements** - extra wishes for skin or tone. Optional.`,
+**User prompt** - optional extra wishes for skin or tone.`,
   photo_styles: `**Style** - pick one with the buttons above the photo: coloring page, cartoon, sticker, clipart, or a professional studio shot.
 
 **Your photo** - one photo of the person, animal, or object to restyle.
 
-**Optional refinements** - extra wishes. Optional.`,
+**User prompt** - optional extra wishes.`,
 }
 
 function getSharedPhotoLabSettingsText() {
-  return `**Export size** - choose above the prompt before Generate: Standard = phone-ready, Premium = higher native resolution, Print = max native size (up to ~3840). Pick PNG / JPG / WebP on Download.`
+  return EXPORT_SIZE_ASSISTANT_HINT
 }
 
 export function getPhotoLabModeSettingsText(modeId, pricingCopy = '') {
@@ -297,10 +300,10 @@ const IMAGINE_MODE_GUIDES = {
 
 **Without a photo** - leave both sizes at 0. A device named in the prompt, such as a Dell XPS 16, uses its standard screen. With no device, the wallpaper is 1920×1080. Computer sets 1920×1080. Phone sets 1280×2856. Or type both sizes.
 
-**Prompt** - optional. A short or empty idea becomes a full photographic scene. A detailed prompt is kept.`,
+**User prompt** - optional. A short or empty idea becomes a full photographic scene. A detailed prompt is kept.`,
   tattoo: `**Result** - a clean sketch on a plain background for a tattoo artist. It is not a photo of a tattoo on skin.
 
-**Prompt** - required, even when a reference photo is uploaded. The photo is only the idea. The prompt says what to keep.
+**User prompt** - required, even when a reference photo is uploaded. The photo is only the idea. The user prompt says what to keep.
 
 **Size** - width and height in centimeters, from 1 to 40. The fields start at 5 and 10.
 
@@ -308,25 +311,25 @@ const IMAGINE_MODE_GUIDES = {
 With a reference photo, choose **Custom** when the style is already in the photo. The other styles push their own look and can leave the reference.
 Choose Fine line, Stencil, Blackwork, or Symbolic only when the photo is the subject and the sketch should be in that technique.
 
-**Prompt examples**
+**User prompt examples**
 - Custom: A Japanese koi fish swimming upstream through swirling waves, surrounded by cherry blossoms, in a traditional Japanese tattoo style.
-- Custom with a reference photo: Make this same subject a clean sketch.
 - Fine line: A delicate butterfly surrounded by tiny wildflowers, with elegant flowing details and a graceful composition.
-- Stencil: A highly realistic tiger head facing forward, with an intense gaze, detailed fur texture, natural facial anatomy, and a powerful expression.
+- Stencil: A fierce roaring tiger head facing forward, with sharp eyes, detailed fur patterns and a powerful expression.
 - Blackwork: A mysterious raven perched on an ancient skull, surrounded by thorny branches and dark botanical elements.
-- Symbolic: A broken hourglass with sand transforming into flying birds, surrounded by subtle geometric shapes, symbolizing freedom, the passage of time and destiny.
+- Symbolic: A crescent moon embracing a small sun, symbolizing harmony, inner strength and the balance of opposites.
+- With a reference photo: Extract the tattoo from the reference onto a white background. Keep the original design; remove the person, skin, and background.
 
 **Reference photo** - optional. Upload it in the center card.`,
   home: `**Your place** - required. Upload a house, yard, or room. The result is one photo of that same place.
 
 **Design example** - optional. Upload a photo of the look you want, even from another house or room. That look is applied to your place.
 
-**Prompt** - optional. Use it for an extra wish, or leave it empty. With no example and no prompt, a style is chosen for you.`,
+**User prompt** - optional. Use it for an extra wish, or leave it empty. With no example and no prompt, a style is chosen for you.`,
   painting: `**Look** - As original, As photo, Oil, Pencil, or Gouache.
 
 **Canvas size** - pick Auto, Square, Landscape, or Portrait, or type width and height. Auto (0×0): a reference photo keeps its proportions; a named famous painting uses that work’s natural proportions; otherwise the canvas is 1024×1024 square.
 
-**Prompt or photo** - write your own scene, name a known painting or artist, or upload a photo as the subject. A photo of a painting is enough even if you do not know the title or artist. You need a prompt or a photo.`,
+**User prompt or photo** - write your own scene, name a known painting or artist, or upload a photo as the subject. A photo of a painting is enough even if you do not know the title or artist. You need a user prompt or a photo.`,
 }
 
 export function getImagineModeSettingsText(modeId, pricingCopy = '') {
@@ -341,7 +344,7 @@ export function getImagineModeSettingsText(modeId, pricingCopy = '') {
 
 ${guide}
 
-**Export size** - choose above the prompt before Generate: Standard = phone-ready, Premium = higher native resolution, Print = max native size (up to ~3840). File format is chosen on Download.
+${EXPORT_SIZE_ASSISTANT_HINT}
 
 ${pricing}`
 }
@@ -356,8 +359,8 @@ export function getGenerationSaveSettingsText({
 } = {}) {
   const isPhotoLab = String(pathname || '') === '/photo-lab'
   const retryTarget = isPhotoLab
-    ? 'a short extra prompt, or another Photo Lab mode'
-    : 'a short extra prompt, or another look'
+    ? 'a short user prompt, or another Photo Lab mode'
+    : 'a short user prompt, or another look'
   const gallery = isLogin
     ? `**Save to gallery** - keeps the image in **My Gallery** (Looks or Photo Lab). Turn it on before **Download**: the image is saved first, then the file downloads.`
     : `**Save to gallery** - needs an account. Sign in to keep results in **My Gallery**. You can still download the file without signing in.`

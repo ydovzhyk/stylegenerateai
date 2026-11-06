@@ -28,8 +28,21 @@ import { DEFAULT_RESTORE_STYLE, RESTORE_COLORIZE_MODE } from '@/constants/restor
 import {
   DEFAULT_PICTURE_STYLE,
   PHOTO_STYLES_MODE,
+  getPictureStyleMeta,
 } from '@/constants/picture-styles'
 import { resolveGallerySourceType } from '@/constants/gallery-sections'
+import {
+  USER_PROMPT_EDITOR_CLASSNAME,
+  USER_PROMPT_INPUT_GROUP_CLASSNAME,
+  USER_PROMPT_TEXTAREA_INPUT_CLASSNAME,
+  USER_PROMPT_TEXTAREA_ROWS,
+  WORKSPACE_PREP_BODY_CLASSNAME,
+  WORKSPACE_PREP_FRAME_CLASSNAME,
+  WORKSPACE_PREP_OPTIONS_ATTR,
+  WORKSPACE_PREP_OPTIONS_CLASSNAME,
+  WORKSPACE_PREP_PROMPT_ATTR,
+  WORKSPACE_PREP_SETTINGS_CLASSNAME,
+} from '@/constants/user-prompt'
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { PROTOTYPE_MAP } from '@/constants/prototype-source-map'
 import useGenerationPlanAccess from '@/hooks/useGenerationPlanAccess'
@@ -99,8 +112,9 @@ export default function AiImageWorkspace({
   workspaceTitle = 'Generate your image',
   workspaceDescription = 'Upload your own photo and apply the selected AI template.',
   selectionEyebrow = 'Selected template',
-  promptLabel = 'Additional prompt',
-  promptPlaceholder = 'Add small details...',
+  promptLabel = 'User prompt',
+  promptPlaceholder =
+    'Example: Soft natural light, keep my hairstyle, subtle smile.',
   promptHint = '',
   showOutputFormat = true,
   actionCardLabels = DEFAULT_ACTION_CARD_LABELS,
@@ -108,7 +122,6 @@ export default function AiImageWorkspace({
   const isPhotoLab = productKey === 'photo_lab'
   const inputRef = useRef(null)
   const referenceInputRef = useRef(null)
-  const smartEditSlotRef = useRef(0)
   const faceInputRef = useRef(null)
   const resultRef = useRef(null)
   const maskEditorRef = useRef(null)
@@ -696,32 +709,22 @@ export default function AiImageWorkspace({
   }
 
   const handleReferenceFilesChange = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const index = smartEditSlotRef.current
-    if (index < 0 || index >= SMART_EDIT_MAX_REFERENCE_IMAGES) {
+    const selected = Array.from(e.target.files || []).slice(
+      0,
+      SMART_EDIT_MAX_REFERENCE_IMAGES,
+    )
+    if (!selected.length) {
       e.target.value = ''
       return
     }
 
-    queueImageModeration(file)
-
-    setReferenceFiles((prev) => {
-      if (index > prev.length) return prev
-      const next = [...prev]
-      next[index] = file
-      return next
-    })
+    selected.forEach((file) => queueImageModeration(file))
 
     setReferencePreviews((prev) => {
-      if (index > prev.length) return prev
-      const next = [...prev]
-      if (next[index]) URL.revokeObjectURL(next[index])
-      next[index] = URL.createObjectURL(file)
-      return next
+      revokePreviewUrls(prev)
+      return selected.map((file) => URL.createObjectURL(file))
     })
-
+    setReferenceFiles(selected)
     setGeneratedPreview('')
     setGeneratedFile(null)
     e.target.value = ''
@@ -729,7 +732,10 @@ export default function AiImageWorkspace({
 
   const trimmedExtraPrompt = String(extraPrompt || '').trim()
   const canRunRemoveObjects = hasRemovalMask || Boolean(trimmedExtraPrompt)
-  const canRunSmartEdit = Boolean(trimmedExtraPrompt)
+  const canRunSmartEdit =
+    Boolean(clientFile) &&
+    referenceFiles.length > 0 &&
+    Boolean(trimmedExtraPrompt)
   const canRunIdentityTransfer = Boolean(clientFile && faceFile)
 
   const runGeneration = async () => {
@@ -1214,28 +1220,19 @@ export default function AiImageWorkspace({
     )
   }
 
-  const resolvedPromptLabel = isRemoveObjectsMode
-    ? 'Additional prompt'
-    : isSmartEditMode
-      ? 'Edit prompt'
-      : promptLabel
+  const resolvedPromptLabel = promptLabel || 'User prompt'
 
-  const resolvedPromptPlaceholder = isRemoveObjectsMode
-    ? "Optional with a mask. Or prompt-only: remove the seagulls near the man's feet..."
-    : isIdentityTransferMode
-      ? template?.promptPlaceholder ||
-        'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
-      : template?.promptPlaceholder || promptPlaceholder
+  const resolvedPromptPlaceholder =
+    template?.promptPlaceholder || promptPlaceholder
 
   const identityTransferPromptHint =
     'Default: hairstyle from the Reference photo. To use your face-photo hairstyle, write “Keep my hairstyle”. You can add other edits too.'
 
+  const smartEditPromptHint =
+    'Required. Describe the change clearly. Name the item from the Detail photos, how it should fit, and keep the result photorealistic.'
+
   const resolvedPromptHint = isPhotoLab
-    ? isIdentityTransferMode
-      ? ''
-      : isSmartEditMode
-        ? 'Required. Write a short prompt that explains the change. Detail photos are optional references for that change.'
-        : ''
+    ? ''
     : template?.promptHint || promptHint
 
   const resolvedWorkspaceDescription = isRemoveObjectsMode
@@ -1245,7 +1242,7 @@ export default function AiImageWorkspace({
       : isPhotoStylesMode
         ? 'Upload one photo, pick a style above the preview, then generate.'
         : isSmartEditMode
-          ? 'Upload the Main photo, add Detail photos if the edit needs them, write a short prompt that explains the change (required), then generate.'
+          ? 'Upload the Main photo, add Detail photos (up to 5), write the user prompt, then generate.'
           : isIdentityTransferMode
           ? 'Upload a Reference photo, then a Photo with your face - keep the shot, transfer your identity.'
           : workspaceDescription
@@ -1269,27 +1266,76 @@ export default function AiImageWorkspace({
     (isSmartEditMode && !canRunSmartEdit) ||
     (isIdentityTransferMode && !canRunIdentityTransfer)
 
+  const formatMissingRequirements = (items = []) => {
+    const list = items.filter(Boolean)
+    if (!list.length) return 'Complete the required steps to continue.'
+    if (list.length === 1) return `Add ${list[0]} to continue.`
+    if (list.length === 2) return `Add ${list[0]} and ${list[1]} to continue.`
+    return `Add ${list.slice(0, -1).join(', ')}, and ${list[list.length - 1]} to continue.`
+  }
+
+  const getGenerateDisabledHint = () => {
+    if (hasFlaggedUpload) return PHOTO_FLAGGED_MESSAGE
+    if (hasFailedUpload) return PHOTO_CHECK_FAILED_MESSAGE
+    if (hasPendingUpload) return PHOTO_CHECK_PENDING_MESSAGE
+
+    if (isSmartEditMode) {
+      return formatMissingRequirements([
+        !clientFile ? 'the Main photo' : '',
+        !referenceFiles.length ? 'Detail photos' : '',
+        !trimmedExtraPrompt ? 'the user prompt' : '',
+      ])
+    }
+
+    if (isIdentityTransferMode) {
+      return formatMissingRequirements([
+        !clientFile ? 'a Reference photo' : '',
+        !faceFile ? 'a Photo with your face' : '',
+      ])
+    }
+
+    if (isRemoveObjectsMode) {
+      const missingPhoto = !clientFile
+      const missingMaskOrPrompt = !canRunRemoveObjects
+
+      if (missingPhoto && missingMaskOrPrompt) {
+        return 'Add your photo, then paint a removal mask and/or write a user prompt to continue.'
+      }
+      if (missingPhoto) return 'Upload your photo to continue.'
+      if (missingMaskOrPrompt) {
+        return 'Paint a removal mask, add a user prompt, or both before generating.'
+      }
+      return 'Add your photo, then paint a removal mask and/or write a user prompt to continue.'
+    }
+
+    if (isPhotoStylesMode) {
+      const styleLabel =
+        getPictureStyleMeta(resolvedPictureStyle)?.shortLabel || 'Coloring page'
+
+      if (!clientFile) {
+        return `Upload your photo to continue. A style is already selected above (${styleLabel}) — change it if you want another look.`
+      }
+
+      return `A style is selected above (${styleLabel}). Upload your photo to continue.`
+    }
+
+    if (!clientFile) {
+      return (
+        actionCardLabels.descriptionDisabled ||
+        'Upload your photo to continue.'
+      )
+    }
+
+    return (
+      actionCardLabels.descriptionDisabled ||
+      'Complete the required steps to continue.'
+    )
+  }
+
   const resolvedActionCardLabels = {
     ...actionCardLabels,
-    descriptionDisabled: hasFlaggedUpload
-      ? PHOTO_FLAGGED_MESSAGE
-      : hasFailedUpload
-        ? PHOTO_CHECK_FAILED_MESSAGE
-        : hasPendingUpload
-          ? PHOTO_CHECK_PENDING_MESSAGE
-          : isRemoveObjectsMode
-            ? !clientFile
-              ? 'Upload your photo first to continue.'
-              : 'Paint a removal mask, add a prompt, or both before generating.'
-            : isSmartEditMode
-              ? !clientFile
-                ? 'Upload your main photo first to continue.'
-                : 'Add a short edit prompt before generating.'
-              : isIdentityTransferMode
-                ? !clientFile
-                  ? 'Upload a Reference photo first to continue.'
-                  : 'Upload a Photo with your face before generating.'
-                : actionCardLabels.descriptionDisabled,
+    titleDisabled: actionCardLabels.titleDisabled || 'Almost ready',
+    descriptionDisabled: getGenerateDisabledHint(),
   }
 
   // Kept for possible admin/debug reuse; workspace no longer shows mode preview.
@@ -1458,13 +1504,11 @@ export default function AiImageWorkspace({
 
   const renderPromptEditor = (className = '') => (
     <div
-      className={clsx(
-        'flex flex-1 flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5',
-        className,
-      )}
+      {...{ [WORKSPACE_PREP_PROMPT_ATTR]: '' }}
+      className={clsx(USER_PROMPT_EDITOR_CLASSNAME, className)}
     >
-      {isIdentityTransferMode ? (
-        <div className="mb-2 flex items-center justify-between gap-3">
+      {isIdentityTransferMode || isSmartEditMode ? (
+        <div className="mb-2 flex shrink-0 items-center justify-between gap-3">
           <Text
             as="p"
             variant="section-title"
@@ -1477,8 +1521,12 @@ export default function AiImageWorkspace({
           <InfoHint
             placement="bottom"
             align="end"
-            text={identityTransferPromptHint}
-            label="Optional refinements hint"
+            text={
+              isSmartEditMode
+                ? smartEditPromptHint
+                : identityTransferPromptHint
+            }
+            label="User prompt hint"
             widthClassName="w-[260px]"
           />
         </div>
@@ -1486,17 +1534,23 @@ export default function AiImageWorkspace({
 
       <Input
         as="textarea"
-        rows={5}
-        label={isIdentityTransferMode ? undefined : resolvedPromptLabel}
-        labelClassName="text-lg font-semibold text-white md:text-xl"
+        rows={USER_PROMPT_TEXTAREA_ROWS}
+        autoGrow
+        fillHeight
+        label={
+          isIdentityTransferMode || isSmartEditMode
+            ? undefined
+            : resolvedPromptLabel
+        }
+        labelClassName="text-lg font-semibold text-white md:text-xl shrink-0"
         placeholder={resolvedPromptPlaceholder}
         hint={resolvedPromptHint}
         value={extraPrompt}
         onChange={(e) => setExtraPrompt(e.target.value)}
         caseMode="sentence"
-        className="flex h-full min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1"
-        inputClassName="h-full min-h-0 flex-1 resize-none"
-        helpClassName={resolvedPromptHint ? undefined : 'hidden'}
+        className={USER_PROMPT_INPUT_GROUP_CLASSNAME}
+        inputClassName={USER_PROMPT_TEXTAREA_INPUT_CLASSNAME}
+        helpClassName={resolvedPromptHint ? 'shrink-0' : 'hidden'}
       />
     </div>
   )
@@ -1755,7 +1809,7 @@ export default function AiImageWorkspace({
             {isIdentityTransferMode
               ? 'Use the source buttons - Reference photo first, then Face photo.'
               : isSmartEditMode
-                ? 'Use the source buttons - Main photo first, then Detail 1 and the rest if you need them.'
+                ? 'Use the source buttons - Main photo first, then Detail photos (up to 5).'
                 : isPhotoStylesMode
                   ? 'Pick a style in the settings column, then upload this photo.'
                   : 'Choose a clear portrait photo for the best result.'}
@@ -1786,7 +1840,7 @@ export default function AiImageWorkspace({
     ]
 
     return (
-      <div className="overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+      <div className="overflow-visible">
         <div className="flex flex-col gap-2">
           {sources.map((source) => (
             <Button
@@ -1830,6 +1884,7 @@ export default function AiImageWorkspace({
   const renderSmartEditSources = () => {
     if (!isSmartEditMode) return null
 
+    const detailCount = referenceFiles.length
     const sources = [
       {
         key: 'main',
@@ -1838,20 +1893,20 @@ export default function AiImageWorkspace({
         disabled: loading,
         onClick: () => inputRef.current?.click(),
       },
-      ...Array.from({ length: SMART_EDIT_MAX_REFERENCE_IMAGES }, (_, index) => ({
-        key: `detail-${index + 1}`,
-        label: `Detail ${index + 1}`,
-        uploaded: Boolean(referenceFiles[index]),
-        disabled: loading || !clientFile || index > referenceFiles.length,
-        onClick: () => {
-          smartEditSlotRef.current = index
-          referenceInputRef.current?.click()
-        },
-      })),
+      {
+        key: 'details',
+        label:
+          detailCount > 0
+            ? `Detail photos · ${detailCount}/${SMART_EDIT_MAX_REFERENCE_IMAGES}`
+            : 'Detail photos',
+        uploaded: detailCount > 0,
+        disabled: loading || !clientFile,
+        onClick: () => referenceInputRef.current?.click(),
+      },
     ]
 
     return (
-      <div className="overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4">
+      <div className="overflow-visible">
         <div className="grid grid-cols-2 gap-2">
           {sources.map((source) => (
             <Button
@@ -1885,6 +1940,7 @@ export default function AiImageWorkspace({
           ref={referenceInputRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
           onChange={handleReferenceFilesChange}
         />
@@ -2006,39 +2062,51 @@ export default function AiImageWorkspace({
       </div>
 
       <div className="mb-5 grid items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <div className="relative h-full min-h-[240px] min-w-0 md:col-span-2 lg:col-span-1">
-          <div className="flex h-full min-h-0 flex-col gap-4 lg:absolute lg:inset-0">
-            {hasPhotoLabModeSettings ? (
-              <div className="relative z-10 min-w-0 shrink-0 overflow-visible">
-                {renderPhotoLabModeSettings()}
-              </div>
-            ) : null}
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
-              <ExportSizeSelect
-                photoQuality={photoQuality}
-                setPhotoQuality={handleExportSizeChange}
-                photoQualities={photoQualities}
-                isQualityAllowed={isQualityAllowed}
-                getOptionLockedReason={getOptionLockedReason}
-                planKey={planKey}
-                isLogin={isLogin}
-                disabled={loading}
-              />
-              {showOutputFormat ? (
-                <OutputFormatSelect
-                  outputFormat={outputFormat}
-                  setOutputFormat={setOutputFormat}
-                  outputFormats={outputFormats}
-                  isFormatAllowed={isFormatAllowed}
-                  getOptionLockedReason={getOptionLockedReason}
-                  planKey={planKey}
-                  isLogin={isLogin}
-                  disabled={loading}
-                />
+        <div className="min-w-0 md:col-span-2 lg:col-span-1">
+          <div className={WORKSPACE_PREP_FRAME_CLASSNAME}>
+            <div className={WORKSPACE_PREP_BODY_CLASSNAME}>
+              {hasPhotoLabModeSettings || showOutputFormat ? (
+                <div
+                  className={clsx(
+                    WORKSPACE_PREP_SETTINGS_CLASSNAME,
+                    'flex flex-col gap-4',
+                  )}
+                >
+                  {hasPhotoLabModeSettings
+                    ? renderPhotoLabModeSettings()
+                    : null}
+                  {showOutputFormat ? (
+                    <OutputFormatSelect
+                      outputFormat={outputFormat}
+                      setOutputFormat={setOutputFormat}
+                      outputFormats={outputFormats}
+                      isFormatAllowed={isFormatAllowed}
+                      getOptionLockedReason={getOptionLockedReason}
+                      planKey={planKey}
+                      isLogin={isLogin}
+                      disabled={loading}
+                    />
+                  ) : null}
+                </div>
               ) : null}
-              {renderPromptEditor(
-                hasPhotoLabModeSettings ? 'min-h-[160px]' : 'min-h-[240px]',
-              )}
+              <div
+                {...{ [WORKSPACE_PREP_OPTIONS_ATTR]: '' }}
+                className={WORKSPACE_PREP_OPTIONS_CLASSNAME}
+              >
+                <div className="shrink-0">
+                  <ExportSizeSelect
+                    photoQuality={photoQuality}
+                    setPhotoQuality={handleExportSizeChange}
+                    photoQualities={photoQualities}
+                    isQualityAllowed={isQualityAllowed}
+                    getOptionLockedReason={getOptionLockedReason}
+                    planKey={planKey}
+                    isLogin={isLogin}
+                    disabled={loading}
+                  />
+                </div>
+                {renderPromptEditor()}
+              </div>
             </div>
           </div>
         </div>

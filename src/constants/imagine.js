@@ -24,7 +24,7 @@ export const IMAGINE_MODES = [
       'Choose a style and size in cm, describe the idea, optional reference photo.',
     icon: PenLine,
     accent: 'from-rose-400/20 to-primary/25',
-    promptPlaceholder: 'Example: a small wolf under a thin crescent moon.',
+    promptPlaceholder: 'Example: A small wolf under a thin crescent moon.',
   },
   {
     id: 'home',
@@ -37,7 +37,7 @@ export const IMAGINE_MODES = [
     icon: House,
     accent: 'from-amber-300/20 to-primary/25',
     promptPlaceholder:
-      'Example: dark wood cladding and a simple planted yard.',
+      'Example: Dark wood cladding and a simple planted yard.',
   },
   {
     id: 'painting',
@@ -50,7 +50,7 @@ export const IMAGINE_MODES = [
     icon: Palette,
     accent: 'from-violet-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: a storm over the sea, or Starry Night, or in the style of Monet.',
+      'Example: A storm over the sea, or Starry Night, or in the style of Monet.',
   },
 ]
 
@@ -76,7 +76,7 @@ export const TATTOO_STYLES = [
     id: 'stencil',
     label: 'Stencil',
     promptExample:
-      'Example: A highly realistic tiger head facing forward, with an intense gaze, detailed fur texture, natural facial anatomy, and a powerful expression.',
+      'Example: A fierce roaring tiger head facing forward, with sharp eyes, detailed fur patterns and a powerful expression.',
   },
   {
     id: 'blackwork',
@@ -88,12 +88,12 @@ export const TATTOO_STYLES = [
     id: 'symbolic',
     label: 'Symbolic',
     promptExample:
-      'Example: A broken hourglass with sand transforming into flying birds, surrounded by subtle geometric shapes, symbolizing freedom, the passage of time and destiny.',
+      'Example: A crescent moon embracing a small sun, symbolizing harmony, inner strength and the balance of opposites.',
   },
 ]
 
 export const TATTOO_REFERENCE_PROMPT_EXAMPLE =
-  'Example: Make this same subject a clean sketch.'
+  'Example: Extract the tattoo from the reference onto a white background. Keep the original design; remove the person, skin, and background.'
 
 export const PAINTING_TECHNIQUES = [
   { id: 'original', label: 'As original' },

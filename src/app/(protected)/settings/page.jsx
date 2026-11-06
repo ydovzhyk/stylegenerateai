@@ -6,9 +6,9 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import Input from '@/components/shared/input/Input'
 import Button from '@/components/shared/button/Button'
+import ConfirmModal from '@/components/shared/confirm-modal/ConfirmModal'
 import Photo from '@/components/shared/photo/Photo'
 import Text from '@/components/shared/text/Text'
-import { MODAL_OVERLAY_ELEVATED_CLASS } from '@/constants/modal-overlay'
 import { useTranslate } from '@/utils/translate/translate'
 
 import { editUser, deleteUser } from '@/store/auth/auth-operations'
@@ -511,50 +511,18 @@ export default function SettingsPage() {
         </div>
       </form>
 
-      {isDeleteModalOpen ? (
-        <div className={MODAL_OVERLAY_ELEVATED_CLASS}>
-          <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-background p-5 shadow-2xl sm:p-6">
-            <Text as="h3" variant="h3" color="white" caseMode="sentence">
-              Delete profile?
-            </Text>
-
-            <Text
-              as="p"
-              variant="body-sm"
-              color="muted"
-              caseMode="sentence"
-              className="mt-3"
-            >
-              Are you sure you want to delete your profile? This action cannot
-              be undone.
-            </Text>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={closeDeleteModal}
-                disabled={isDeleting}
-                fullWidth
-                className="min-h-12 rounded-2xl sm:w-auto"
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                onClick={handleDeleteProfile}
-                loading={isDeleting}
-                disabled={isDeleting}
-                fullWidth
-                className="min-h-12 rounded-2xl sm:w-auto"
-              >
-                Delete profile
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmModal
+        open={isDeleteModalOpen}
+        elevated
+        title="Delete profile?"
+        description="Are you sure you want to delete your profile? This action cannot be undone."
+        confirmLabel="Delete profile"
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteProfile}
+        onCancel={closeDeleteModal}
+        confirmLoading={isDeleting}
+        closeAriaLabel="Close delete confirmation"
+      />
     </div>
   )
 }

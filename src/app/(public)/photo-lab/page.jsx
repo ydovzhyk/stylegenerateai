@@ -306,7 +306,7 @@ export default function PhotoLabPage() {
 
           selectionEyebrow="Selected mode"
 
-          promptLabel="Optional refinements"
+          promptLabel="User prompt"
 
           showOutputFormat={false}
 
@@ -316,7 +316,7 @@ export default function PhotoLabPage() {
 
             descriptionReady: 'Start AI editing with your uploaded photo.',
 
-            descriptionDisabled: 'Upload your photo first to continue.',
+            descriptionDisabled: 'Upload your photo to continue.',
 
           }}
 

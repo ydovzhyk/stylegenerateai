@@ -13,6 +13,7 @@ import PhotoLabMaskEditor, {
 import PhotoLabMaskToolbar, {
   DEFAULT_MASK_ZOOM_STATE,
 } from '@/components/photo-lab/PhotoLabMaskToolbar'
+import PictureStyleToolbar from '@/components/photo-lab/PictureStyleToolbar'
 import {
   createPhotoLabTemplate,
   generatePhotoLabAdminPreview,
@@ -38,8 +39,11 @@ import {
 import {
   DEFAULT_PICTURE_STYLE,
   PHOTO_STYLES_MODE,
-  PICTURE_STYLES,
 } from '@/constants/picture-styles'
+import {
+  USER_PROMPT_TEXTAREA_INPUT_CLASSNAME,
+  USER_PROMPT_TEXTAREA_ROWS,
+} from '@/constants/user-prompt'
 import {
   DEFAULT_RESTORED_PROTOTYPE_ID,
   RESTORED_PROTOTYPE_SOURCES,
@@ -180,7 +184,6 @@ export default function PhotoLabPreviewTester() {
   const dispatch = useDispatch()
   const mainInputRef = useRef(null)
   const referenceInputRef = useRef(null)
-  const smartEditSlotRef = useRef(0)
   const maskEditorRef = useRef(null)
 
   const [selectedModeId, setSelectedModeId] = useState(
@@ -655,14 +658,30 @@ export default function PhotoLabPreviewTester() {
 
       if (!maskBlob && !normalizedAdditionalPrompt) {
         setError(
-          'Paint a removal mask, add a prompt, or both before generating',
+          'Paint a removal mask, add a user prompt, or both before generating',
         )
         return
       }
     }
 
-    if (isSmartEditMode && !normalizedAdditionalPrompt) {
-      setError('Smart Edit requires a short edit prompt')
+    if (isSmartEditMode) {
+      if (!referenceSourceFiles.length) {
+        setError('Smart Edit requires at least one Detail photo')
+        return
+      }
+
+      if (!normalizedAdditionalPrompt) {
+        setError('Smart Edit requires a short user prompt')
+        return
+      }
+    }
+
+    if (
+      isIdentityTransferMode &&
+      mainSourceFile &&
+      !referenceSourceFiles.length
+    ) {
+      setError('Identity Transfer requires a Face photo')
       return
     }
 
@@ -794,7 +813,7 @@ export default function PhotoLabPreviewTester() {
             : isRestoreColorizeMode
               ? 'Restore & Colorize uses one old photo. Pick a restored preset or upload your own source, then test restore type and quality before saving showcase templates.'
               : isSmartEditMode
-                ? 'Smart Edit uses a Main photo plus optional Detail 1-5 references (clothes, objects, places). Describe the change in the edit prompt - required, same as the public page.'
+                ? 'Smart Edit uses a Main photo plus Detail photos (up to 5). Describe the change in the user prompt - required, same as the public page.'
                 : isIdentityTransferMode
                   ? 'Identity Transfer uses a reference scene plus a face photo. Pick a scene preset and a face prototype, or upload your own photos.'
                   : isRemoveObjectsMode
@@ -928,49 +947,12 @@ export default function PhotoLabPreviewTester() {
           ) : null}
 
           {isPhotoStylesMode ? (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <Text
-                as="p"
-                variant="caption"
-                color="faint"
-                caseMode="sentence"
-                className="mb-3 uppercase tracking-[0.18em]"
-              >
-                Picture style
-              </Text>
-
-              <div className="grid grid-cols-2 gap-2">
-                {PICTURE_STYLES.map((style) => {
-                  const active = pictureStyle === style.id
-
-                  return (
-                    <Button
-                      key={style.id}
-                      type="button"
-                      variant="secondary"
-                      shape="soft"
-                      active={active}
-                      disabled={isGenerating || isSavingTemplate}
-                      fullWidth
-                      onClick={() => setPictureStyle(style.id)}
-                      className="justify-start gap-3 px-4 py-3 font-medium"
-                      leftIcon={
-                        <span
-                          aria-hidden
-                          className={
-                            active
-                              ? 'h-4 w-4 shrink-0 rounded-full border border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-                              : 'h-4 w-4 shrink-0 rounded-full border border-white/40'
-                          }
-                        />
-                      }
-                    >
-                      {style.shortLabel}
-                    </Button>
-                  )
-                })}
-              </div>
-            </div>
+            <PictureStyleToolbar
+              pictureStyle={pictureStyle}
+              onPictureStyleChange={setPictureStyle}
+              disabled={isGenerating || isSavingTemplate}
+              showTitle
+            />
           ) : null}
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
@@ -1068,57 +1050,55 @@ export default function PhotoLabPreviewTester() {
               </div>
 
               {isSmartEditMode ? (
-                <div className="mb-4 grid grid-cols-2 gap-2">
-                  {[
-                    {
-                      key: 'main',
-                      label: 'Main photo',
-                      uploaded: Boolean(mainSourceFile),
-                      disabled: isGenerating || isSavingTemplate,
-                      onClick: () => mainInputRef.current?.click(),
-                    },
-                    ...Array.from(
-                      { length: SMART_EDIT_MAX_REFERENCE_IMAGES },
-                      (_, index) => ({
-                        key: `detail-${index + 1}`,
-                        label: `Detail ${index + 1}`,
-                        uploaded: Boolean(referenceSourceFiles[index]),
+                <div className="mb-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      {
+                        key: 'main',
+                        label: 'Main photo',
+                        uploaded: Boolean(mainSourceFile),
+                        disabled: isGenerating || isSavingTemplate,
+                        onClick: () => mainInputRef.current?.click(),
+                      },
+                      {
+                        key: 'details',
+                        label:
+                          referenceSourceFiles.length > 0
+                            ? `Detail photos · ${referenceSourceFiles.length}/${SMART_EDIT_MAX_REFERENCE_IMAGES}`
+                            : 'Detail photos',
+                        uploaded: referenceSourceFiles.length > 0,
                         disabled:
                           isGenerating ||
                           isSavingTemplate ||
-                          !mainSourceFile ||
-                          index > referenceSourceFiles.length,
-                        onClick: () => {
-                          smartEditSlotRef.current = index
-                          referenceInputRef.current?.click()
-                        },
-                      }),
-                    ),
-                  ].map((source) => (
-                    <Button
-                      key={source.key}
-                      type="button"
-                      variant="secondary"
-                      shape="soft"
-                      active={source.uploaded}
-                      disabled={source.disabled}
-                      fullWidth
-                      onClick={source.onClick}
-                      className="justify-start gap-3 px-4 py-3 font-medium"
-                      leftIcon={
-                        <span
-                          aria-hidden
-                          className={`h-4 w-4 shrink-0 rounded-full border ${
-                            source.uploaded
-                              ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
-                              : 'border-white/40 bg-transparent'
-                          }`}
-                        />
-                      }
-                    >
-                      {source.label}
-                    </Button>
-                  ))}
+                          !mainSourceFile,
+                        onClick: () => referenceInputRef.current?.click(),
+                      },
+                    ].map((source) => (
+                      <Button
+                        key={source.key}
+                        type="button"
+                        variant="secondary"
+                        shape="soft"
+                        active={source.uploaded}
+                        disabled={source.disabled}
+                        fullWidth
+                        onClick={source.onClick}
+                        className="justify-start gap-3 px-4 py-3 font-medium"
+                        leftIcon={
+                          <span
+                            aria-hidden
+                            className={`h-4 w-4 shrink-0 rounded-full border ${
+                              source.uploaded
+                                ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_#12141c]'
+                                : 'border-white/40 bg-transparent'
+                            }`}
+                          />
+                        }
+                      >
+                        {source.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div
@@ -1633,7 +1613,7 @@ export default function PhotoLabPreviewTester() {
                         : isRestoreColorizeMode
                           ? 'Use one old photo for restore testing. Preset restored photos are selected above by default.'
                           : isSmartEditMode
-                            ? 'Use the buttons above - Main photo first, then Detail 1 and the rest if you need them.'
+                            ? 'Use the buttons above - Main photo first, then Detail photos (up to 5).'
                             : isIdentityTransferMode
                               ? 'Image 1 = Reference scene. Image 2 = Face identity. Preset scenes are selected above by default.'
                               : 'The main photo will always be sent first. You can add up to five supporting reference photos after it.'}
@@ -1672,35 +1652,9 @@ export default function PhotoLabPreviewTester() {
                 ref={referenceInputRef}
                 type="file"
                 accept="image/*"
-                multiple={!isIdentityTransferMode && !isSmartEditMode}
+                multiple={!isIdentityTransferMode}
                 className="hidden"
                 onChange={(e) => {
-                  if (isSmartEditMode) {
-                    const file = Array.from(e.target.files || [])[0] || null
-                    const index = smartEditSlotRef.current
-
-                    if (
-                      !file ||
-                      index < 0 ||
-                      index >= SMART_EDIT_MAX_REFERENCE_IMAGES
-                    ) {
-                      e.target.value = ''
-                      return
-                    }
-
-                    queueImageModeration(file)
-                    setReferenceSourceFiles((prev) => {
-                      if (index > prev.length) return prev
-                      const next = [...prev]
-                      next[index] = file
-                      return next
-                    })
-                    setResultPreview('')
-                    setError('')
-                    e.target.value = ''
-                    return
-                  }
-
                   const maxFiles = isIdentityTransferMode
                     ? 1
                     : SMART_EDIT_MAX_REFERENCE_IMAGES
@@ -1798,24 +1752,26 @@ export default function PhotoLabPreviewTester() {
             <Input
               id="photo-lab-additional-prompt"
               as="textarea"
-              rows={5}
-              label={isSmartEditMode ? 'Edit prompt' : 'Additional prompt'}
+              rows={USER_PROMPT_TEXTAREA_ROWS}
+              autoGrow
+              label="User prompt"
+              inputClassName={USER_PROMPT_TEXTAREA_INPUT_CLASSNAME}
               placeholder={
                 isEnhanceQualityMode
-                  ? 'Optional: reduce noise in shadows, preserve face identity, keep the same lighting...'
+                  ? 'Example: Clearer background details, less noise in shadows.'
                   : isRemoveObjectsMode
-                    ? 'Optional with a mask. Or prompt-only: remove the seagulls near the man\'s feet...'
+                    ? "Example: Remove the seagulls near the man's feet."
                     : isSmartEditMode
-                      ? 'Example: put the hoodie from Detail 1 on me, and place the camera from Detail 2 on the table.'
+                      ? 'Example: Dress the woman in the orange hooded puffer jacket from the reference. Fit it naturally to her body. Keep the result photorealistic.'
                       : isIdentityTransferMode
                         ? 'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
-                        : 'Optional details for this test: outfit, background, mood, lighting, objects to add/remove...'
+                        : 'Example: Soft smile, light blazer, natural office background.'
               }
               hint={
                 isRemoveObjectsMode
                   ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
                   : isSmartEditMode
-                    ? 'Required. Describe the change. Detail photos are optional visual references for that change.'
+                    ? ''
                     : isIdentityTransferMode
                       ? 'Optional. Default hairstyle is from Reference; write “Keep my hairstyle” to use the face photo. Other edits can be added in the same prompt.'
                       : 'Optional. This will be combined with the server-side Photo Lab prompt.'
@@ -1824,6 +1780,7 @@ export default function PhotoLabPreviewTester() {
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}
               disabled={isGenerating || isSavingTemplate}
+              helpClassName={isSmartEditMode ? 'hidden' : undefined}
             />
 
             <div className="mt-4">
@@ -1941,7 +1898,12 @@ export default function PhotoLabPreviewTester() {
                   (isRemoveObjectsMode &&
                     !hasRemovalMask &&
                     !String(additionalPrompt || '').trim()) ||
-                  (isSmartEditMode && !String(additionalPrompt || '').trim())
+                  (isSmartEditMode &&
+                    (!referenceSourceFiles.length ||
+                      !String(additionalPrompt || '').trim())) ||
+                  (isIdentityTransferMode &&
+                    mainSourceFile &&
+                    !referenceSourceFiles.length)
                 }
                 fullWidth
                 className="w-auto"

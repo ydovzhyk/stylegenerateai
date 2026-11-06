@@ -17,10 +17,7 @@ export default function RestoreStyleToolbar({
 }) {
   return (
     <div
-      className={clsx(
-        'overflow-visible rounded-2xl border border-white/10 bg-background-soft/70 p-4',
-        className,
-      )}
+      className={clsx('overflow-visible', className)}
     >
       {showTitle ? (
         <Text
@@ -74,6 +71,7 @@ export default function RestoreStyleToolbar({
                     text={meta.modalDescription}
                     label={`More about ${meta.label}`}
                     align="end"
+                    placement="bottom"
                     widthClassName="w-[min(280px,calc(100vw-48px))]"
                   />
                 </span>

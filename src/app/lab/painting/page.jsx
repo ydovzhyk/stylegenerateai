@@ -57,7 +57,7 @@ export default function PaintingLabPage() {
             className="w-full border p-2 rounded"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="Additional prompt"
+            placeholder="User prompt"
           />
 
           <button

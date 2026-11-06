@@ -45,6 +45,18 @@ import {
   WALLPAPER_PRESETS,
 } from '@/constants/imagine'
 import {
+  USER_PROMPT_EDITOR_CLASSNAME,
+  USER_PROMPT_INPUT_GROUP_CLASSNAME,
+  USER_PROMPT_TEXTAREA_INPUT_CLASSNAME,
+  USER_PROMPT_TEXTAREA_ROWS,
+  WORKSPACE_PREP_BODY_CLASSNAME,
+  WORKSPACE_PREP_FRAME_CLASSNAME,
+  WORKSPACE_PREP_OPTIONS_ATTR,
+  WORKSPACE_PREP_OPTIONS_CLASSNAME,
+  WORKSPACE_PREP_PROMPT_ATTR,
+  WORKSPACE_PREP_SETTINGS_CLASSNAME,
+} from '@/constants/user-prompt'
+import {
   PHOTO_CHECK_FAILED_MESSAGE,
   PHOTO_CHECK_PENDING_MESSAGE,
   PHOTO_FLAGGED_MESSAGE,
@@ -168,6 +180,11 @@ export default function ImagineWorkspace({ mode }) {
     photoQualities,
     isQualityAllowed,
     getOptionLockedReason,
+    generatedImageFormat,
+    setGeneratedImageFormat,
+    generatedImageFormats,
+    isGeneratedImageFormatAllowed,
+    lockedText,
   } = useGenerationPlanAccess({
     productKey: 'imagine',
   })
@@ -358,6 +375,11 @@ export default function ImagineWorkspace({ mode }) {
       (mode?.label ? `${mode.label} result` : 'imagine-result')
     const visitor = isLogin ? '' : visitorId
     const isPrintQuality = photoQuality === 'print'
+    const selectedFormat = generatedImageFormat || 'png'
+    const selectedExtension =
+      selectedFormat === 'jpeg' || selectedFormat === 'jpg'
+        ? 'jpg'
+        : selectedFormat
 
     setSaveLoading(true)
     try {
@@ -366,7 +388,7 @@ export default function ImagineWorkspace({ mode }) {
           visitorId: visitor,
           title: normalizedTitle,
         })
-        downloadFromBlob(blob, normalizedTitle, 'png')
+        downloadFromBlob(blob, normalizedTitle, selectedExtension)
         await axiosDiscardPrintExportJob(printExport.jobId, visitor).catch(
           () => null,
         )
@@ -377,7 +399,7 @@ export default function ImagineWorkspace({ mode }) {
 
       const exported = await axiosExportGenerationJob(generationJobId, {
         photoQuality,
-        fileFormat: 'png',
+        fileFormat: selectedFormat,
         title: normalizedTitle,
         visitorId: visitor,
       })
@@ -392,7 +414,7 @@ export default function ImagineWorkspace({ mode }) {
         throw new Error('Export file is missing')
       }
 
-      const exportFormat = exported?.fileFormat || 'png'
+      const exportFormat = exported?.fileFormat || selectedFormat
       const extension =
         exportFormat === 'jpeg' || exportFormat === 'jpg' ? 'jpg' : exportFormat
       downloadFromBlob(exported.blob, normalizedTitle, extension)
@@ -540,10 +562,9 @@ export default function ImagineWorkspace({ mode }) {
   const uploadPreview = isHome ? placePreview : referencePreview
   const uploadLabel = isHome ? 'Your place' : 'Reference photo'
   const inputsReady = inputsReadyFor(mode.id, prompt, placeFile, referenceFile)
-  const promptOptional = mode.id === 'home' || mode.id === 'wallpaper'
   const promptPlaceholder =
     mode.id === 'tattoo'
-      ? tattooStyle === 'custom' && referenceFile
+      ? referenceFile
         ? TATTOO_REFERENCE_PROMPT_EXAMPLE
         : TATTOO_STYLES.find((style) => style.id === tattooStyle)?.promptExample ||
           mode.promptPlaceholder
@@ -551,10 +572,12 @@ export default function ImagineWorkspace({ mode }) {
   const missingHint = inputsReady
     ? ''
     : mode.id === 'home'
-      ? 'Upload a photo of your place to generate.'
+      ? 'Upload a photo of your place to continue.'
       : mode.id === 'painting'
-        ? 'Write a prompt or add a photo to generate.'
-        : 'Write a prompt to generate.'
+        ? 'Write a user prompt or add a photo to continue.'
+        : mode.id === 'tattoo'
+          ? 'Write a user prompt to continue.'
+          : 'Complete the required inputs to continue.'
   const blockedHint = checkFlagged
     ? PHOTO_FLAGGED_MESSAGE
     : checkFailed
@@ -612,12 +635,17 @@ export default function ImagineWorkspace({ mode }) {
       </div>
 
       <div className="mb-5 grid grid-cols-1 items-stretch gap-5 md:grid-cols-2 lg:grid-cols-3">
-        <div className="relative h-full min-h-[240px] min-w-0 md:col-span-2 lg:col-span-1">
-          <div className="flex h-full min-h-0 flex-col gap-4 lg:absolute lg:inset-0">
+        <div className="min-w-0 md:col-span-2 lg:col-span-1">
+          <div className={WORKSPACE_PREP_FRAME_CLASSNAME}>
+            <div className={WORKSPACE_PREP_BODY_CLASSNAME}>
+            {(isHome ||
+              mode.id === 'wallpaper' ||
+              mode.id === 'tattoo' ||
+              mode.id === 'painting') && (
             <div
               className={clsx(
-                'relative z-10 min-w-0 shrink-0 overflow-visible rounded-2xl border border-white/10 bg-background-soft/70',
-                isHome ? 'px-3 pb-3' : 'p-4',
+                WORKSPACE_PREP_SETTINGS_CLASSNAME,
+                isHome ? 'px-0' : '',
               )}
             >
               {isHome ? (
@@ -814,33 +842,45 @@ export default function ImagineWorkspace({ mode }) {
                 </div>
               ) : null}
             </div>
+            )}
 
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto">
-              <ExportSizeSelect
-                photoQuality={photoQuality}
-                setPhotoQuality={handleExportSizeChange}
-                photoQualities={photoQualities}
-                isQualityAllowed={isQualityAllowed}
-                getOptionLockedReason={getOptionLockedReason}
-                planKey={planKey}
-                isLogin={isLogin}
-                disabled={isGenerating}
-              />
-              <div className="flex min-h-[160px] flex-1 flex-col rounded-[26px] border border-white/10 bg-white/[0.025] p-5">
-                <Input
-                  id="imagine-prompt"
-                  as="textarea"
-                  rows={5}
-                  label={promptOptional ? 'Optional prompt' : 'Prompt'}
-                  labelClassName="text-lg font-semibold text-white md:text-xl"
-                  placeholder={promptPlaceholder}
-                  value={prompt}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  caseMode="sentence"
-                  className="flex h-full min-h-0 flex-1 flex-col [&>div]:flex [&>div]:min-h-0 [&>div]:flex-1"
-                  inputClassName="h-full min-h-0 flex-1 resize-none"
-                  helpClassName="hidden"
-                />
+              <div
+                {...{ [WORKSPACE_PREP_OPTIONS_ATTR]: '' }}
+                className={WORKSPACE_PREP_OPTIONS_CLASSNAME}
+              >
+                <div className="shrink-0">
+                  <ExportSizeSelect
+                    photoQuality={photoQuality}
+                    setPhotoQuality={handleExportSizeChange}
+                    photoQualities={photoQualities}
+                    isQualityAllowed={isQualityAllowed}
+                    getOptionLockedReason={getOptionLockedReason}
+                    planKey={planKey}
+                    isLogin={isLogin}
+                    disabled={isGenerating}
+                  />
+                </div>
+                <div
+                  {...{ [WORKSPACE_PREP_PROMPT_ATTR]: '' }}
+                  className={USER_PROMPT_EDITOR_CLASSNAME}
+                >
+                  <Input
+                    id="imagine-prompt"
+                    as="textarea"
+                    rows={USER_PROMPT_TEXTAREA_ROWS}
+                    autoGrow
+                    fillHeight
+                    label="User prompt"
+                    labelClassName="text-lg font-semibold text-white md:text-xl shrink-0"
+                    placeholder={promptPlaceholder}
+                    value={prompt}
+                    onChange={(event) => setPrompt(event.target.value)}
+                    caseMode="sentence"
+                    className={USER_PROMPT_INPUT_GROUP_CLASSNAME}
+                    inputClassName={USER_PROMPT_TEXTAREA_INPUT_CLASSNAME}
+                    helpClassName="hidden"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1089,13 +1129,14 @@ export default function ImagineWorkspace({ mode }) {
           planHint={planHint}
           creditCost={creditCost}
           titleReady={previewUrl ? 'Ready to try again' : 'Ready to generate'}
+          titleDisabled="Almost ready"
           descriptionReady={
             blockedHint ||
             error ||
             'Start AI generation with the settings above.'
           }
           descriptionDisabled={
-            blockedHint || 'Complete the required inputs before generating.'
+            blockedHint || 'Complete the required inputs to continue.'
           }
           buttonGenerate="Generate"
           buttonRegenerate="Regenerate"
@@ -1108,7 +1149,11 @@ export default function ImagineWorkspace({ mode }) {
           imageTitle={imageTitle}
           setImageTitle={setImageTitle}
           saveLoading={saveLoading}
-          showFileFormat={false}
+          generatedImageFormat={generatedImageFormat}
+          setGeneratedImageFormat={setGeneratedImageFormat}
+          generatedImageFormats={generatedImageFormats}
+          isGeneratedImageFormatAllowed={isGeneratedImageFormatAllowed}
+          formatLockedText={lockedText}
           showGallerySave={false}
         />
       </div>
