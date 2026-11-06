@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Sparkles } from 'lucide-react'
 import { useDispatch } from 'react-redux'
 import Text from '@/components/shared/text/Text'
 import ImagineModes from '@/components/imagine/ImagineModes'
@@ -53,33 +52,14 @@ export default function ImaginePage() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Describe a wallpaper, a tattoo sketch, a home design, or a painting.
-          Add a reference photo when you want the idea to start from something real.
+          Pick a mode, write what you want, and generate a wallpaper, tattoo
+          sketch, home design, or painting. Wallpaper and Tattoo also take a
+          size. Home can start from your photo alone. Add a reference photo when
+          you want the idea to start from something real.
         </Text>
       </div>
 
       <ImagineShowcasePreview />
-
-      <div className="gradient-border-card flex items-start gap-4 p-5 sm:items-center sm:p-6">
-        <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
-          <Sparkles size={24} />
-        </span>
-        <div>
-          <Text as="h2" variant="h3" color="white" caseMode="sentence">
-            Start from a description
-          </Text>
-          <Text
-            as="p"
-            variant="body"
-            color="muted"
-            caseMode="sentence"
-            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
-          >
-            Pick a mode, write what you want, and generate. Wallpaper and Tattoo
-            also take a size. Home can start from your photo alone.
-          </Text>
-        </div>
-      </div>
 
       <ImagineModes
         modes={IMAGINE_MODES}

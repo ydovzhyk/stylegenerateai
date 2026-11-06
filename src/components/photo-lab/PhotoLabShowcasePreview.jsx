@@ -52,6 +52,13 @@ const SHOWCASE_MODE_ITEMS = [
     description: 'Modify clothing, objects, lighting, and background.',
   },
   {
+    id: 'free_prompt',
+    chipLabel: 'Find yourself',
+    title: 'Find yourself',
+    description:
+      'Create your own photo, or edit one you already have.',
+  },
+  {
     id: 'identity_transfer',
     chipLabel: 'With your face',
     title: 'Same shot, your face',
@@ -84,7 +91,7 @@ const SHOWCASE_MODE_ITEMS = [
     chipLabel: 'Styled photo',
     title: 'Restyle your photo',
     description:
-      'Coloring page, cartoon, sticker, clipart, or a professional studio shot.',
+      'Turn one photo into a coloring page, cartoon, sticker, clipart, or a professional studio shot.',
   },
 ]
 

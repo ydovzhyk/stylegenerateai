@@ -1947,6 +1947,227 @@
             }
           }
         },
+        "free_prompt": {
+          "title": "Free Prompt",
+          "modeKey": "free_prompt",
+          "usesSourceDimensions": false,
+          "plans": {
+            "visitor": {
+              "modeAccess": {
+                "available": false,
+                "lockedReason": "sign_in_required"
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [],
+                "baseCredits": 0
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "label": "Draft",
+                    "description": "Internal billing tier (not shown in Export size)."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
+                  },
+                  "premium": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "sign_in_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
+                  }
+                }
+              }
+            },
+            "free": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality"
+                ],
+                "baseCredits": 5
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Internal billing tier (not shown in Export size)."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
+                  },
+                  "print": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": false,
+                    "credits": null,
+                    "lockedReason": "plan_basic_required",
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "basic": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality"
+                ],
+                "baseCredits": 5
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Internal billing tier (not shown in Export size)."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            },
+            "pro": {
+              "modeAccess": {
+                "available": true
+              },
+              "pricing": {
+                "formula": "sum",
+                "components": [
+                  "photoQuality"
+                ],
+                "baseCredits": 5
+              },
+              "options": {
+                "photoQuality": {
+                  "draft": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "Draft",
+                    "description": "Internal billing tier (not shown in Export size)."
+                  },
+                  "standard": {
+                    "available": true,
+                    "credits": 1,
+                    "label": "Standard",
+                    "description": "Phone-ready generation size for everyday use and sharing."
+                  },
+                  "premium": {
+                    "available": true,
+                    "credits": 2,
+                    "label": "Premium",
+                    "description": "Higher native resolution for wallpapers and small prints."
+                  },
+                  "print": {
+                    "available": true,
+                    "credits": 4,
+                    "label": "Print",
+                    "description": "Maximum native resolution (up to ~3840 on the long edge) for posters and archive use."
+                  }
+                },
+                "generatedImageFormat": {
+                  "png": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "PNG"
+                  },
+                  "jpeg": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "JPEG"
+                  },
+                  "webp": {
+                    "available": true,
+                    "credits": 0,
+                    "label": "WebP"
+                  }
+                }
+              }
+            }
+          }
+        },
         "remove_objects": {
           "title": "Remove Objects",
           "modeKey": "remove_objects",

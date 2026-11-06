@@ -66,6 +66,7 @@ import {
   Loader2,
   Paintbrush,
   Palette,
+  PenLine,
   Sparkles,
   UserRound,
   WandSparkles,
@@ -74,9 +75,12 @@ import {
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const REMOVE_OBJECTS_MODE = 'remove_objects'
 const SMART_EDIT_MODE = 'smart_edit'
+const FREE_PROMPT_MODE = 'free_prompt'
 const IDENTITY_TRANSFER_MODE = 'identity_transfer'
 const SMART_EDIT_MAX_REFERENCE_IMAGES = 5
 const SMART_EDIT_MAX_TOTAL_IMAGES = 1 + SMART_EDIT_MAX_REFERENCE_IMAGES
+const FREE_PROMPT_MAX_REFERENCE_IMAGES = 5
+const FREE_PROMPT_MAX_TOTAL_IMAGES = 1 + FREE_PROMPT_MAX_REFERENCE_IMAGES
 const IDENTITY_TRANSFER_REQUIRED_IMAGES = 2
 
 const RESTORE_STYLES = RESTORE_STYLE_IDS.map((id) => ({
@@ -103,6 +107,12 @@ const PHOTO_LAB_TEST_MODES = [
     title: 'Smart Edit',
     label: 'Prompt edit',
     icon: WandSparkles,
+  },
+  {
+    id: 'free_prompt',
+    title: 'Free Prompt',
+    label: 'Find yourself',
+    icon: PenLine,
   },
   {
     id: 'identity_transfer',
@@ -240,10 +250,14 @@ export default function PhotoLabPreviewTester() {
   const isRestoreColorizeMode = selectedModeId === RESTORE_COLORIZE_MODE
   const isRemoveObjectsMode = selectedModeId === REMOVE_OBJECTS_MODE
   const isSmartEditMode = selectedModeId === SMART_EDIT_MODE
+  const isFreePromptMode = selectedModeId === FREE_PROMPT_MODE
   const isIdentityTransferMode = selectedModeId === IDENTITY_TRANSFER_MODE
   const isPhotoStylesMode = selectedModeId === PHOTO_STYLES_MODE
   const canUsePrototypeSource =
-    !isEnhanceQualityMode && !isRemoveObjectsMode && !isSmartEditMode
+    !isEnhanceQualityMode &&
+    !isRemoveObjectsMode &&
+    !isSmartEditMode &&
+    !isFreePromptMode
   const requiresUploadedSource =
     isEnhanceQualityMode || isRemoveObjectsMode || isSmartEditMode
 
@@ -354,6 +368,7 @@ export default function PhotoLabPreviewTester() {
       selectedModeId === RESTORE_COLORIZE_MODE ||
       selectedModeId === REMOVE_OBJECTS_MODE ||
       selectedModeId === SMART_EDIT_MODE ||
+      selectedModeId === FREE_PROMPT_MODE ||
       selectedModeId === IDENTITY_TRANSFER_MODE
     ) {
       // Slot roles differ per mode (Detail vs face) - reset supporting uploads.
@@ -364,8 +379,11 @@ export default function PhotoLabPreviewTester() {
       }
     }
 
-    if (selectedModeId === SMART_EDIT_MODE) {
-      // Match client: Smart Edit uses uploaded Main + Detail slots, not prototypes.
+    if (
+      selectedModeId === SMART_EDIT_MODE ||
+      selectedModeId === FREE_PROMPT_MODE
+    ) {
+      // Match client: uploaded slots only, not prototypes.
       setMainSourceFile(null)
       setResultPreview('')
       setError('')
@@ -477,12 +495,21 @@ export default function PhotoLabPreviewTester() {
     isIdentityTransferMode,
     isRestoreColorizeMode,
     isRemoveObjectsMode,
+    isFreePromptMode,
     isSmartEditMode,
     mainSourceFile,
     referenceSourceFiles,
   ])
 
   const resolveSourceFiles = async () => {
+    if (isFreePromptMode) {
+      if (!mainSourceFile) return []
+      return [mainSourceFile, ...referenceSourceFiles].slice(
+        0,
+        FREE_PROMPT_MAX_TOTAL_IMAGES,
+      )
+    }
+
     if (isEnhanceQualityMode || isRemoveObjectsMode || isSmartEditMode) {
       if (!mainSourceFile) {
         throw new Error(
@@ -674,6 +701,11 @@ export default function PhotoLabPreviewTester() {
         setError('Smart Edit requires a short user prompt')
         return
       }
+    }
+
+    if (isFreePromptMode && !normalizedAdditionalPrompt) {
+      setError('Free Prompt requires a user prompt')
+      return
     }
 
     if (
@@ -1045,11 +1077,13 @@ export default function PhotoLabPreviewTester() {
                     ? 'Source photo'
                     : isSmartEditMode
                       ? 'Main + Detail photos'
+                      : isFreePromptMode
+                        ? 'Main + Other photos'
                       : 'Source images'}
                 </Text>
               </div>
 
-              {isSmartEditMode ? (
+              {isSmartEditMode || isFreePromptMode ? (
                 <div className="mb-4">
                   <div className="grid grid-cols-2 gap-2">
                     {[
@@ -1064,8 +1098,10 @@ export default function PhotoLabPreviewTester() {
                         key: 'details',
                         label:
                           referenceSourceFiles.length > 0
-                            ? `Detail photos · ${referenceSourceFiles.length}/${SMART_EDIT_MAX_REFERENCE_IMAGES}`
-                            : 'Detail photos',
+                            ? `${isFreePromptMode ? 'Other' : 'Detail'} photos · ${referenceSourceFiles.length}/${isFreePromptMode ? FREE_PROMPT_MAX_REFERENCE_IMAGES : SMART_EDIT_MAX_REFERENCE_IMAGES}`
+                            : isFreePromptMode
+                              ? 'Other photos'
+                              : 'Detail photos',
                         uploaded: referenceSourceFiles.length > 0,
                         disabled:
                           isGenerating ||
@@ -1763,6 +1799,8 @@ export default function PhotoLabPreviewTester() {
                     ? "Example: Remove the seagulls near the man's feet."
                     : isSmartEditMode
                       ? 'Example: Dress the woman in the orange hooded puffer jacket from the reference. Fit it naturally to her body. Keep the result photorealistic.'
+                      : isFreePromptMode
+                        ? 'Example: A cinematic portrait of a woman in a red coat under neon rain, shallow depth of field, photorealistic.'
                       : isIdentityTransferMode
                         ? 'Example: Keep my hairstyle. Or: Keep my hairstyle and add red lipstick.'
                         : 'Example: Soft smile, light blazer, natural office background.'
@@ -1770,7 +1808,7 @@ export default function PhotoLabPreviewTester() {
               hint={
                 isRemoveObjectsMode
                   ? 'Paint a mask, enter a prompt, or both. Required if no mask is painted.'
-                  : isSmartEditMode
+                  : isSmartEditMode || isFreePromptMode
                     ? ''
                     : isIdentityTransferMode
                       ? 'Optional. Default hairstyle is from Reference; write “Keep my hairstyle” to use the face photo. Other edits can be added in the same prompt.'
@@ -1780,7 +1818,9 @@ export default function PhotoLabPreviewTester() {
               value={additionalPrompt}
               onChange={(e) => setAdditionalPrompt(e.target.value)}
               disabled={isGenerating || isSavingTemplate}
-              helpClassName={isSmartEditMode ? 'hidden' : undefined}
+              helpClassName={
+                isSmartEditMode || isFreePromptMode ? 'hidden' : undefined
+              }
             />
 
             <div className="mt-4">
@@ -1901,6 +1941,8 @@ export default function PhotoLabPreviewTester() {
                   (isSmartEditMode &&
                     (!referenceSourceFiles.length ||
                       !String(additionalPrompt || '').trim())) ||
+                  (isFreePromptMode &&
+                    !String(additionalPrompt || '').trim()) ||
                   (isIdentityTransferMode &&
                     mainSourceFile &&
                     !referenceSourceFiles.length)

@@ -14,7 +14,6 @@ import {
 import { setIsManualSearch } from '@/store/ready-template/ready-template-slice'
 import AiImageWorkspace from '@/components/shared/ai-image-workspace/AiImageWorkspace'
 import Text from '@/components/shared/text/Text'
-import { Sparkles } from 'lucide-react'
 
 export default function CreateYourLookPage() {
   const dispatch = useDispatch()
@@ -103,36 +102,13 @@ export default function CreateYourLookPage() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Transform your photo into a new visual identity with curated AI
-          styles. Explore cinematic, fantasy, artistic, and modern looks, then
-          generate a polished result in just a few clicks.
+          Pick a look you like, upload your photo, and generate a personalized
+          AI image in a few clicks. Explore cinematic, fantasy, artistic, and
+          modern styles - transform your photo into a new visual identity.
         </Text>
       </div>
 
       <CreateYourLookAnimatedPreview />
-
-      <div className="gradient-border-card flex items-start gap-4 p-5 sm:items-center sm:p-6">
-        <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
-          <Sparkles size={24} />
-        </span>
-
-        <div>
-          <Text as="h2" variant="h3" color="white" caseMode="sentence">
-            Pick a look. Upload your photo. Transform yourself.
-          </Text>
-
-          <Text
-            as="p"
-            variant="body"
-            color="muted"
-            caseMode="sentence"
-            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
-          >
-            Click a template you like, upload your photo, and generate a
-            personalized AI image in just a few clicks.
-          </Text>
-        </div>
-      </div>
 
       <div ref={railRef}>
         <CreateYourLookDefaultTemplatesRail />

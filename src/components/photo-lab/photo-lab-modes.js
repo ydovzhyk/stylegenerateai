@@ -4,6 +4,7 @@ import {
   ImagePlus,
   Paintbrush,
   Palette,
+  PenLine,
   Sparkles,
   UserRound,
   WandSparkles,
@@ -46,6 +47,19 @@ export const PHOTO_LAB_MODES = [
       'Example: Dress the woman in the orange hooded puffer jacket from the reference. Fit it naturally to her body. Keep the result photorealistic.',
     uploadHint:
       'Upload the Main photo, add Detail photos (up to 5), then write the user prompt.',
+  },
+  {
+    id: 'free_prompt',
+    title: 'Free Prompt',
+    label: 'Find yourself',
+    description:
+      'Create your own photo from a prompt, or edit an existing one. Optional photos welcome - your call.',
+    icon: PenLine,
+    accent: 'from-lime-300/20 to-primary/25',
+    promptPlaceholder:
+      'Example: A cinematic portrait of a woman in a red coat under neon rain, shallow depth of field, photorealistic.',
+    uploadHint:
+      'Prompt required. Photos are optional - none, Main photo, or Main + Other photos.',
   },
   {
     id: 'identity_transfer',

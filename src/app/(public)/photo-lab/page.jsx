@@ -13,8 +13,6 @@ import PhotoLabModes from '@/components/photo-lab/PhotoLabModes'
 
 import AiImageWorkspace from '@/components/shared/ai-image-workspace/AiImageWorkspace'
 
-import Text from '@/components/shared/text/Text'
-
 import { PHOTO_LAB_MODES } from '@/components/photo-lab/photo-lab-modes'
 
 import {
@@ -36,10 +34,6 @@ import {
 import { getModePreviewLabels } from '@/constants/mode-preview-labels'
 import { getPhotoLabTemplatesState } from '@/store/photo-lab/photo-lab-selectors'
 import { setAssistantPhotoLabMode } from '@/store/assistant/assistant-slice'
-
-import { Sparkles } from 'lucide-react'
-
-
 
 const EMPTY_MODE_PREVIEW = { beforeUrl: '', afterUrl: '' }
 
@@ -207,56 +201,6 @@ export default function PhotoLabPage() {
 
 
       <PhotoLabShowcasePreview />
-
-
-
-      <div className="gradient-border-card flex items-start gap-4 p-5 sm:items-center sm:p-6">
-
-        <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary-soft">
-
-          <Sparkles size={24} />
-
-        </span>
-
-
-
-        <div>
-
-          <Text as="h2" variant="h3" color="white" caseMode="sentence">
-
-            Choose a mode. Upload your photo. Let AI improve it.
-
-          </Text>
-
-
-
-          <Text
-
-            as="p"
-
-            variant="body"
-
-            color="muted"
-
-            caseMode="sentence"
-
-            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
-
-          >
-
-            Select the tool you need - portrait, restore, enhance, object
-
-            removal, or smart edit - upload your image, and generate a cleaner,
-
-            sharper, more polished result in just a few clicks.
-
-          </Text>
-
-        </div>
-
-      </div>
-
-
 
       <PhotoLabModes
 

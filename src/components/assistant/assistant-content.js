@@ -64,6 +64,7 @@ Typical choices:
 - **Professional Portrait** - a casual photo into a LinkedIn / CV headshot.
 - **Restore & Colorize** - repair old, faded, or damaged pictures.
 - **Smart Edit** - Main photo + Detail photos + a short required user prompt that explains the change.
+- **Free Prompt** - find yourself: create your own photo, or edit an existing one.
 - **Identity Transfer** - keep a reference shot 1:1 and put your face into it.
 - **Remove Objects** - clean people or clutter out of the frame.
 - **Enhance Quality** - sharper and clearer, same scene.
@@ -242,6 +243,16 @@ const PHOTO_LAB_MODE_GUIDES = {
 **Detail photos** - add up to 5 reference photos in one go (clothes, objects, places) for the model to use as visual sources.
 
 **User prompt** - required. Describe the change clearly. Example: Dress the woman in the orange hooded puffer jacket from the reference. Fit it naturally to her body. Keep the result photorealistic.
+
+Then press Generate.`,
+  free_prompt: `Find yourself - create your own photo, or edit an existing one.
+
+**User prompt** - required. Write freely what you want. We do not rewrite your instruction.
+
+**Photos** - optional:
+- none → create from the prompt alone
+- Main photo → edit / use that photo as you describe
+- Main photo + up to 5 Other photos → use them only as your prompt says
 
 Then press Generate.`,
   identity_transfer: `**Photos** - upload **Reference photo** first (pose, clothes, and scene to keep 1:1), then a clear **Face photo** of you.

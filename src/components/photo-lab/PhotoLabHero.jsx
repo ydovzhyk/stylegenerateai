@@ -31,9 +31,9 @@ export default function PhotoLabHero() {
         caseMode="sentence"
         className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
       >
-        Restore old memories, create professional portraits, enhance low-quality
-        photos, remove unwanted objects, and edit images with simple AI
-        instructions.
+        Choose a mode - portrait, restore, enhance, object removal, smart edit,
+        free prompt, and more - upload your photo, and generate a cleaner,
+        sharper, more polished result in a few clicks.
       </Text>
     </div>
   )

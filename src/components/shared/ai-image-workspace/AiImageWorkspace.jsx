@@ -87,8 +87,10 @@ const DEFAULT_ACTION_CARD_LABELS = {}
 const REMOVE_OBJECTS_MODE = 'remove_objects'
 const ENHANCE_QUALITY_MODE = 'enhance_quality'
 const SMART_EDIT_MODE = 'smart_edit'
+const FREE_PROMPT_MODE = 'free_prompt'
 const IDENTITY_TRANSFER_MODE = 'identity_transfer'
 const SMART_EDIT_MAX_REFERENCE_IMAGES = 5
+const FREE_PROMPT_MAX_REFERENCE_IMAGES = 5
 const PRINT_EXPORT_POLL_MS = 3_000
 const WORKSPACE_PREVIEW_FRAME_CLASS =
   'group relative flex aspect-[4/5] w-full items-center justify-center overflow-hidden rounded-[26px] border bg-background-soft/70 shadow-[0_18px_60px_rgba(0,0,0,0.22)] sm:aspect-[5/6] lg:aspect-[4/5]'
@@ -177,16 +179,21 @@ export default function AiImageWorkspace({
   const isRestoreColorizeMode =
     isPhotoLab && activeModeId === RESTORE_COLORIZE_MODE
   const isSmartEditMode = isPhotoLab && activeModeId === SMART_EDIT_MODE
+  const isFreePromptMode = isPhotoLab && activeModeId === FREE_PROMPT_MODE
   const isIdentityTransferMode =
     isPhotoLab && activeModeId === IDENTITY_TRANSFER_MODE
   const isPhotoStylesMode = isPhotoLab && activeModeId === PHOTO_STYLES_MODE
+  const isMultiReferenceMode = isSmartEditMode || isFreePromptMode
+  const maxReferenceImages = isFreePromptMode
+    ? FREE_PROMPT_MAX_REFERENCE_IMAGES
+    : SMART_EDIT_MAX_REFERENCE_IMAGES
   const resolvedPictureStyle = pictureStyle || DEFAULT_PICTURE_STYLE
 
   const photoStackExtras = useMemo(() => {
-    if (isSmartEditMode) {
+    if (isMultiReferenceMode) {
       return referencePreviews
         .filter(Boolean)
-        .slice(0, SMART_EDIT_MAX_REFERENCE_IMAGES)
+        .slice(0, maxReferenceImages)
     }
     if (isIdentityTransferMode && facePreview) {
       return [facePreview]
@@ -195,7 +202,8 @@ export default function AiImageWorkspace({
   }, [
     facePreview,
     isIdentityTransferMode,
-    isSmartEditMode,
+    isMultiReferenceMode,
+    maxReferenceImages,
     referencePreviews,
   ])
 
@@ -209,7 +217,7 @@ export default function AiImageWorkspace({
     const files = []
     if (clientFile) files.push(clientFile)
     if (isIdentityTransferMode && faceFile) files.push(faceFile)
-    if (isSmartEditMode) files.push(...referenceFiles)
+    if (isMultiReferenceMode) files.push(...referenceFiles)
     return files
   }
 
@@ -573,7 +581,7 @@ export default function AiImageWorkspace({
   }, [template?.id])
 
   useEffect(() => {
-    if (isSmartEditMode) return
+    if (isMultiReferenceMode) return
 
     setReferenceFiles([])
     setReferencePreviews((prev) => {
@@ -583,7 +591,7 @@ export default function AiImageWorkspace({
     if (referenceInputRef.current) {
       referenceInputRef.current.value = ''
     }
-  }, [isSmartEditMode])
+  }, [isMultiReferenceMode])
 
   useEffect(() => {
     if (isIdentityTransferMode) return
@@ -711,7 +719,7 @@ export default function AiImageWorkspace({
   const handleReferenceFilesChange = (e) => {
     const selected = Array.from(e.target.files || []).slice(
       0,
-      SMART_EDIT_MAX_REFERENCE_IMAGES,
+      maxReferenceImages,
     )
     if (!selected.length) {
       e.target.value = ''
@@ -736,10 +744,12 @@ export default function AiImageWorkspace({
     Boolean(clientFile) &&
     referenceFiles.length > 0 &&
     Boolean(trimmedExtraPrompt)
+  const canRunFreePrompt = Boolean(trimmedExtraPrompt)
   const canRunIdentityTransfer = Boolean(clientFile && faceFile)
 
   const runGeneration = async () => {
-    if (!clientFile || !template?.id) return
+    if (!template?.id) return
+    if (!isFreePromptMode && !clientFile) return
     if (moderationBlocksGenerate()) return
 
     if (isRemoveObjectsMode && !canRunRemoveObjects) {
@@ -747,6 +757,10 @@ export default function AiImageWorkspace({
     }
 
     if (isSmartEditMode && !canRunSmartEdit) {
+      return
+    }
+
+    if (isFreePromptMode && !canRunFreePrompt) {
       return
     }
 
@@ -767,6 +781,11 @@ export default function AiImageWorkspace({
 
         if (isSmartEditMode) {
           formData.append('photos', clientFile)
+          referenceFiles.forEach((file) => {
+            formData.append('photos', file)
+          })
+        } else if (isFreePromptMode) {
+          if (clientFile) formData.append('photos', clientFile)
           referenceFiles.forEach((file) => {
             formData.append('photos', file)
           })
@@ -881,10 +900,12 @@ export default function AiImageWorkspace({
   }
 
   const handleGenerateClick = () => {
-    if (!clientFile || !template?.id) return
+    if (!template?.id) return
+    if (!isFreePromptMode && !clientFile) return
     if (moderationBlocksGenerate()) return
     if (isRemoveObjectsMode && !canRunRemoveObjects) return
     if (isSmartEditMode && !canRunSmartEdit) return
+    if (isFreePromptMode && !canRunFreePrompt) return
     if (isIdentityTransferMode && !canRunIdentityTransfer) return
 
     runGeneration()
@@ -1231,6 +1252,9 @@ export default function AiImageWorkspace({
   const smartEditPromptHint =
     'Required. Describe the change clearly. Name the item from the Detail photos, how it should fit, and keep the result photorealistic.'
 
+  const freePromptHint =
+    'Write freely, like chatting with AI. Photos are optional: none, Main photo, or Main + Other photos.'
+
   const resolvedPromptHint = isPhotoLab
     ? ''
     : template?.promptHint || promptHint
@@ -1243,6 +1267,8 @@ export default function AiImageWorkspace({
         ? 'Upload one photo, pick a style above the preview, then generate.'
         : isSmartEditMode
           ? 'Upload the Main photo, add Detail photos (up to 5), write the user prompt, then generate.'
+          : isFreePromptMode
+            ? 'Describe what you want. Generate from the prompt alone, or attach a photo / extra photos - your call.'
           : isIdentityTransferMode
           ? 'Upload a Reference photo, then a Photo with your face - keep the shot, transfer your identity.'
           : workspaceDescription
@@ -1260,10 +1286,11 @@ export default function AiImageWorkspace({
   })
 
   const isGenerateDisabled =
-    !clientFile ||
+    (!isFreePromptMode && !clientFile) ||
     moderationBlocksGenerate() ||
     (isRemoveObjectsMode && !canRunRemoveObjects) ||
     (isSmartEditMode && !canRunSmartEdit) ||
+    (isFreePromptMode && !canRunFreePrompt) ||
     (isIdentityTransferMode && !canRunIdentityTransfer)
 
   const formatMissingRequirements = (items = []) => {
@@ -1283,6 +1310,12 @@ export default function AiImageWorkspace({
       return formatMissingRequirements([
         !clientFile ? 'the Main photo' : '',
         !referenceFiles.length ? 'Detail photos' : '',
+        !trimmedExtraPrompt ? 'the user prompt' : '',
+      ])
+    }
+
+    if (isFreePromptMode) {
+      return formatMissingRequirements([
         !trimmedExtraPrompt ? 'the user prompt' : '',
       ])
     }
@@ -1494,12 +1527,14 @@ export default function AiImageWorkspace({
     isRestoreColorizeMode && Boolean(onRestoreStyleChange) && Boolean(restoreStyle)
   const showIdentitySourceWorkspace = isIdentityTransferMode
   const showSmartEditSourceWorkspace = isSmartEditMode
+  const showFreePromptSourceWorkspace = isFreePromptMode
   const showPictureStyleWorkspace = isPhotoStylesMode
   const hasPhotoLabModeSettings =
     showRemoveObjectsSettings ||
     showRestoreStyleSettings ||
     showIdentitySourceWorkspace ||
     showSmartEditSourceWorkspace ||
+    showFreePromptSourceWorkspace ||
     showPictureStyleWorkspace
 
   const renderPromptEditor = (className = '') => (
@@ -1507,7 +1542,7 @@ export default function AiImageWorkspace({
       {...{ [WORKSPACE_PREP_PROMPT_ATTR]: '' }}
       className={clsx(USER_PROMPT_EDITOR_CLASSNAME, className)}
     >
-      {isIdentityTransferMode || isSmartEditMode ? (
+      {isIdentityTransferMode || isSmartEditMode || isFreePromptMode ? (
         <div className="mb-2 flex shrink-0 items-center justify-between gap-3">
           <Text
             as="p"
@@ -1524,7 +1559,9 @@ export default function AiImageWorkspace({
             text={
               isSmartEditMode
                 ? smartEditPromptHint
-                : identityTransferPromptHint
+                : isFreePromptMode
+                  ? freePromptHint
+                  : identityTransferPromptHint
             }
             label="User prompt hint"
             widthClassName="w-[260px]"
@@ -1538,7 +1575,7 @@ export default function AiImageWorkspace({
         autoGrow
         fillHeight
         label={
-          isIdentityTransferMode || isSmartEditMode
+          isIdentityTransferMode || isSmartEditMode || isFreePromptMode
             ? undefined
             : resolvedPromptLabel
         }
@@ -1608,6 +1645,10 @@ export default function AiImageWorkspace({
 
     if (showSmartEditSourceWorkspace) {
       return renderSmartEditSources()
+    }
+
+    if (showFreePromptSourceWorkspace) {
+      return renderFreePromptSources()
     }
 
     if (showPictureStyleWorkspace) {
@@ -1725,15 +1766,18 @@ export default function AiImageWorkspace({
           title = faceFile?.name || 'Photo with your face'
           titleTranslate = !faceFile?.name
         }
-      } else if (isSmartEditMode) {
+      } else if (isSmartEditMode || isFreePromptMode) {
         if (!hasExtras || safeStep === 0) {
           eyebrow = 'Main photo'
           title = clientFile?.name || 'Main photo'
           titleTranslate = !clientFile?.name
         } else {
-          eyebrow = `Detail ${safeStep}`
+          eyebrow = isFreePromptMode
+            ? `Other ${safeStep}`
+            : `Detail ${safeStep}`
           title =
-            referenceFiles[safeStep - 1]?.name || `Detail ${safeStep}`
+            referenceFiles[safeStep - 1]?.name ||
+            (isFreePromptMode ? `Other ${safeStep}` : `Detail ${safeStep}`)
           titleTranslate = !referenceFiles[safeStep - 1]?.name
         }
       }
@@ -1751,7 +1795,7 @@ export default function AiImageWorkspace({
             alt: eyebrow,
             title,
           }),
-        action: isIdentityTransferMode || isSmartEditMode ? null : (
+        action: isIdentityTransferMode || isMultiReferenceMode ? null : (
           <Button
             type="button"
             variant="secondary"
@@ -1794,7 +1838,7 @@ export default function AiImageWorkspace({
           <Text as="span" variant="body" color="white" caseMode="sentence">
             {isIdentityTransferMode
               ? 'Upload Reference photo'
-              : isSmartEditMode
+              : isSmartEditMode || isFreePromptMode
                 ? 'Upload Main photo'
                 : 'Upload your photo'}
           </Text>
@@ -1810,6 +1854,8 @@ export default function AiImageWorkspace({
               ? 'Use the source buttons - Reference photo first, then Face photo.'
               : isSmartEditMode
                 ? 'Use the source buttons - Main photo first, then Detail photos (up to 5).'
+                : isFreePromptMode
+                  ? 'Photos are optional. Write your prompt, then generate - or add a Main photo first.'
                 : isPhotoStylesMode
                   ? 'Pick a style in the settings column, then upload this photo.'
                   : 'Choose a clear portrait photo for the best result.'}
@@ -1881,14 +1927,16 @@ export default function AiImageWorkspace({
     )
   }
 
-  const renderSmartEditSources = () => {
-    if (!isSmartEditMode) return null
-
+  const renderMultiReferenceSources = ({
+    mainLabel,
+    detailsLabel,
+    detailsRequireMain = true,
+  }) => {
     const detailCount = referenceFiles.length
     const sources = [
       {
         key: 'main',
-        label: 'Main photo',
+        label: mainLabel,
         uploaded: Boolean(clientFile),
         disabled: loading,
         onClick: () => inputRef.current?.click(),
@@ -1897,10 +1945,10 @@ export default function AiImageWorkspace({
         key: 'details',
         label:
           detailCount > 0
-            ? `Detail photos · ${detailCount}/${SMART_EDIT_MAX_REFERENCE_IMAGES}`
-            : 'Detail photos',
+            ? `${detailsLabel} · ${detailCount}/${maxReferenceImages}`
+            : detailsLabel,
         uploaded: detailCount > 0,
-        disabled: loading || !clientFile,
+        disabled: loading || (detailsRequireMain && !clientFile),
         onClick: () => referenceInputRef.current?.click(),
       },
     ]
@@ -1946,6 +1994,26 @@ export default function AiImageWorkspace({
         />
       </div>
     )
+  }
+
+  const renderSmartEditSources = () => {
+    if (!isSmartEditMode) return null
+
+    return renderMultiReferenceSources({
+      mainLabel: 'Main photo',
+      detailsLabel: 'Detail photos',
+      detailsRequireMain: true,
+    })
+  }
+
+  const renderFreePromptSources = () => {
+    if (!isFreePromptMode) return null
+
+    return renderMultiReferenceSources({
+      mainLabel: 'Main photo',
+      detailsLabel: 'Other photos',
+      detailsRequireMain: true,
+    })
   }
 
   const renderRemoveObjectsResultPreview = () =>

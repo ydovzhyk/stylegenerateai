@@ -15,6 +15,10 @@ export const MODE_PREVIEW_LABELS = {
     before: 'Your photo',
     after: 'Edited look',
   },
+  free_prompt: {
+    before: 'Your photo',
+    after: 'Find yourself',
+  },
   identity_transfer: {
     before: 'Reference photo',
     after: 'With your face',
