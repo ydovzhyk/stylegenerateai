@@ -44,7 +44,7 @@ export default function ScrollToTopButton() {
         isVisible
           ? 'pointer-events-auto translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-3 opacity-0',
-        // Mobile chat panel covers the send control — hide scroll-to-top while open.
+        // Mobile chat panel covers the send control - hide scroll-to-top while open.
         isAssistantOpen &&
           'max-md:!pointer-events-none max-md:!translate-y-3 max-md:!opacity-0',
       )}

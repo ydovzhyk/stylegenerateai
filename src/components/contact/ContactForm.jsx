@@ -131,7 +131,7 @@ export default function ContactForm() {
         <Input
           id="contact-message"
           label="Your message"
-          placeholder="Tell us what you need"
+          placeholder="What do you like, what should we add, or what can we improve?"
           as="textarea"
           rows={2}
           inputClassName="min-h-[80px]"
@@ -148,7 +148,7 @@ export default function ContactForm() {
         variant="primary"
         loading={isLoading}
         loadingText="Sending message..."
-        className="self-start"
+        className="mt-auto self-center"
       >
         Send Message
       </Button>

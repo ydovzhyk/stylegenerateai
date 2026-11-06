@@ -356,7 +356,7 @@ export default function PhotoLabPreviewTester() {
       selectedModeId === SMART_EDIT_MODE ||
       selectedModeId === IDENTITY_TRANSFER_MODE
     ) {
-      // Slot roles differ per mode (Detail vs face) — reset supporting uploads.
+      // Slot roles differ per mode (Detail vs face) - reset supporting uploads.
       setReferenceSourceFiles([])
 
       if (referenceInputRef.current) {

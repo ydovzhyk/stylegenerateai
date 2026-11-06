@@ -12,7 +12,7 @@ export const USER_PROMPT_TEXTAREA_INPUT_CLASSNAME =
   'min-h-[9.9rem] w-full overflow-hidden resize-none'
 
 /**
- * Parent — same size as upload / result cards.
+ * Parent - same size as upload / result cards.
  * overflow-visible so Block 1 InfoHints are not clipped; Block 2 scrolls itself.
  */
 export const WORKSPACE_PREP_FRAME_CLASSNAME =
@@ -21,11 +21,11 @@ export const WORKSPACE_PREP_FRAME_CLASSNAME =
 export const WORKSPACE_PREP_BODY_CLASSNAME =
   'flex h-full min-h-0 flex-col gap-4 p-4 sm:p-5'
 
-/** Block 1 — mode settings / uploads; height from content. */
+/** Block 1 - mode settings / uploads; height from content. */
 export const WORKSPACE_PREP_SETTINGS_CLASSNAME =
   'relative z-10 min-w-0 shrink-0 overflow-visible'
 
-/** Block 2 — Export size + User prompt; scrolls when taller than parent. */
+/** Block 2 - Export size + User prompt; scrolls when taller than parent. */
 export const WORKSPACE_PREP_OPTIONS_CLASSNAME =
   'flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto'
 

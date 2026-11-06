@@ -23,8 +23,8 @@ export default function ContactSection() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Have a question, idea, or custom AI image request? Send a message and
-          we’ll get back to you.
+          Share what you enjoy, what you’d love to see next, or what we could
+          improve. Your feedback helps shape the product.
         </Text>
       </div>
 
@@ -48,7 +48,7 @@ export default function ContactSection() {
                 caseMode="sentence"
                 className="text-lg"
               >
-                Custom AI image requests
+                Ideas and feedback
               </Text>
             </div>
 
@@ -59,9 +59,9 @@ export default function ContactSection() {
               caseMode="sentence"
               className="mt-2 text-sm leading-6"
             >
-              Need a specific style, professional portrait flow, photo
-              enhancement, or custom visual feature? Tell us what you want to
-              create.
+              I don’t take custom one-off commissions - but I’d love to hear
+              what you like, what new features you’d want to see, and what we
+              can improve. I’ll do my best to build it.
             </Text>
 
             <div className="grid gap-3">
@@ -96,8 +96,8 @@ export default function ContactSection() {
                   caseMode="sentence"
                   className="text-sm leading-6"
                 >
-                  We usually review messages as soon as possible and reply with
-                  the next steps.
+                  Messages are reviewed as soon as possible. Thanks for helping
+                  make StyleGenerateAI better.
                 </Text>
               </div>
             </div>

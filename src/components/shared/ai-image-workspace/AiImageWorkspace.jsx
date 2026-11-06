@@ -1313,7 +1313,7 @@ export default function AiImageWorkspace({
         getPictureStyleMeta(resolvedPictureStyle)?.shortLabel || 'Coloring page'
 
       if (!clientFile) {
-        return `Upload your photo to continue. A style is already selected above (${styleLabel}) — change it if you want another look.`
+        return `Upload your photo to continue. A style is already selected above (${styleLabel}) - change it if you want another look.`
       }
 
       return `A style is selected above (${styleLabel}). Upload your photo to continue.`

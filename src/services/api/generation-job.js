@@ -135,7 +135,7 @@ export async function waitForGenerationJob(
     const status = await axiosGetGenerationJob(jobId, visitorId)
 
     if (status?.status === 'ready') {
-      // Keep the job until download/export or TTL — master buffer is needed for Export size.
+      // Keep the job until download/export or TTL - master buffer is needed for Export size.
       return status
     }
 

@@ -195,7 +195,7 @@ a {
   outline-offset: 1px;
 }
 
-/* Framed textarea uses its wrapper border — kill the global focus ring. */
+/* Framed textarea uses its wrapper border - kill the global focus ring. */
 .textarea-dark--framed:focus-visible,
 .textarea-dark-frame :focus-visible {
   outline: none;
@@ -410,7 +410,7 @@ a {
 
   /*
    * Frame lives on a wrapper (focus-within). Suppress the global
-   * :focus-visible outline — it stacked on the frame border.
+   * :focus-visible outline - it stacked on the frame border.
    */
   .textarea-dark-frame {
     border: 1px solid rgba(255, 255, 255, 0.08);

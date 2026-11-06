@@ -6,14 +6,14 @@ export const PICTURE_STYLES = [
     label: 'Your photo as a coloring page',
     shortLabel: 'Coloring page',
     modalDescription:
-      'Black outlines on a clean white page — ready to color in. Same subject and pose, no color fills or photo texture.',
+      'Black outlines on a clean white page - ready to color in. Same subject and pose, no color fills or photo texture.',
   },
   {
     id: 'cartoon',
     label: 'Your photo as a cartoon',
     shortLabel: 'Cartoon',
     modalDescription:
-      'A 3D animated-style character of the same subject — smooth forms, soft light, still recognizable. Not a flat drawing and not a photo.',
+      'A 3D animated-style character of the same subject - smooth forms, soft light, still recognizable. Not a flat drawing and not a photo.',
   },
   {
     id: 'sticker',
@@ -34,7 +34,7 @@ export const PICTURE_STYLES = [
     label: 'Your snapshot, made professional',
     shortLabel: 'Studio shot',
     modalDescription:
-      'The same subject as a polished studio photo — clean backdrop, controlled light, still photoreal. Not a cartoon or drawing.',
+      'The same subject as a polished studio photo - clean backdrop, controlled light, still photoreal. Not a cartoon or drawing.',
   },
 ]
 
