@@ -10,7 +10,10 @@ import {
   useRef,
   useState,
 } from 'react'
-import { WORKSPACE_PREP_OPTIONS_ATTR } from '@/constants/user-prompt'
+import {
+  USER_PROMPT_FILL_HEIGHT_MQ,
+  WORKSPACE_PREP_OPTIONS_ATTR,
+} from '@/constants/user-prompt'
 import { useTranslate } from '@/utils/translate/translate'
 
 /**
@@ -87,6 +90,10 @@ const Input = forwardRef(function Input(
   ref,
 ) {
   const [isFocused, setIsFocused] = useState(false)
+  const [allowFillHeight, setAllowFillHeight] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.matchMedia(USER_PROMPT_FILL_HEIGHT_MQ).matches
+  })
   const localRef = useRef(null)
   const lastShellSizeRef = useRef(null)
   const syncTextareaHeightRef = useRef(() => {})
@@ -98,7 +105,9 @@ const Input = forwardRef(function Input(
   const hasLeftIcon = Boolean(leftIcon)
   const hasRightIcon = Boolean(rightIcon)
   const isAutoGrowTextarea = as === 'textarea' && autoGrow
-  const isFillHeightTextarea = as === 'textarea' && fillHeight
+  // Mobile: content height only. Fill leftover Block 2 space from md up.
+  const isFillHeightTextarea =
+    as === 'textarea' && fillHeight && allowFillHeight
 
   const showErrorState = Boolean(error) && !isFocused
 
@@ -184,6 +193,25 @@ const Input = forwardRef(function Input(
 
   syncTextareaHeightRef.current = syncTextareaHeight
 
+  useEffect(() => {
+    if (!fillHeight) {
+      setAllowFillHeight(false)
+      return undefined
+    }
+
+    const media = window.matchMedia(USER_PROMPT_FILL_HEIGHT_MQ)
+    const update = () => setAllowFillHeight(media.matches)
+    update()
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', update)
+      return () => media.removeEventListener('change', update)
+    }
+
+    media.addListener(update)
+    return () => media.removeListener(update)
+  }, [fillHeight])
+
   useLayoutEffect(() => {
     syncTextareaHeightRef.current()
     // Aspect-ratio / flex height often settles one frame later.
@@ -194,6 +222,7 @@ const Input = forwardRef(function Input(
   }, [
     isAutoGrowTextarea,
     isFillHeightTextarea,
+    allowFillHeight,
     value,
     resolvedPlaceholder,
     rows,

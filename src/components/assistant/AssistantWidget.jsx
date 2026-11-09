@@ -880,7 +880,7 @@ export default function AssistantWidget() {
           className={clsx(
             'pointer-events-auto gradient-border-card fixed z-[60] flex flex-col',
             'inset-x-3 bottom-0 h-[var(--assistant-panel-h)]',
-            'md:inset-x-auto md:bottom-auto md:left-auto md:top-1/2 md:-translate-y-1/2',
+            'md:inset-x-auto md:bottom-auto md:left-auto md:top-[var(--assistant-fab-anchor)] md:-translate-y-1/2',
             'md:right-[calc(var(--assistant-right)+var(--assistant-fab-size)+var(--assistant-stack-gap))]',
             'md:h-[var(--assistant-panel-h)] md:w-[min(calc(100vw-2rem),360px)]',
           )}
@@ -1034,8 +1034,8 @@ export default function AssistantWidget() {
         <div
           className={clsx(
             'pointer-events-auto fixed right-[var(--assistant-right)] z-[70] w-max max-w-[min(16rem,calc(100vw-2rem))]',
-            // Sit just above the vertically centered FAB (anchored from bottom).
-            'bottom-[calc(50%+(var(--assistant-fab-size)/2)+var(--assistant-stack-gap))]',
+            // Sit just above the vertically centered FAB (svh = stable vs mobile chrome).
+            'bottom-[calc(var(--assistant-fab-anchor)+(var(--assistant-fab-size)/2)+var(--assistant-stack-gap))]',
           )}
         >
           <AssistantBubble text={proactive.text} onClick={openWithGreeting} />
@@ -1045,8 +1045,8 @@ export default function AssistantWidget() {
       <div
         className={clsx(
           'pointer-events-auto fixed right-[var(--assistant-right)] z-[70]',
-          // Vertical center on the right, same open/close. Anchored from bottom of the viewport.
-          'bottom-1/2 translate-y-1/2',
+          // Vertical center on the right. svh keeps it fixed when URL bar shows/hides.
+          'bottom-[var(--assistant-fab-anchor)] translate-y-1/2',
         )}
       >
         <button

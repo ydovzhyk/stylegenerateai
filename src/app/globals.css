@@ -115,9 +115,11 @@
   --assistant-fab-size: 56px;
   --assistant-stack-gap: 0.75rem;
   /* svh = stable on mobile (doesn't jump when browser chrome shows/hides).
-     vh fallback for older browsers; dvh was intentionally avoided. */
+     vh fallback for older browsers; dvh / % viewport height were intentionally avoided. */
   --assistant-panel-h: 80vh;
   --assistant-panel-h: 80svh;
+  --assistant-fab-anchor: 50vh;
+  --assistant-fab-anchor: 50svh;
 
   --radius-sm: 14px;
   --radius-md: 20px;
