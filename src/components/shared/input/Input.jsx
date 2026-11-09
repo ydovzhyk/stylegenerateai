@@ -19,6 +19,12 @@ import { useTranslate } from '@/utils/translate/translate'
  */
 const FILL_CLIP_INSET_PX = 1
 
+/**
+ * Mobile browser chrome show/hide can jitter layout by a few px and fire
+ * resize. Ignore tiny shell changes so the prompt textarea does not jump.
+ */
+const SHELL_RESIZE_TOLERANCE_PX = 6
+
 function isPrimitiveText(value) {
   return typeof value === 'string' || typeof value === 'number'
 }
@@ -36,6 +42,19 @@ function getShellFreeSpace(shell) {
     if (index < children.length - 1) used += gap
   })
   return shell.clientHeight - used
+}
+
+function getShellSize(shell) {
+  if (!shell) return { width: 0, height: 0 }
+  return { width: shell.clientWidth, height: shell.clientHeight }
+}
+
+function shellSizeChanged(prev, next, tolerance = SHELL_RESIZE_TOLERANCE_PX) {
+  if (!prev) return true
+  return (
+    Math.abs(prev.width - next.width) >= tolerance ||
+    Math.abs(prev.height - next.height) >= tolerance
+  )
 }
 
 const Input = forwardRef(function Input(
@@ -69,6 +88,8 @@ const Input = forwardRef(function Input(
 ) {
   const [isFocused, setIsFocused] = useState(false)
   const localRef = useRef(null)
+  const lastShellSizeRef = useRef(null)
+  const syncTextareaHeightRef = useRef(() => {})
 
   useImperativeHandle(ref, () => localRef.current)
 
@@ -126,7 +147,12 @@ const Input = forwardRef(function Input(
     const node = localRef.current
     if (!node || (!isAutoGrowTextarea && !isFillHeightTextarea)) return
 
-    // Natural content height first.
+    // Remember the painted size. Measuring needs height:auto, but if the
+    // final size is unchanged we restore it in the same turn (before paint)
+    // so mobile chrome resize does not flash a collapsed textarea.
+    const committedHeight = node.offsetHeight
+    const previousInlineHeight = node.style.height
+
     node.style.height = 'auto'
     const contentHeight = node.scrollHeight
     let nextHeight = contentHeight
@@ -140,17 +166,29 @@ const Input = forwardRef(function Input(
       if (free > FILL_CLIP_INSET_PX) {
         nextHeight = contentHeight + free - FILL_CLIP_INSET_PX
       }
+      lastShellSizeRef.current = getShellSize(shell)
     }
 
-    if (Math.abs(node.offsetHeight - nextHeight) < 1) return
+    nextHeight = Math.ceil(nextHeight)
+
+    if (Math.abs(committedHeight - nextHeight) < 1) {
+      node.style.height =
+        previousInlineHeight && previousInlineHeight !== 'auto'
+          ? previousInlineHeight
+          : `${committedHeight}px`
+      return
+    }
+
     node.style.height = `${nextHeight}px`
   }
 
+  syncTextareaHeightRef.current = syncTextareaHeight
+
   useLayoutEffect(() => {
-    syncTextareaHeight()
+    syncTextareaHeightRef.current()
     // Aspect-ratio / flex height often settles one frame later.
     const raf = window.requestAnimationFrame(() => {
-      syncTextareaHeight()
+      syncTextareaHeightRef.current()
     })
     return () => window.cancelAnimationFrame(raf)
   }, [
@@ -164,31 +202,46 @@ const Input = forwardRef(function Input(
   useEffect(() => {
     if (!isAutoGrowTextarea && !isFillHeightTextarea) return undefined
 
-    const handleResize = () => syncTextareaHeight()
-    window.addEventListener('resize', handleResize)
-
-    // Re-fill when Block 2's allocated height changes (not when textarea grows).
     const shell = localRef.current?.closest(
       `[${WORKSPACE_PREP_OPTIONS_ATTR}]`,
     )
+
+    const syncIfShellChanged = () => {
+      if (!isFillHeightTextarea) {
+        // Content-only autoGrow does not depend on viewport chrome.
+        return
+      }
+      const nextSize = getShellSize(shell)
+      if (!shellSizeChanged(lastShellSizeRef.current, nextSize)) return
+      lastShellSizeRef.current = nextSize
+      syncTextareaHeightRef.current()
+    }
+
+    // Mobile URL-bar show/hide fires window/visualViewport resize without a
+    // real Block 2 size change. Gate every listener on shell geometry.
+    if (shell) {
+      lastShellSizeRef.current = getShellSize(shell)
+    }
+
+    const visualViewport = window.visualViewport
+    window.addEventListener('resize', syncIfShellChanged)
+    visualViewport?.addEventListener('resize', syncIfShellChanged)
+
     let observer
-    let lastShellHeight = shell?.clientHeight ?? 0
     if (
       isFillHeightTextarea &&
       shell &&
       typeof ResizeObserver !== 'undefined'
     ) {
       observer = new ResizeObserver(() => {
-        const nextShellHeight = shell.clientHeight
-        if (Math.abs(nextShellHeight - lastShellHeight) < 1) return
-        lastShellHeight = nextShellHeight
-        syncTextareaHeight()
+        syncIfShellChanged()
       })
       observer.observe(shell)
     }
 
     return () => {
-      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('resize', syncIfShellChanged)
+      visualViewport?.removeEventListener('resize', syncIfShellChanged)
       observer?.disconnect()
     }
   }, [isAutoGrowTextarea, isFillHeightTextarea])
@@ -206,7 +259,7 @@ const Input = forwardRef(function Input(
   const handleChange = (e) => {
     onChange?.(e)
     if (isAutoGrowTextarea || isFillHeightTextarea) {
-      syncTextareaHeight()
+      syncTextareaHeightRef.current()
     }
   }
 
