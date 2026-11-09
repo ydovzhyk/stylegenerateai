@@ -22,6 +22,7 @@ const ClientLayout = ({ children }) => {
     { href: '/create-your-look', label: 'Looks' },
     { href: '/photo-lab', label: 'Photo Lab' },
     { href: '/imagine', label: 'Imagine' },
+    { href: '/animate', label: 'Animate' },
     { href: '/pricing', label: 'Pricing' },
   ]
 
@@ -29,6 +30,7 @@ const ClientLayout = ({ children }) => {
     { href: '/ready-template', label: 'Ready Templates' },
     { href: '/photo-lab-preview', label: 'Photo Lab Preview' },
     { href: '/imagine-preview', label: 'Imagine Preview' },
+    { href: '/animate-preview', label: 'Animate Preview' },
   ]
 
   return (
