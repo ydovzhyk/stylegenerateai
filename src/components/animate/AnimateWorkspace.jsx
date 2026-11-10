@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { toast } from 'react-toastify'
 import clsx from 'clsx'
-import { ImagePlus, Music2, Sparkles } from 'lucide-react'
+import { ImagePlus, Music2, Sparkles, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
@@ -23,12 +23,15 @@ import {
   WORKSPACE_PREP_SETTINGS_CLASSNAME,
 } from '@/constants/user-prompt'
 import {
+  ANIMATE_ASPECT_RATIOS,
   ANIMATE_DURATIONS,
   ANIMATE_KLING_MODELS,
   ANIMATE_RESOLUTIONS,
+  DEFAULT_ANIMATE_ASPECT_RATIO,
   DEFAULT_ANIMATE_DURATION,
   DEFAULT_ANIMATE_MODEL,
   DEFAULT_ANIMATE_RESOLUTION,
+  MAX_PROMPT_REFS,
 } from '@/constants/animate'
 import { axiosGenerateAnimateVideo } from '@/services/api/animate'
 import { getLogin } from '@/store/auth/auth-selectors'
@@ -61,20 +64,52 @@ function useObjectUrl(file) {
   return url
 }
 
+function ReferenceThumb({ file, label, onRemove, disabled }) {
+  const url = useObjectUrl(file)
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-background-soft/70">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={label} className="aspect-[4/5] w-full object-cover" />
+      ) : null}
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/55 px-2 py-1.5">
+        <Text as="span" variant="caption" color="white" caseMode="none">
+          {label}
+        </Text>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onRemove}
+          className="rounded-full p-1 text-white/80 transition hover:bg-white/10 hover:text-white disabled:opacity-40"
+          aria-label={`Remove ${label}`}
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AnimateWorkspace({ mode }) {
   const dispatch = useDispatch()
   const isLogin = useSelector(getLogin)
   const visitorId = useSelector(getVisitorId)
   const photoInputRef = useRef(null)
+  const referencesInputRef = useRef(null)
   const musicInputRef = useRef(null)
 
+  const isPromptRefs = mode?.id === 'prompt_refs'
+
   const [photoFile, setPhotoFile] = useState(null)
+  const [referenceFiles, setReferenceFiles] = useState([])
   const [musicFile, setMusicFile] = useState(null)
   const [musicStartSeconds, setMusicStartSeconds] = useState('0')
   const [prompt, setPrompt] = useState('')
   const [model, setModel] = useState(DEFAULT_ANIMATE_MODEL)
   const [duration, setDuration] = useState(String(DEFAULT_ANIMATE_DURATION))
   const [resolution] = useState(DEFAULT_ANIMATE_RESOLUTION)
+  const [aspectRatio, setAspectRatio] = useState(DEFAULT_ANIMATE_ASPECT_RATIO)
   const [imageChecks, setImageChecks] = useState({})
   const [isGenerating, setIsGenerating] = useState(false)
   const [resultPreview, setResultPreview] = useState('')
@@ -110,11 +145,22 @@ export default function AnimateWorkspace({ mode }) {
     [],
   )
 
+  const aspectRatioOptions = useMemo(
+    () =>
+      ANIMATE_ASPECT_RATIOS.map((item) => ({
+        value: item.id,
+        label: item.label,
+      })),
+    [],
+  )
+
   useEffect(() => {
     setPhotoFile(null)
+    setReferenceFiles([])
     setMusicFile(null)
     setMusicStartSeconds('0')
     setPrompt('')
+    setAspectRatio(DEFAULT_ANIMATE_ASPECT_RATIO)
     setResultPreview('')
     setResultMeta(null)
     setImageChecks({})
@@ -144,6 +190,27 @@ export default function AnimateWorkspace({ mode }) {
     if (file) await runPhotoCheck(file)
   }
 
+  const handleReferencesChange = async (event) => {
+    const picked = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (!picked.length) return
+
+    setReferenceFiles((prev) => {
+      const room = Math.max(0, MAX_PROMPT_REFS - prev.length)
+      return [...prev, ...picked.slice(0, room)]
+    })
+    setResultPreview('')
+    setResultMeta(null)
+
+    await Promise.all(picked.slice(0, MAX_PROMPT_REFS).map((file) => runPhotoCheck(file)))
+  }
+
+  const removeReferenceAt = (index) => {
+    setReferenceFiles((prev) => prev.filter((_, i) => i !== index))
+    setResultPreview('')
+    setResultMeta(null)
+  }
+
   const handleMusicChange = (event) => {
     const file = event.target.files?.[0] || null
     event.target.value = ''
@@ -157,32 +224,72 @@ export default function AnimateWorkspace({ mode }) {
   }
 
   const photoStatus = photoFile ? imageChecks[imageCheckKey(photoFile)] : null
-  const canGenerate =
-    Boolean(mode?.id) &&
-    Boolean(photoFile) &&
-    photoStatus === 'clear' &&
-    !isGenerating
+  const referenceStatuses = referenceFiles.map(
+    (file) => imageChecks[imageCheckKey(file)] || 'pending',
+  )
+  const referencesReady =
+    referenceFiles.length > 0 &&
+    referenceStatuses.every((status) => status === 'clear')
+  const referencesPending = referenceStatuses.some((status) => status === 'pending')
+  const referencesFlagged = referenceStatuses.some((status) => status === 'flagged')
+  const referencesError = referenceStatuses.some((status) => status === 'error')
+
+  const promptOk = !mode?.promptRequired || Boolean(prompt.trim())
+
+  const canGenerate = isPromptRefs
+    ? Boolean(mode?.id) &&
+      promptOk &&
+      referencesReady &&
+      !isGenerating
+    : Boolean(mode?.id) &&
+      Boolean(photoFile) &&
+      photoStatus === 'clear' &&
+      !isGenerating
 
   const handleGenerate = async () => {
     if (!mode?.id) {
       toast.info('Choose a mode first')
       return
     }
-    if (!photoFile) {
-      toast.info('Upload an Instagram photo first')
-      return
-    }
-    if (photoStatus === 'pending') {
-      toast.info(PHOTO_CHECK_PENDING_MESSAGE)
-      return
-    }
-    if (photoStatus === 'flagged') {
-      toast.error(PHOTO_FLAGGED_MESSAGE)
-      return
-    }
-    if (photoStatus === 'error') {
-      toast.error(PHOTO_CHECK_FAILED_MESSAGE)
-      return
+
+    if (isPromptRefs) {
+      if (!prompt.trim()) {
+        toast.info('Write a prompt describing the video')
+        return
+      }
+      if (!referenceFiles.length) {
+        toast.info('Upload 1–3 reference photos first')
+        return
+      }
+      if (referencesPending) {
+        toast.info(PHOTO_CHECK_PENDING_MESSAGE)
+        return
+      }
+      if (referencesFlagged) {
+        toast.error(PHOTO_FLAGGED_MESSAGE)
+        return
+      }
+      if (referencesError) {
+        toast.error(PHOTO_CHECK_FAILED_MESSAGE)
+        return
+      }
+    } else {
+      if (!photoFile) {
+        toast.info('Upload an Instagram photo first')
+        return
+      }
+      if (photoStatus === 'pending') {
+        toast.info(PHOTO_CHECK_PENDING_MESSAGE)
+        return
+      }
+      if (photoStatus === 'flagged') {
+        toast.error(PHOTO_FLAGGED_MESSAGE)
+        return
+      }
+      if (photoStatus === 'error') {
+        toast.error(PHOTO_CHECK_FAILED_MESSAGE)
+        return
+      }
     }
 
     const formData = new FormData()
@@ -191,7 +298,12 @@ export default function AnimateWorkspace({ mode }) {
     formData.append('model', model)
     formData.append('duration', String(duration))
     formData.append('resolution', resolution)
-    formData.append('photo', photoFile)
+    if (isPromptRefs) {
+      formData.append('aspectRatio', aspectRatio)
+      referenceFiles.forEach((file) => formData.append('references', file))
+    } else {
+      formData.append('photo', photoFile)
+    }
     if (musicFile) {
       formData.append('music', musicFile)
       formData.append('musicStartSeconds', String(musicStartSeconds || '0'))
@@ -215,6 +327,7 @@ export default function AnimateWorkspace({ mode }) {
         durationSeconds: data?.durationSeconds,
         model: data?.model,
         resolution: data?.resolution,
+        aspectRatio: data?.aspectRatio,
         musicAttached: data?.musicAttached,
         musicMuxed: data?.musicMuxed,
         musicMuxError: data?.musicMuxError,
@@ -280,7 +393,7 @@ export default function AnimateWorkspace({ mode }) {
               >
                 <Select
                   id="animate-model"
-                  label="Kling model"
+                  label="Video model"
                   options={modelOptions}
                   value={
                     modelOptions.find((item) => item.value === model) || null
@@ -328,6 +441,27 @@ export default function AnimateWorkspace({ mode }) {
                   isClearable={false}
                   hint="Locked to 720p for the first metrics phase."
                 />
+
+                {isPromptRefs ? (
+                  <Select
+                    id="animate-aspect-ratio"
+                    label="Aspect ratio"
+                    options={aspectRatioOptions}
+                    value={
+                      aspectRatioOptions.find(
+                        (item) => item.value === aspectRatio,
+                      ) || null
+                    }
+                    onChange={(option) => {
+                      if (!option?.value) return
+                      setAspectRatio(option.value)
+                    }}
+                    isDisabled={isGenerating}
+                    isSearchable={false}
+                    isClearable={false}
+                    hideHelp
+                  />
+                ) : null}
               </div>
 
               <div
@@ -398,7 +532,7 @@ export default function AnimateWorkspace({ mode }) {
                     rows={USER_PROMPT_TEXTAREA_ROWS}
                     autoGrow
                     fillHeight
-                    label="Motion prompt"
+                    label={isPromptRefs ? 'Scene prompt' : 'Motion prompt'}
                     labelClassName="text-lg font-semibold text-white md:text-xl shrink-0"
                     placeholder={mode.promptPlaceholder}
                     value={prompt}
@@ -416,69 +550,162 @@ export default function AnimateWorkspace({ mode }) {
         </div>
 
         <div className="min-w-0">
-          <div
-            className={clsx(
-              PREVIEW_FRAME_CLASS,
-              photoUrl ? 'border-white/10' : 'border-dashed border-white/15',
-            )}
-          >
-            {photoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={photoUrl}
-                alt="Instagram photo"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => photoInputRef.current?.click()}
-                className="flex h-full w-full flex-col items-center justify-center p-5 text-center transition hover:bg-white/[0.035]"
+          {isPromptRefs ? (
+            <div className="space-y-3">
+              <div
+                className={clsx(
+                  'rounded-[26px] border bg-background-soft/70 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.22)]',
+                  referenceFiles.length
+                    ? 'border-white/10'
+                    : 'border-dashed border-white/15',
+                )}
               >
-                <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-primary-soft">
-                  <ImagePlus size={24} />
-                </span>
-                <Text as="span" variant="body" color="white" caseMode="sentence">
-                  Upload Instagram photo
-                </Text>
-                <Text
-                  as="span"
-                  variant="caption"
-                  color="muted"
-                  caseMode="sentence"
-                  className="mt-2 max-w-[230px]"
-                >
-                  JPG, PNG, or WEBP. This becomes the first frame of the video.
-                </Text>
-              </button>
-            )}
-          </div>
-          {photoFile ? (
-            <div className="mt-3 flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                disabled={isGenerating}
-                onClick={() => photoInputRef.current?.click()}
-              >
-                Change photo
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={isGenerating}
-                onClick={() => {
-                  setPhotoFile(null)
-                  setResultPreview('')
-                  setResultMeta(null)
-                }}
-              >
-                Remove
-              </Button>
+                {referenceFiles.length ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {referenceFiles.map((file, index) => (
+                      <ReferenceThumb
+                        key={`${imageCheckKey(file)}-${index}`}
+                        file={file}
+                        label={`@ref_${index + 1}`}
+                        disabled={isGenerating}
+                        onRemove={() => removeReferenceAt(index)}
+                      />
+                    ))}
+                    {referenceFiles.length < MAX_PROMPT_REFS ? (
+                      <button
+                        type="button"
+                        disabled={isGenerating}
+                        onClick={() => referencesInputRef.current?.click()}
+                        className="flex aspect-[4/5] flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 px-3 text-center transition hover:bg-white/[0.035] disabled:opacity-50"
+                      >
+                        <ImagePlus size={20} className="mb-2 text-primary-soft" />
+                        <Text as="span" variant="caption" color="muted" caseMode="sentence">
+                          Add photo
+                        </Text>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => referencesInputRef.current?.click()}
+                    className="flex min-h-[280px] w-full flex-col items-center justify-center p-5 text-center transition hover:bg-white/[0.035]"
+                  >
+                    <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-primary-soft">
+                      <ImagePlus size={24} />
+                    </span>
+                    <Text as="span" variant="body" color="white" caseMode="sentence">
+                      Upload reference photos
+                    </Text>
+                    <Text
+                      as="span"
+                      variant="caption"
+                      color="muted"
+                      caseMode="sentence"
+                      className="mt-2 max-w-[240px]"
+                    >
+                      1–3 photos. Use @ref_1, @ref_2, @ref_3 in the prompt to
+                      point at a specific look.
+                    </Text>
+                  </button>
+                )}
+              </div>
+              {referenceFiles.length ? (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={
+                      isGenerating || referenceFiles.length >= MAX_PROMPT_REFS
+                    }
+                    onClick={() => referencesInputRef.current?.click()}
+                  >
+                    Add reference
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isGenerating}
+                    onClick={() => {
+                      setReferenceFiles([])
+                      setResultPreview('')
+                      setResultMeta(null)
+                    }}
+                  >
+                    Clear all
+                  </Button>
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          ) : (
+            <>
+              <div
+                className={clsx(
+                  PREVIEW_FRAME_CLASS,
+                  photoUrl ? 'border-white/10' : 'border-dashed border-white/15',
+                )}
+              >
+                {photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photoUrl}
+                    alt="Instagram photo"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="flex h-full w-full flex-col items-center justify-center p-5 text-center transition hover:bg-white/[0.035]"
+                  >
+                    <span className="mb-4 flex h-14 w-14 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-primary-soft">
+                      <ImagePlus size={24} />
+                    </span>
+                    <Text as="span" variant="body" color="white" caseMode="sentence">
+                      Upload Instagram photo
+                    </Text>
+                    <Text
+                      as="span"
+                      variant="caption"
+                      color="muted"
+                      caseMode="sentence"
+                      className="mt-2 max-w-[230px]"
+                    >
+                      JPG, PNG, or WEBP. This becomes the first frame of the video.
+                    </Text>
+                  </button>
+                )}
+              </div>
+              {photoFile ? (
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={isGenerating}
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    Change photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isGenerating}
+                    onClick={() => {
+                      setPhotoFile(null)
+                      setResultPreview('')
+                      setResultMeta(null)
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
 
         <div className="min-w-0">
@@ -510,7 +737,7 @@ export default function AnimateWorkspace({ mode }) {
                   caseMode="sentence"
                   className="mt-2 max-w-[230px]"
                 >
-                  Your Kling clip will appear here after generate.
+                  Your clip will appear here after generate.
                 </Text>
               </div>
             )}
@@ -526,6 +753,7 @@ export default function AnimateWorkspace({ mode }) {
               {[
                 resultMeta.model,
                 resultMeta.resolution,
+                resultMeta.aspectRatio || '',
                 resultMeta.durationSeconds
                   ? `${resultMeta.durationSeconds}s`
                   : '',
@@ -550,6 +778,14 @@ export default function AnimateWorkspace({ mode }) {
         onChange={handlePhotoChange}
       />
       <input
+        ref={referencesInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className="hidden"
+        onChange={handleReferencesChange}
+      />
+      <input
         ref={musicInputRef}
         type="file"
         accept="audio/mpeg,audio/wav,audio/mp4,audio/aac,audio/ogg,audio/webm"
@@ -565,8 +801,16 @@ export default function AnimateWorkspace({ mode }) {
           onGenerate={handleGenerate}
           titleReady="Ready to generate video"
           titleDisabled="Almost ready"
-          descriptionReady="Start Kling image-to-video with your Instagram photo."
-          descriptionDisabled="Upload a clear Instagram photo to continue."
+          descriptionReady={
+            isPromptRefs
+              ? 'Build a clip from your prompt and reference photos.'
+              : 'Animate your Instagram photo into a short video.'
+          }
+          descriptionDisabled={
+            isPromptRefs
+              ? 'Add a prompt and 1–3 clear reference photos to continue.'
+              : 'Upload a clear Instagram photo to continue.'
+          }
           buttonGenerate="Generate video"
           buttonRegenerate="Regenerate video"
           buttonGenerating="Generating video..."

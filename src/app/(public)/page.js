@@ -130,7 +130,7 @@ export default function HomePage() {
             caseMode="sentence"
             className="max-w-xl text-sm leading-6 sm:text-base"
           >
-            Animate an Instagram photo into a short video clip.
+            Animate a photo or build a clip from a prompt and references.
           </Text>
 
           <Link

@@ -1,20 +1,23 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useDispatch } from 'react-redux'
-import { Loader2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Loader2, X } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
 import {
+  ANIMATE_ASPECT_RATIOS,
   ANIMATE_DURATIONS,
   ANIMATE_KLING_MODELS,
   ANIMATE_MODES,
   ANIMATE_RESOLUTIONS,
+  DEFAULT_ANIMATE_ASPECT_RATIO,
   DEFAULT_ANIMATE_DURATION,
   DEFAULT_ANIMATE_MODEL,
   DEFAULT_ANIMATE_RESOLUTION,
+  MAX_PROMPT_REFS,
 } from '@/constants/animate'
 import {
   USER_PROMPT_TEXTAREA_INPUT_CLASSNAME,
@@ -26,6 +29,8 @@ import {
   axiosGetAnimateTemplates,
 } from '@/services/api/animate'
 import { getGenerationUsage } from '@/store/generation-usage/generation-usage-operations'
+import { getLogin } from '@/store/auth/auth-selectors'
+import { getVisitorId } from '@/store/visitor/visitor-selectors'
 import {
   PHOTO_CHECK_FAILED_MESSAGE,
   PHOTO_CHECK_PENDING_MESSAGE,
@@ -42,9 +47,55 @@ async function dataUrlToFile(dataUrl, filename = 'animate-result.mp4') {
   })
 }
 
+function useObjectUrl(file) {
+  const [url, setUrl] = useState('')
+
+  useEffect(() => {
+    if (!file) {
+      setUrl('')
+      return undefined
+    }
+    const nextUrl = URL.createObjectURL(file)
+    setUrl(nextUrl)
+    return () => URL.revokeObjectURL(nextUrl)
+  }, [file])
+
+  return url
+}
+
+function ReferenceThumb({ file, label, onRemove, disabled }) {
+  const url = useObjectUrl(file)
+
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-white/10">
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={url} alt={label} className="aspect-[4/5] w-full object-cover" />
+      ) : null}
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-black/55 px-2 py-1">
+        <Text as="span" variant="caption" color="white" caseMode="none">
+          {label}
+        </Text>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onRemove}
+          className="rounded-full p-1 text-white/80 transition hover:bg-white/10 disabled:opacity-40"
+          aria-label={`Remove ${label}`}
+        >
+          <X size={12} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AnimatePreviewTester() {
   const dispatch = useDispatch()
+  const isLogin = useSelector(getLogin)
+  const visitorId = useSelector(getVisitorId)
   const photoInputRef = useRef(null)
+  const referencesInputRef = useRef(null)
   const musicInputRef = useRef(null)
 
   const [selectedModeId, setSelectedModeId] = useState(ANIMATE_MODES[0].id)
@@ -53,7 +104,9 @@ export default function AnimatePreviewTester() {
   const [model, setModel] = useState(DEFAULT_ANIMATE_MODEL)
   const [duration, setDuration] = useState(String(DEFAULT_ANIMATE_DURATION))
   const [resolution] = useState(DEFAULT_ANIMATE_RESOLUTION)
+  const [aspectRatio, setAspectRatio] = useState(DEFAULT_ANIMATE_ASPECT_RATIO)
   const [photoFile, setPhotoFile] = useState(null)
+  const [referenceFiles, setReferenceFiles] = useState([])
   const [musicFile, setMusicFile] = useState(null)
   const [musicStartSeconds, setMusicStartSeconds] = useState('0')
   const [imageChecks, setImageChecks] = useState({})
@@ -66,26 +119,11 @@ export default function AnimatePreviewTester() {
 
   const selectedMode =
     ANIMATE_MODES.find((mode) => mode.id === selectedModeId) || ANIMATE_MODES[0]
+  const isPromptRefs = selectedMode.id === 'prompt_refs'
   const busy = isGenerating || isSavingTemplate
 
-  const photoUrl = useMemo(
-    () => (photoFile ? URL.createObjectURL(photoFile) : ''),
-    [photoFile],
-  )
-  const musicUrl = useMemo(
-    () => (musicFile ? URL.createObjectURL(musicFile) : ''),
-    [musicFile],
-  )
-
-  useEffect(() => {
-    if (!photoUrl) return undefined
-    return () => URL.revokeObjectURL(photoUrl)
-  }, [photoUrl])
-
-  useEffect(() => {
-    if (!musicUrl) return undefined
-    return () => URL.revokeObjectURL(musicUrl)
-  }, [musicUrl])
+  const photoUrl = useObjectUrl(photoFile)
+  const musicUrl = useObjectUrl(musicFile)
 
   useEffect(() => {
     let cancelled = false
@@ -115,12 +153,28 @@ export default function AnimatePreviewTester() {
     value: item.id,
     label: item.label,
   }))
+  const aspectRatioOptions = ANIMATE_ASPECT_RATIOS.map((item) => ({
+    value: item.id,
+    label: item.label,
+  }))
 
   const photoStatus = photoFile
     ? imageChecks[imageCheckKey(photoFile)] || 'pending'
     : null
-  const canGenerate =
-    Boolean(photoFile) && photoStatus === 'clear' && !busy
+  const referenceStatuses = referenceFiles.map(
+    (file) => imageChecks[imageCheckKey(file)] || 'pending',
+  )
+  const referencesReady =
+    referenceFiles.length > 0 &&
+    referenceStatuses.every((status) => status === 'clear')
+  const referencesPending = referenceStatuses.some((status) => status === 'pending')
+  const referencesFlagged = referenceStatuses.some((status) => status === 'flagged')
+  const referencesError = referenceStatuses.some((status) => status === 'error')
+  const promptOk = !selectedMode.promptRequired || Boolean(prompt.trim())
+
+  const canGenerate = isPromptRefs
+    ? promptOk && referencesReady && !busy
+    : Boolean(photoFile) && photoStatus === 'clear' && !busy
 
   const runPhotoCheck = async (file) => {
     if (!file) return
@@ -147,6 +201,21 @@ export default function AnimatePreviewTester() {
     if (file) await runPhotoCheck(file)
   }
 
+  const handleReferencesChange = async (event) => {
+    const picked = Array.from(event.target.files || [])
+    event.target.value = ''
+    if (!picked.length) return
+
+    setReferenceFiles((prev) => {
+      const room = Math.max(0, MAX_PROMPT_REFS - prev.length)
+      return [...prev, ...picked.slice(0, room)]
+    })
+    setResultPreview('')
+    setResultMeta(null)
+    setError('')
+    await Promise.all(picked.slice(0, MAX_PROMPT_REFS).map((file) => runPhotoCheck(file)))
+  }
+
   const handleMusicChange = (event) => {
     const file = event.target.files?.[0] || null
     event.target.value = ''
@@ -155,21 +224,44 @@ export default function AnimatePreviewTester() {
   }
 
   const handleGenerate = async () => {
-    if (!photoFile) {
-      setError('Upload a source photo before generating')
-      return
-    }
-    if (photoStatus === 'pending') {
-      setError(PHOTO_CHECK_PENDING_MESSAGE)
-      return
-    }
-    if (photoStatus === 'flagged') {
-      setError(PHOTO_FLAGGED_MESSAGE)
-      return
-    }
-    if (photoStatus === 'error') {
-      setError(PHOTO_CHECK_FAILED_MESSAGE)
-      return
+    if (isPromptRefs) {
+      if (!prompt.trim()) {
+        setError('Write a prompt describing the video before generating')
+        return
+      }
+      if (!referenceFiles.length) {
+        setError('Upload 1–3 reference photos before generating')
+        return
+      }
+      if (referencesPending) {
+        setError(PHOTO_CHECK_PENDING_MESSAGE)
+        return
+      }
+      if (referencesFlagged) {
+        setError(PHOTO_FLAGGED_MESSAGE)
+        return
+      }
+      if (referencesError) {
+        setError(PHOTO_CHECK_FAILED_MESSAGE)
+        return
+      }
+    } else {
+      if (!photoFile) {
+        setError('Upload a source photo before generating')
+        return
+      }
+      if (photoStatus === 'pending') {
+        setError(PHOTO_CHECK_PENDING_MESSAGE)
+        return
+      }
+      if (photoStatus === 'flagged') {
+        setError(PHOTO_FLAGGED_MESSAGE)
+        return
+      }
+      if (photoStatus === 'error') {
+        setError(PHOTO_CHECK_FAILED_MESSAGE)
+        return
+      }
     }
 
     setError('')
@@ -182,11 +274,17 @@ export default function AnimatePreviewTester() {
       formData.append('model', model)
       formData.append('duration', String(duration))
       formData.append('resolution', resolution)
-      formData.append('photo', photoFile)
+      if (isPromptRefs) {
+        formData.append('aspectRatio', aspectRatio)
+        referenceFiles.forEach((file) => formData.append('references', file))
+      } else {
+        formData.append('photo', photoFile)
+      }
       if (musicFile) {
         formData.append('music', musicFile)
         formData.append('musicStartSeconds', String(musicStartSeconds || '0'))
       }
+      if (!isLogin && visitorId) formData.append('visitorId', visitorId)
 
       const data = await axiosGenerateAnimateVideo(formData)
       if (!data?.previewUrl) {
@@ -198,6 +296,7 @@ export default function AnimatePreviewTester() {
         durationSeconds: data.durationSeconds,
         model: data.model,
         resolution: data.resolution,
+        aspectRatio: data.aspectRatio,
         musicAttached: data.musicAttached,
         musicMuxed: data.musicMuxed,
         promptUsed: data.promptUsed,
@@ -243,13 +342,21 @@ export default function AnimatePreviewTester() {
         'musicAttached',
         resultMeta?.musicAttached || musicFile ? 'true' : 'false',
       )
-      if (photoFile) formData.append('photo', photoFile)
 
-      const resultFile = await dataUrlToFile(
-        resultPreview,
-        `${normalizeFileSlug(title) || 'animate'}-result.mp4`,
-      )
-      formData.append('result', resultFile)
+      const sourcePhoto = isPromptRefs ? referenceFiles[0] : photoFile
+      if (sourcePhoto) formData.append('photo', sourcePhoto)
+
+      // Avoid browser fetch of GCS URLs (CORS → "Failed to fetch").
+      // Backend downloads/copies the generated video itself.
+      if (/^https?:\/\//i.test(String(resultPreview || ''))) {
+        formData.append('generatedVideoUrl', resultPreview)
+      } else {
+        const resultFile = await dataUrlToFile(
+          resultPreview,
+          `${normalizeFileSlug(title) || 'animate'}-result.mp4`,
+        )
+        formData.append('result', resultFile)
+      }
 
       await axiosCreateAnimateTemplate(formData)
       const templates = await axiosGetAnimateTemplates()
@@ -280,7 +387,7 @@ export default function AnimatePreviewTester() {
           caseMode="sentence"
           className="mt-2 max-w-3xl"
         >
-          Generate with Kling, review the clip, then save it as a showcase
+          Generate a clip, review it, then save it as a showcase
           template. Good results only - every generation costs real money.
         </Text>
         <Text
@@ -311,8 +418,12 @@ export default function AnimatePreviewTester() {
                   disabled={busy}
                   onClick={() => {
                     setSelectedModeId(mode.id)
+                    setPhotoFile(null)
+                    setReferenceFiles([])
                     setResultPreview('')
                     setResultMeta(null)
+                    setPrompt('')
+                    setAspectRatio(DEFAULT_ANIMATE_ASPECT_RATIO)
                     setError('')
                   }}
                   className="justify-start px-4 py-3 text-left font-medium"
@@ -326,7 +437,7 @@ export default function AnimatePreviewTester() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 space-y-4">
             <Select
               id="admin-animate-model"
-              label="Kling model"
+              label="Video model"
               options={modelOptions}
               value={modelOptions.find((item) => item.value === model) || null}
               onChange={(option) => {
@@ -371,15 +482,69 @@ export default function AnimatePreviewTester() {
               hint="Locked to 720p for metrics"
             />
 
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => photoInputRef.current?.click()}
-              disabled={busy}
-              fullWidth
-            >
-              {photoFile ? 'Change source photo' : 'Upload source photo'}
-            </Button>
+            {isPromptRefs ? (
+              <Select
+                id="admin-animate-aspect-ratio"
+                label="Aspect ratio"
+                options={aspectRatioOptions}
+                value={
+                  aspectRatioOptions.find(
+                    (item) => item.value === aspectRatio,
+                  ) || null
+                }
+                onChange={(option) => {
+                  if (!option?.value) return
+                  setAspectRatio(option.value)
+                }}
+                isDisabled={busy}
+                isSearchable={false}
+                isClearable={false}
+                hideHelp
+              />
+            ) : null}
+
+            {isPromptRefs ? (
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => referencesInputRef.current?.click()}
+                  disabled={busy || referenceFiles.length >= MAX_PROMPT_REFS}
+                  fullWidth
+                >
+                  {referenceFiles.length
+                    ? `Add reference (${referenceFiles.length}/${MAX_PROMPT_REFS})`
+                    : 'Upload reference photos (1–3)'}
+                </Button>
+                {referenceFiles.length ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {referenceFiles.map((file, index) => (
+                      <ReferenceThumb
+                        key={`${imageCheckKey(file)}-${index}`}
+                        file={file}
+                        label={`@ref_${index + 1}`}
+                        disabled={busy}
+                        onRemove={() =>
+                          setReferenceFiles((prev) =>
+                            prev.filter((_, i) => i !== index),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={busy}
+                fullWidth
+              >
+                {photoFile ? 'Change source photo' : 'Upload source photo'}
+              </Button>
+            )}
 
             <Button
               type="button"
@@ -432,7 +597,7 @@ export default function AnimatePreviewTester() {
               as="textarea"
               rows={USER_PROMPT_TEXTAREA_ROWS}
               autoGrow
-              label="Motion prompt"
+              label={isPromptRefs ? 'Scene prompt' : 'Motion prompt'}
               placeholder={selectedMode.promptPlaceholder}
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
@@ -496,10 +661,34 @@ export default function AnimatePreviewTester() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
             <Text as="p" variant="caption" color="soft" caseMode="sentence">
-              Source photo
+              {isPromptRefs ? 'Reference photos' : 'Source photo'}
             </Text>
             <div className="mt-3 aspect-[4/5] overflow-hidden rounded-2xl border border-dashed border-white/15 bg-background-soft/70">
-              {photoUrl ? (
+              {isPromptRefs ? (
+                referenceFiles.length ? (
+                  <div className="grid h-full grid-cols-2 gap-1 p-1 sm:grid-cols-3">
+                    {referenceFiles.map((file, index) => (
+                      <ReferenceThumb
+                        key={`preview-${imageCheckKey(file)}-${index}`}
+                        file={file}
+                        label={`@ref_${index + 1}`}
+                        disabled={busy}
+                        onRemove={() =>
+                          setReferenceFiles((prev) =>
+                            prev.filter((_, i) => i !== index),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex h-full items-center justify-center px-4 text-center">
+                    <Text as="p" variant="caption" color="muted" caseMode="sentence">
+                      Upload 1–3 reference photos for look and identity
+                    </Text>
+                  </div>
+                )
+              ) : photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={photoUrl}
@@ -525,7 +714,7 @@ export default function AnimatePreviewTester() {
                 <div className="flex h-full flex-col items-center justify-center gap-3">
                   <Loader2 className="h-6 w-6 animate-spin text-primary-soft" />
                   <Text as="p" variant="caption" color="muted" caseMode="sentence">
-                    Kling is rendering...
+                    Rendering video...
                   </Text>
                 </div>
               ) : resultPreview ? (
@@ -554,6 +743,7 @@ export default function AnimatePreviewTester() {
                 {[
                   resultMeta.model,
                   resultMeta.resolution,
+                  resultMeta.aspectRatio || '',
                   resultMeta.durationSeconds
                     ? `${resultMeta.durationSeconds}s`
                     : '',
@@ -577,6 +767,14 @@ export default function AnimatePreviewTester() {
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
         onChange={handlePhotoChange}
+      />
+      <input
+        ref={referencesInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className="hidden"
+        onChange={handleReferencesChange}
       />
       <input
         ref={musicInputRef}

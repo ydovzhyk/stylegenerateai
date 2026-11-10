@@ -18,7 +18,7 @@ export default function AnimateModes({ modes, selectedModeId, onSelectMode }) {
           caseMode="sentence"
           className="mt-2"
         >
-          Start with an Instagram photo. More modes can join this page later.
+          Animate a photo, or build a scene from a prompt and reference images.
         </Text>
       </div>
 

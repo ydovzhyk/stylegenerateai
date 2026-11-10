@@ -36,7 +36,7 @@ export default function AnimatePreviewPage() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Test Kling image-to-video here. Save only the good clips as showcase
+          Test Animate image-to-video here. Save only the good clips as showcase
           templates for the public Animate page.
         </Text>
       </div>

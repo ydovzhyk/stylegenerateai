@@ -34,7 +34,7 @@ export default function AnimatePage() {
           site · ANIMATE
         </Text>
         <Text as="h1" variant="h1" color="white" caseMode="sentence">
-          Bring your photo to life
+          Bring photos to life
         </Text>
         <Text
           as="p"
@@ -43,8 +43,9 @@ export default function AnimatePage() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Upload an Instagram photo, optionally add music, tune Kling settings,
-          and generate a short 720p video. More modes can join this page later.
+          Animate an Instagram photo, or build a clip from a prompt and
+          reference photos. Optionally add music, tune motion settings, and
+          generate a short 720p video.
         </Text>
       </div>
 
