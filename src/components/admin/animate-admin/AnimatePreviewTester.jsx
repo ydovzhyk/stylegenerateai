@@ -343,8 +343,11 @@ export default function AnimatePreviewTester() {
         resultMeta?.musicAttached || musicFile ? 'true' : 'false',
       )
 
-      const sourcePhoto = isPromptRefs ? referenceFiles[0] : photoFile
-      if (sourcePhoto) formData.append('photo', sourcePhoto)
+      if (isPromptRefs) {
+        referenceFiles.forEach((file) => formData.append('references', file))
+      } else if (photoFile) {
+        formData.append('photo', photoFile)
+      }
 
       // Avoid browser fetch of GCS URLs (CORS → "Failed to fetch").
       // Backend downloads/copies the generated video itself.

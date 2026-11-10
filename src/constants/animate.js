@@ -3,10 +3,11 @@ import { Clapperboard, ImagePlay, Images } from 'lucide-react'
 export const ANIMATE_MODES = [
   {
     id: 'instagram_photo',
-    title: 'Instagram Photo',
-    label: 'Bring your photo to life',
+    title: 'Alive Photo',
+    chipLabel: 'Alive photo',
+    label: 'Make your photo come alive',
     description:
-      'Upload an Instagram photo, optionally add music, tune motion settings, and generate a short 720p video.',
+      'Upload a photo, optionally add music, tune motion, and turn that still moment into a short living 720p clip.',
     workspaceHint:
       'Upload your photo, write how it should move, optionally add music, then generate.',
     icon: ImagePlay,
@@ -19,16 +20,17 @@ export const ANIMATE_MODES = [
   },
   {
     id: 'prompt_refs',
-    title: 'Prompt + Refs',
-    label: 'Build a clip from a prompt',
+    title: "Author's Vision",
+    chipLabel: "Author's vision",
+    label: 'Direct the scene yourself',
     description:
-      'Describe the scene, add 1–3 reference photos for look and identity, optionally add music, and generate a short 720p video.',
+      'Describe the scene you have in mind, add 1–3 reference photos for look and identity, and generate a short 720p video as you imagined it.',
     workspaceHint:
       'Write the prompt, upload 1–3 reference photos, pick aspect ratio, optionally add music, then generate. Mention @ref_1 / @ref_2 / @ref_3 in the prompt when you want a specific photo used.',
     icon: Images,
     accent: 'from-cyan-400/20 to-primary/25',
     promptPlaceholder:
-      'Example: @ref_1 walks through a quiet street at dusk, soft wind in the hair, slow tracking shot, keep the face and outfit from @ref_1.',
+      'Example: @ref_1 stands on the terrace from @ref_2, picks up a glass, takes a sip, and looks at the view from @ref_3. One continuous shot.',
     promptRequired: true,
     maxReferences: 3,
     uploadKind: 'references',
