@@ -99,19 +99,12 @@ function ReferencePhotoDeck({
     <div className="relative w-full max-w-[240px] pt-3 pl-3 sm:max-w-[260px]">
       {/* Fixed aspect box so fill images don't collapse to height 0 */}
       <div className="relative w-full" style={{ aspectRatio: '16 / 10' }}>
-        <button
-          type="button"
-          onClick={() => onOpenPreview?.(carousel.displaySrc || mainSrc)}
-          aria-label="Open reference photo preview"
-          className="absolute inset-0 z-[1] cursor-zoom-in"
-        />
-
         {deckSrcs.map((src, index) => {
           const offset = index * 10
           return (
             <div
               key={`${src}-${index}`}
-              className="absolute inset-0 overflow-hidden rounded-[18px] border border-white/20 bg-background-soft shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+              className="pointer-events-none absolute inset-0 overflow-hidden rounded-[18px] border border-white/20 bg-background-soft shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
               style={{
                 zIndex: deckSrcs.length - index,
                 transform: `translate(${-offset}px, ${-offset}px)`,
@@ -129,6 +122,13 @@ function ReferencePhotoDeck({
             </div>
           )
         })}
+
+        <button
+          type="button"
+          onClick={() => onOpenPreview?.(carousel.displaySrc || mainSrc)}
+          aria-label="Open reference photo preview"
+          className="absolute inset-0 z-[3] cursor-zoom-in rounded-[18px]"
+        />
 
         <div className="pointer-events-none absolute left-2.5 top-2.5 z-[5]">
           <PreviewBadge tone="primary">
