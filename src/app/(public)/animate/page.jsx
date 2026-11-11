@@ -45,7 +45,7 @@ export default function AnimatePage() {
         >
           Animate an Instagram photo, or build a clip from a prompt and
           reference photos. Optionally add music, tune motion settings, and
-          generate a short 720p video.
+          generate a short video.
         </Text>
       </div>
 

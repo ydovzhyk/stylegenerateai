@@ -24,6 +24,7 @@ export default function MyGalleryPage() {
   const deleteLoadingId = useSelector(getGeneratedImageDeleteLoadingId)
   const looksItems = useSelector(getGeneratedImagesBySection('looks'))
   const photoLabItems = useSelector(getGeneratedImagesBySection('photo_lab'))
+  const animateItems = useSelector(getGeneratedImagesBySection('animate'))
 
   const [pendingDeleteItem, setPendingDeleteItem] = useState(null)
   const [previewModal, setPreviewModal] = useState({
@@ -31,6 +32,7 @@ export default function MyGalleryPage() {
     src: '',
     alt: '',
     title: '',
+    mediaKind: 'image',
   })
 
   useEffect(() => {
@@ -62,12 +64,15 @@ export default function MyGalleryPage() {
   const handlePreview = (item) => {
     const src = item?.previewUrl || item?.imageUrl || ''
     if (!src) return
+    const isVideo =
+      String(item?.mimeType || '').startsWith('video/') || item?.format === 'mp4'
 
     setPreviewModal({
       open: true,
       src,
-      alt: item?.title || 'Saved image',
-      title: item?.title || 'Saved image',
+      alt: item?.title || (isVideo ? 'Saved video' : 'Saved image'),
+      title: item?.title || (isVideo ? 'Saved video' : 'Saved image'),
+      mediaKind: isVideo ? 'video' : 'image',
     })
   }
 
@@ -77,7 +82,20 @@ export default function MyGalleryPage() {
       src: '',
       alt: '',
       title: '',
+      mediaKind: 'image',
     })
+  }
+
+  const itemsBySectionId = {
+    looks: looksItems,
+    photo_lab: photoLabItems,
+    animate: animateItems,
+  }
+
+  const descriptionBySectionId = {
+    looks: 'Images saved from Create Your Look.',
+    photo_lab: 'Images saved from all Photo Lab modes.',
+    animate: 'Videos saved from Animate.',
   }
 
   return (
@@ -110,7 +128,7 @@ export default function MyGalleryPage() {
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
           Browse saved previews and download full-resolution exports from your
-          Looks and Photo Lab generations.
+          Looks, Photo Lab, and Animate generations.
         </Text>
       </div>
 
@@ -119,16 +137,8 @@ export default function MyGalleryPage() {
           <GallerySectionSlider
             key={section.id}
             title={section.label}
-            description={
-              section.id === 'looks'
-                ? 'Images saved from Create Your Look.'
-                : 'Images saved from all Photo Lab modes.'
-            }
-            items={
-              section.id === 'looks'
-                ? looksItems
-                : photoLabItems
-            }
+            description={descriptionBySectionId[section.id] || ''}
+            items={itemsBySectionId[section.id] || []}
             deleteLoadingId={deleteLoadingId}
             onDelete={handleDeleteRequest}
             onPreview={handlePreview}
@@ -151,7 +161,12 @@ export default function MyGalleryPage() {
       <ConfirmModal
         open={Boolean(pendingDeleteItem)}
         elevated
-        title="Delete saved image?"
+        title={
+          String(pendingDeleteItem?.mimeType || '').startsWith('video/') ||
+          pendingDeleteItem?.format === 'mp4'
+            ? 'Delete saved video?'
+            : 'Delete saved image?'
+        }
         description="This will remove the preview and full export from your gallery."
         detail={pendingDeleteItem?.title || null}
         confirmLabel="Delete"
@@ -168,6 +183,7 @@ export default function MyGalleryPage() {
         src={previewModal.src}
         alt={previewModal.alt}
         title={previewModal.title}
+        mediaKind={previewModal.mediaKind}
       />
     </div>
   )

@@ -7,14 +7,16 @@ import { HoverTip } from '@/components/shared/info-hint/InfoHint'
 import { getLockedText } from '@/hooks/useGenerationPlanAccess'
 
 const SECTION_TITLE_LABEL_CLASS = 'text-lg font-semibold text-white md:text-xl'
-const FIELD_CONTROL_HEIGHT = 52
+const FIELD_CONTROL_HEIGHT = 40
 
-function formatLockedOptionLabel(option) {
+function formatLockedOptionLabel(option, { context } = {}) {
+  const showDescription = context === 'menu' && Boolean(option.description)
+
   return (
     <span className="flex w-full items-center justify-between gap-3">
       <span className="flex min-w-0 flex-col gap-px text-left">
         <span className="font-medium leading-5">{option.label}</span>
-        {option.description ? (
+        {showDescription ? (
           <span className="text-xs leading-4 text-white/55">
             {option.description}
           </span>

@@ -41,6 +41,8 @@ export default function GalleryImageCard({
 }) {
   const [downloading, setDownloading] = useState(false)
   const previewSrc = item?.previewUrl || item?.imageUrl || ''
+  const isVideo =
+    String(item?.mimeType || '').startsWith('video/') || item?.format === 'mp4'
   const metaParts = buildGalleryMetaParts(item)
 
   const handleDownload = async () => {
@@ -85,17 +87,28 @@ export default function GalleryImageCard({
               <button
                 type="button"
                 onClick={() => onPreview?.(item)}
-                aria-label={`Open ${item?.title || 'saved image'} preview`}
+                aria-label={`Open ${item?.title || (isVideo ? 'saved video' : 'saved image')} preview`}
                 className="absolute inset-0 z-[1] cursor-zoom-in"
               />
 
-              <Photo
-                src={previewSrc}
-                alt={item?.title || 'Saved image'}
-                fill
-                sizes="(max-width: 640px) 90vw, 320px"
-                className="object-[50%_5%]"
-              />
+              {isVideo ? (
+                <video
+                  src={previewSrc}
+                  muted
+                  playsInline
+                  loop
+                  autoPlay
+                  className="absolute inset-0 h-full w-full object-cover object-center"
+                />
+              ) : (
+                <Photo
+                  src={previewSrc}
+                  alt={item?.title || 'Saved image'}
+                  fill
+                  sizes="(max-width: 640px) 90vw, 320px"
+                  className="object-[50%_5%]"
+                />
+              )}
             </>
           ) : (
             <div className="flex h-full items-center justify-center text-foreground-faint">

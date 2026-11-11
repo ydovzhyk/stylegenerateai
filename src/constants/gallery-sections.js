@@ -14,6 +14,11 @@ export const GALLERY_SECTIONS = [
       'color_to_bw',
     ],
   },
+  {
+    id: 'animate',
+    label: 'Animate',
+    sourceTypes: ['animate_video'],
+  },
 ]
 
 export const RESTORE_COLORIZE_MODE = 'restore_colorize'

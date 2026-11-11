@@ -27,7 +27,9 @@ export default function ImagePreviewModal({
   src,
   alt = 'Preview image',
   title = 'Image preview',
+  mediaKind = 'image',
 }) {
+  const isVideo = mediaKind === 'video'
   const viewportRef = useRef(null)
   const imageRef = useRef(null)
 
@@ -168,7 +170,7 @@ export default function ImagePreviewModal({
   if (!open || !src) return null
 
   const zoomPercent = Math.round(zoom * 100)
-  const canPan = zoom > MIN_ZOOM
+  const canPan = !isVideo && zoom > MIN_ZOOM
 
   return (
     <div
@@ -212,90 +214,113 @@ export default function ImagePreviewModal({
                 : 'cursor-grab'
               : 'cursor-default'
           }`}
-          onPointerDown={handlePointerDown}
+          onPointerDown={isVideo ? undefined : handlePointerDown}
         >
           <div className="flex h-[min(72vh,760px)] w-full items-center justify-center p-3">
-            <img
-              ref={imageRef}
-              src={src}
-              alt={alt}
-              draggable={false}
-              onLoad={() => setPan((current) => clampPan(current, zoom))}
-              className="max-h-full max-w-full select-none rounded-[20px] object-contain shadow-xl transition-transform duration-150 ease-out"
-              style={{
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: 'center center',
-              }}
-            />
+            {isVideo ? (
+              <video
+                src={src}
+                controls
+                playsInline
+                autoPlay
+                className="max-h-full max-w-full rounded-[20px] object-contain shadow-xl"
+              />
+            ) : (
+              <img
+                ref={imageRef}
+                src={src}
+                alt={alt}
+                draggable={false}
+                onLoad={() => setPan((current) => clampPan(current, zoom))}
+                className="max-h-full max-w-full select-none rounded-[20px] object-contain shadow-xl transition-transform duration-150 ease-out"
+                style={{
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: 'center center',
+                }}
+              />
+            )}
           </div>
         </div>
 
-        <div className="relative z-10 flex shrink-0 flex-col gap-3 border-t border-white/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <Text
-            as="p"
-            variant="caption"
-            color="muted"
-            caseMode="sentence"
-            className="hidden sm:block"
-          >
-            {canPan
-              ? 'Drag the image to move it inside the preview.'
-              : 'Use zoom controls to inspect image details.'}
-          </Text>
-
-          <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              iconOnly
-              onClick={() => updateZoom(zoom - ZOOM_STEP)}
-              disabled={zoom <= MIN_ZOOM}
-              aria-label="Zoom out"
-              className={ICON_BUTTON_CLASS}
-              leftIcon={<Minus size={16} />}
-            />
-
-            <input
-              type="range"
-              min={MIN_ZOOM * 100}
-              max={MAX_ZOOM * 100}
-              step={ZOOM_STEP * 100}
-              value={zoomPercent}
-              onChange={(e) => updateZoom(Number(e.target.value) / 100)}
-              aria-label="Zoom level"
-              className="h-1.5 w-full min-w-[140px] max-w-[220px] cursor-pointer appearance-none rounded-full bg-white/10 accent-[#7c5cff] sm:w-[180px]"
-            />
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              iconOnly
-              onClick={() => updateZoom(zoom + ZOOM_STEP)}
-              disabled={zoom >= MAX_ZOOM}
-              aria-label="Zoom in"
-              className={ICON_BUTTON_CLASS}
-              leftIcon={<Plus size={16} />}
-            />
-
-            <span className="min-w-[48px] text-center text-xs font-medium text-white/70">
-              {zoomPercent}%
-            </span>
-
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              iconOnly
-              onClick={resetView}
-              disabled={zoom <= MIN_ZOOM && pan.x === 0 && pan.y === 0}
-              aria-label="Reset zoom"
-              className={ICON_BUTTON_CLASS}
-              leftIcon={<RotateCcw size={15} />}
-            />
+        {isVideo ? (
+          <div className="relative z-10 border-t border-white/10 px-4 py-3">
+            <Text
+              as="p"
+              variant="caption"
+              color="muted"
+              caseMode="sentence"
+            >
+              Use the player controls to watch the saved clip.
+            </Text>
           </div>
-        </div>
+        ) : (
+          <div className="relative z-10 flex shrink-0 flex-col gap-3 border-t border-white/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <Text
+              as="p"
+              variant="caption"
+              color="muted"
+              caseMode="sentence"
+              className="hidden sm:block"
+            >
+              {canPan
+                ? 'Drag the image to move it inside the preview.'
+                : 'Use zoom controls to inspect image details.'}
+            </Text>
+
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                iconOnly
+                onClick={() => updateZoom(zoom - ZOOM_STEP)}
+                disabled={zoom <= MIN_ZOOM}
+                aria-label="Zoom out"
+                className={ICON_BUTTON_CLASS}
+                leftIcon={<Minus size={16} />}
+              />
+
+              <input
+                type="range"
+                min={MIN_ZOOM * 100}
+                max={MAX_ZOOM * 100}
+                step={ZOOM_STEP * 100}
+                value={zoomPercent}
+                onChange={(e) => updateZoom(Number(e.target.value) / 100)}
+                aria-label="Zoom level"
+                className="h-1.5 w-full min-w-[140px] max-w-[220px] cursor-pointer appearance-none rounded-full bg-white/10 accent-[#7c5cff] sm:w-[180px]"
+              />
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                iconOnly
+                onClick={() => updateZoom(zoom + ZOOM_STEP)}
+                disabled={zoom >= MAX_ZOOM}
+                aria-label="Zoom in"
+                className={ICON_BUTTON_CLASS}
+                leftIcon={<Plus size={16} />}
+              />
+
+              <span className="min-w-[48px] text-center text-xs font-medium text-white/70">
+                {zoomPercent}%
+              </span>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                iconOnly
+                onClick={resetView}
+                disabled={zoom <= MIN_ZOOM && pan.x === 0 && pan.y === 0}
+                aria-label="Reset zoom"
+                className={ICON_BUTTON_CLASS}
+                leftIcon={<RotateCcw size={15} />}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

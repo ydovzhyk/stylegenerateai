@@ -9,6 +9,7 @@ import Text from '@/components/shared/text/Text'
 import PreviewBadge from '@/components/shared/preview-badge/PreviewBadge'
 import ImagePreviewModal from '@/components/shared/image-preview-modal/ImagePreviewModal'
 import ConfirmModal from '@/components/shared/confirm-modal/ConfirmModal'
+import PromptReadMore from '@/components/shared/prompt-read-more/PromptReadMore'
 import Photo from '@/components/shared/photo/Photo'
 import {
   PhotoStackNavButtons,
@@ -130,7 +131,7 @@ function ReferencePhotoDeck({
           className="absolute inset-0 z-[3] cursor-zoom-in rounded-[18px]"
         />
 
-        <div className="pointer-events-none absolute left-2.5 top-2.5 z-[5]">
+        <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-[5]">
           <PreviewBadge tone="primary">
             {carousel.hasExtras
               ? `Reference ${carousel.safeStep + 1}/${carousel.maxStep + 1}`
@@ -151,13 +152,24 @@ function ReferencePhotoDeck({
   )
 }
 
+function listTemplatesForMode(grouped = {}, modeId = '') {
+  const list = grouped?.[modeId]
+  return (Array.isArray(list) ? list : []).filter((item) => item?.resultVideoUrl)
+}
+
+/** Alive photo first, then Author's vision — keeps the public round-robin order. */
 function flattenTemplatesByMode(grouped = {}) {
-  return ANIMATE_MODES.flatMap((mode) => {
-    const list = grouped?.[mode.id]
-    return (Array.isArray(list) ? list : []).filter(
-      (item) => item?.resultVideoUrl,
-    )
-  })
+  return ANIMATE_MODES.flatMap((mode) => listTemplatesForMode(grouped, mode.id))
+}
+
+function nextModeIdWithVideos(grouped = {}, fromModeId = '') {
+  const start = ANIMATE_MODES.findIndex((mode) => mode.id === fromModeId)
+  const offset = start >= 0 ? start : 0
+  for (let step = 1; step <= ANIMATE_MODES.length; step += 1) {
+    const mode = ANIMATE_MODES[(offset + step) % ANIMATE_MODES.length]
+    if (listTemplatesForMode(grouped, mode.id).length) return mode.id
+  }
+  return null
 }
 
 export default function AnimateShowcasePreview() {
@@ -241,15 +253,17 @@ export default function AnimateShowcasePreview() {
     }
   }, [])
 
+  const fullPlaylist = useMemo(
+    () => flattenTemplatesByMode(templatesByMode),
+    [templatesByMode],
+  )
+
   const templates = useMemo(() => {
     if (pinnedModeId) {
-      const list = templatesByMode?.[pinnedModeId]
-      return (Array.isArray(list) ? list : []).filter(
-        (item) => item?.resultVideoUrl,
-      )
+      return listTemplatesForMode(templatesByMode, pinnedModeId)
     }
-    return flattenTemplatesByMode(templatesByMode)
-  }, [pinnedModeId, templatesByMode])
+    return fullPlaylist
+  }, [fullPlaylist, pinnedModeId, templatesByMode])
 
   const featured = useMemo(() => {
     if (!templates.length) return null
@@ -261,7 +275,8 @@ export default function AnimateShowcasePreview() {
   const modeMeta = getModeMeta(highlightedModeId)
   const contentKey = `${featured?._id || featured?.resultVideoUrl || 'empty'}-${activeIndex}`
   const hasVideo = Boolean(featured?.resultVideoUrl)
-  const hasMultiple = templates.length > 1
+  // Rotate across the whole showcase, not only the currently pinned mode list.
+  const canRotatePlaylist = fullPlaylist.length > 1
   const referenceUrls = useMemo(() => {
     const fromArray = Array.isArray(featured?.referenceImageUrls)
       ? featured.referenceImageUrls
@@ -285,7 +300,7 @@ export default function AnimateShowcasePreview() {
   }, [activeIndex, templates.length])
 
   const goToNextTemplate = useCallback(() => {
-    if (!hasMultiple) return
+    if (!canRotatePlaylist) return
     syncAudioToFrameVideos(true, volume)
     videoFrameRef.current?.querySelectorAll('video').forEach((node) => {
       try {
@@ -294,8 +309,35 @@ export default function AnimateShowcasePreview() {
         // ignore
       }
     })
-    setActiveIndex((current) => (current + 1) % templates.length)
-  }, [hasMultiple, syncAudioToFrameVideos, templates.length, volume])
+
+    // Forced mode chip: play that mode once, then continue the round-robin
+    // (Author's vision → Alive photo → Author's vision…).
+    if (pinnedModeId) {
+      if (activeIndex + 1 < templates.length) {
+        setActiveIndex(activeIndex + 1)
+        return
+      }
+
+      const nextMode = nextModeIdWithVideos(templatesByMode, pinnedModeId)
+      const nextIndex = nextMode
+        ? fullPlaylist.findIndex((item) => item.mode === nextMode)
+        : 0
+      setPinnedModeId(null)
+      setActiveIndex(nextIndex >= 0 ? nextIndex : 0)
+      return
+    }
+
+    setActiveIndex((current) => (current + 1) % fullPlaylist.length)
+  }, [
+    activeIndex,
+    canRotatePlaylist,
+    fullPlaylist,
+    pinnedModeId,
+    syncAudioToFrameVideos,
+    templates.length,
+    templatesByMode,
+    volume,
+  ])
 
   const playFrameVideo = useCallback((resumeTime) => {
     const el = videoRef.current
@@ -385,7 +427,7 @@ export default function AnimateShowcasePreview() {
 
   const handleVideoEnded = () => {
     if (isVideoFullscreen) return
-    if (!hasMultiple) return
+    if (!canRotatePlaylist) return
     if (rotateTimeoutRef.current) {
       clearTimeout(rotateTimeoutRef.current)
     }
@@ -394,13 +436,29 @@ export default function AnimateShowcasePreview() {
     }, ROTATE_PAUSE_MS)
   }
 
-  const handleModeChipClick = useCallback((modeId) => {
-    if (rotateTimeoutRef.current) {
-      clearTimeout(rotateTimeoutRef.current)
-    }
-    setPinnedModeId((current) => (current === modeId ? null : modeId))
-    setActiveIndex(0)
-  }, [])
+  const handleModeChipClick = useCallback(
+    (modeId) => {
+      if (rotateTimeoutRef.current) {
+        clearTimeout(rotateTimeoutRef.current)
+      }
+      const modeList = listTemplatesForMode(templatesByMode, modeId)
+      if (!modeList.length) return
+
+      setPinnedModeId((current) => {
+        if (current === modeId) {
+          // Unpin → resume full Alive → Author's vision playlist from this mode.
+          const resumeIndex = fullPlaylist.findIndex(
+            (item) => item.mode === modeId,
+          )
+          setActiveIndex(resumeIndex >= 0 ? resumeIndex : 0)
+          return null
+        }
+        setActiveIndex(0)
+        return modeId
+      })
+    },
+    [fullPlaylist, templatesByMode],
+  )
 
   const openReferencePreview = useCallback((src) => {
     const nextSrc = String(src || '').trim()
@@ -428,7 +486,7 @@ export default function AnimateShowcasePreview() {
 
     fullscreenResumeRef.current = {
       shouldAdvance: Boolean(
-        hasMultiple && (hadPendingRotate || el?.ended),
+        canRotatePlaylist && (hadPendingRotate || el?.ended),
       ),
       resumeTime: el && !el.ended ? Number(el.currentTime) || 0 : 0,
     }
@@ -441,7 +499,7 @@ export default function AnimateShowcasePreview() {
       }
     })
     setIsVideoFullscreen(true)
-  }, [featured?.resultVideoUrl, hasMultiple])
+  }, [featured?.resultVideoUrl, canRotatePlaylist])
 
   const closeVideoFullscreen = useCallback(() => {
     const fs = fullscreenVideoRef.current
@@ -451,7 +509,7 @@ export default function AnimateShowcasePreview() {
         shouldAdvance: false,
         resumeTime: Number(fs.currentTime) || 0,
       }
-    } else if (!resume.shouldAdvance && fs?.ended && hasMultiple) {
+    } else if (!resume.shouldAdvance && fs?.ended && canRotatePlaylist) {
       fullscreenResumeRef.current = {
         shouldAdvance: true,
         resumeTime: 0,
@@ -459,7 +517,7 @@ export default function AnimateShowcasePreview() {
     }
     skipNextFramePlayRef.current = true
     setIsVideoFullscreen(false)
-  }, [hasMultiple])
+  }, [canRotatePlaylist])
 
   useEffect(() => {
     if (!isVideoFullscreen) return
@@ -484,7 +542,7 @@ export default function AnimateShowcasePreview() {
     if (!wasFullscreen || isVideoFullscreen || !hasVideo) return
 
     const resume = fullscreenResumeRef.current
-    if (resume.shouldAdvance && hasMultiple) {
+    if (resume.shouldAdvance && canRotatePlaylist) {
       fullscreenResumeRef.current = { shouldAdvance: false, resumeTime: 0 }
       goToNextTemplate()
       return
@@ -497,7 +555,7 @@ export default function AnimateShowcasePreview() {
     )
   }, [
     goToNextTemplate,
-    hasMultiple,
+    canRotatePlaylist,
     hasVideo,
     isVideoFullscreen,
     playFrameVideo,
@@ -618,17 +676,22 @@ export default function AnimateShowcasePreview() {
                 <Text as="h2" variant="h2" color="white" caseMode="sentence">
                   {featured?.title || modeMeta.title || FALLBACK.title}
                 </Text>
-                <Text
-                  as="p"
-                  variant="body-sm"
-                  color="muted"
-                  caseMode="sentence"
-                  className="mt-3 max-w-xl leading-6 line-clamp-6"
-                >
-                  {featured?.prompt ||
+                <PromptReadMore
+                  prompt={
+                    featured?.prompt ||
                     modeMeta.description ||
-                    FALLBACK.description}
-                </Text>
+                    FALLBACK.description
+                  }
+                  label=""
+                  modalTitle={
+                    featured?.title
+                      ? `${featured.title} · prompt`
+                      : 'Full prompt'
+                  }
+                  clampLines={6}
+                  className="mt-3 max-w-xl"
+                  textClassName="leading-6"
+                />
               </motion.div>
             </AnimatePresence>
           </div>
@@ -712,7 +775,7 @@ export default function AnimateShowcasePreview() {
                         muted={isMuted}
                         playsInline
                         autoPlay
-                        loop={!hasMultiple}
+                        loop={!canRotatePlaylist}
                         onEnded={handleVideoEnded}
                         className="h-full w-full object-cover object-center"
                       />

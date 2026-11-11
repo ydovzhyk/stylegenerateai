@@ -10,6 +10,7 @@ const initialState = {
   itemsBySection: {
     looks: [],
     photo_lab: [],
+    animate: [],
   },
   loading: false,
   listLoading: false,
@@ -50,6 +51,8 @@ const generatedImageSlice = createSlice({
 
           if (payload.generatedImage.sourceType === 'create_your_look') {
             state.itemsBySection.looks.unshift(payload.generatedImage)
+          } else if (payload.generatedImage.sourceType === 'animate_video') {
+            state.itemsBySection.animate.unshift(payload.generatedImage)
           } else {
             state.itemsBySection.photo_lab.unshift(payload.generatedImage)
           }
@@ -89,6 +92,9 @@ const generatedImageSlice = createSlice({
           (item) => item._id !== payload.id,
         )
         state.itemsBySection.photo_lab = state.itemsBySection.photo_lab.filter(
+          (item) => item._id !== payload.id,
+        )
+        state.itemsBySection.animate = state.itemsBySection.animate.filter(
           (item) => item._id !== payload.id,
         )
       })

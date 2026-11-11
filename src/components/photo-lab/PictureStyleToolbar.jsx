@@ -40,7 +40,7 @@ export default function PictureStyleToolbar({
             <label
               key={styleId}
               className={clsx(
-                'flex cursor-pointer items-center gap-3 overflow-visible rounded-2xl border px-4 py-3 transition',
+                'flex h-10 min-h-10 cursor-pointer items-center gap-3 overflow-visible rounded-2xl border px-4 py-0 transition',
                 active
                   ? 'border-primary/35 bg-primary/10'
                   : 'border-white/10 bg-white/[0.03] hover:border-white/15',

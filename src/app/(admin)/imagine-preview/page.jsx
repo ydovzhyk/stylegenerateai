@@ -1,4 +1,5 @@
 import Text from '@/components/shared/text/Text'
+import AdminImageProviderSwitch from '@/components/admin/AdminImageProviderSwitch'
 import ImaginePreviewTester from '@/components/admin/imagine-admin/ImaginePreviewTester'
 
 export const metadata = {
@@ -9,7 +10,7 @@ export const metadata = {
 export default function ImaginePreviewPage() {
   return (
     <div>
-      <div className="mb-6 max-w-3xl sm:mb-7 md:mb-8">
+      <div className="mb-5 max-w-3xl sm:mb-6">
         <Text
           as="p"
           variant="caption"
@@ -39,6 +40,8 @@ export default function ImaginePreviewPage() {
           Test Imagine modes and save showcase templates for the public preview.
         </Text>
       </div>
+
+      <AdminImageProviderSwitch className="mb-5 sm:mb-6 md:mb-7" />
 
       <ImaginePreviewTester />
     </div>

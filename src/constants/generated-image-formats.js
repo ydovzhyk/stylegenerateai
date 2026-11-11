@@ -22,6 +22,14 @@ export const GENERATED_IMAGE_FORMATS = {
     extension: 'webp',
     description: 'Modern format',
   },
+
+  mp4: {
+    id: 'mp4',
+    label: 'MP4',
+    mimeType: 'video/mp4',
+    extension: 'mp4',
+    description: 'Video clip',
+  },
 }
 
 export const DEFAULT_GENERATED_IMAGE_FORMAT = 'png'

@@ -30,9 +30,10 @@ export const WORKSPACE_PREP_SETTINGS_CLASSNAME =
 /**
  * Block 2 - Export size + User prompt.
  * Mobile: full height, no inner scroll. md+: flex fill + scroll when needed.
+ * scrollbar-gutter + pr keep controls clear of the themed scrollbar thumb.
  */
 export const WORKSPACE_PREP_OPTIONS_CLASSNAME =
-  'flex flex-col gap-4 overflow-x-hidden overflow-y-visible md:min-h-0 md:flex-1 md:overflow-y-auto'
+  'flex flex-col gap-4 overflow-x-hidden overflow-y-visible md:min-h-0 md:flex-1 md:overflow-y-auto md:pr-3 md:[scrollbar-gutter:stable]'
 
 /**
  * Content-sized prompt (height comes from textarea JS).

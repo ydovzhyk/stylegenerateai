@@ -1,4 +1,5 @@
 import ReadyTemplateForm from '@/components/ready-template/ReadyTemplateForm'
+import AdminImageProviderSwitch from '@/components/admin/AdminImageProviderSwitch'
 import Text from '@/components/shared/text/Text'
 
 export const metadata = {
@@ -9,7 +10,7 @@ export const metadata = {
 export default function ReadyTemplatePage() {
   return (
     <div>
-      <div className="mb-6 max-w-3xl sm:mb-7 md:mb-8">
+      <div className="mb-5 max-w-3xl sm:mb-6">
         <Text
           as="p"
           variant="caption"
@@ -40,6 +41,8 @@ export default function ReadyTemplatePage() {
           internal library of reusable styles.
         </Text>
       </div>
+
+      <AdminImageProviderSwitch className="mb-5 sm:mb-6 md:mb-7" />
 
       <ReadyTemplateForm />
     </div>

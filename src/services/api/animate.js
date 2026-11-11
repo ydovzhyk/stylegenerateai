@@ -4,11 +4,26 @@ import { resolveGenerationResponse } from './generation-job'
 export async function axiosGenerateAnimateVideo(formData) {
   const { data } = await instance.post('/animate/generate', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    // Kling jobs can take several minutes.
+    // Video jobs can take several minutes.
     timeout: 10 * 60 * 1000,
   })
 
   return resolveGenerationResponse(data, formData)
+}
+
+export async function axiosGetAnimateConfig() {
+  const { data } = await instance.get('/animate/config')
+  return data
+}
+
+export async function axiosGetAnimateSettings() {
+  const { data } = await instance.get('/animate/settings')
+  return data
+}
+
+export async function axiosUpdateAnimateSettings(payload) {
+  const { data } = await instance.put('/animate/settings', payload)
+  return data
 }
 
 export async function axiosGetAnimateStats() {

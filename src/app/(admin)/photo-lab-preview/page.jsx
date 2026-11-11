@@ -1,4 +1,5 @@
 import Text from '@/components/shared/text/Text'
+import AdminImageProviderSwitch from '@/components/admin/AdminImageProviderSwitch'
 import PhotoLabPreviewTester from '@/components/admin/photo-lab-admin/PhotoLabPreviewTester'
 
 export const metadata = {
@@ -9,7 +10,7 @@ export const metadata = {
 export default function PhotoLabPreviewPage() {
   return (
     <div>
-      <div className="mb-6 max-w-3xl sm:mb-7 md:mb-8">
+      <div className="mb-5 max-w-3xl sm:mb-6">
         <Text
           as="p"
           variant="caption"
@@ -40,6 +41,8 @@ export default function PhotoLabPreviewPage() {
           before using them on the public page.
         </Text>
       </div>
+
+      <AdminImageProviderSwitch className="mb-5 sm:mb-6 md:mb-7" />
 
       <PhotoLabPreviewTester />
     </div>

@@ -1898,7 +1898,7 @@ export default function AiImageWorkspace({
               disabled={source.disabled}
               fullWidth
               onClick={source.onClick}
-              className="justify-start gap-3 px-4 py-3 font-medium"
+              className="h-10 min-h-10 justify-start gap-3 px-4 font-medium"
               leftIcon={
                 <span
                   aria-hidden
@@ -1966,7 +1966,7 @@ export default function AiImageWorkspace({
               disabled={source.disabled}
               fullWidth
               onClick={source.onClick}
-              className="justify-start gap-3 px-4 py-3 font-medium"
+              className="h-10 min-h-10 justify-start gap-3 px-4 font-medium"
               leftIcon={
                 <span
                   aria-hidden

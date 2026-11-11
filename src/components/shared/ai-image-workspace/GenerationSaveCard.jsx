@@ -10,14 +10,16 @@ import InfoHint, { HoverTip } from '@/components/shared/info-hint/InfoHint'
 import { useTranslate } from '@/utils/translate/translate'
 
 const SUB_BLOCK_LABEL_CLASS = 'text-base font-medium text-white'
-const SAVE_FIELD_CONTROL_HEIGHT = 52
+const SAVE_FIELD_CONTROL_HEIGHT = 40
 
-function formatLockedOptionLabel(option) {
+function formatLockedOptionLabel(option, { context } = {}) {
+  const showDescription = context === 'menu' && Boolean(option.description)
+
   return (
     <span className="flex w-full items-center justify-between gap-3">
       <span className="flex min-w-0 flex-col gap-px text-left">
         <span className="font-medium leading-5">{option.label}</span>
-        {option.description ? (
+        {showDescription ? (
           <span className="text-xs leading-4 text-white/55">
             {option.description}
           </span>
@@ -65,6 +67,10 @@ export default function GenerationSaveCard({
   showFileFormat = true,
   showGallerySave = true,
   downloadOptionsTitle = 'Download options',
+  titleLabel = 'Image title',
+  titlePlaceholder = 'My generated look',
+  titleInputId = 'generated-image-title',
+  gallerySaveHint = 'The image will be saved before downloading.',
   buttonDownload = 'Download',
   buttonDownloadProcessing = 'Processing…',
   printExportProcessingHint = "We're preparing your file format. Please wait - this may take a little while.",
@@ -114,13 +120,13 @@ export default function GenerationSaveCard({
 
       <fieldset disabled={!active} className="min-w-0 disabled:pointer-events-none">
         <Input
-          id="generated-image-title"
-          label="Image title"
+          id={titleInputId}
+          label={titleLabel}
           labelClassName={SUB_BLOCK_LABEL_CLASS}
-          placeholder="My generated look"
+          placeholder={titlePlaceholder}
           value={imageTitle}
           onChange={(e) => setImageTitle?.(e.target.value)}
-          inputClassName="h-[52px]"
+          inputClassName="h-10 min-h-10 py-0"
         />
 
         {showFileFormatSelect ? (
@@ -171,7 +177,7 @@ export default function GenerationSaveCard({
                 </label>
               </div>
               <InfoHint
-                text="The image will be saved before downloading."
+                text={gallerySaveHint}
                 label="Save to gallery hint"
                 align="end"
                 placement="bottom"
@@ -185,7 +191,7 @@ export default function GenerationSaveCard({
               caseMode="sentence"
               className="mt-4"
             >
-              Sign in to save this image to your gallery.
+              Sign in to save this to your gallery.
             </Text>
           )
         ) : null}

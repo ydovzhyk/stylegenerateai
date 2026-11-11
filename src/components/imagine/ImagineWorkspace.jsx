@@ -99,7 +99,7 @@ function SizeField({ id, label, value, onChange, suffix }) {
       <Text as="span" variant="caption" color="faint" caseMode="sentence">
         {label}
       </Text>
-      <span className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+      <span className="flex h-10 min-h-10 items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-0">
         <input
           id={id}
           type="number"
@@ -127,7 +127,7 @@ function SourceButton({ label, uploaded, disabled, onClick }) {
       disabled={disabled}
       fullWidth
       onClick={onClick}
-      className="justify-start gap-3 px-4 py-3 font-medium"
+      className="h-10 min-h-10 justify-start gap-3 px-4 font-medium"
       leftIcon={
         <span
           aria-hidden
@@ -158,7 +158,7 @@ function ChoiceGrid({ items, activeId, onSelect, disabled }) {
           disabled={disabled}
           fullWidth
           onClick={() => onSelect(item.id)}
-          className="justify-start px-4 py-3 text-left font-medium"
+          className="h-10 min-h-10 justify-start px-4 text-left font-medium"
         >
           {item.label}
         </Button>
