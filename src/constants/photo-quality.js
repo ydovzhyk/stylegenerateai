@@ -8,21 +8,20 @@ export const PHOTO_QUALITIES = {
   standard: {
     id: 'standard',
     label: 'Standard',
-    description: 'Phone-ready generation size for everyday use and sharing.',
+    description: 'Phone-ready size for everyday viewing and sharing.',
   },
 
   premium: {
     id: 'premium',
     label: 'Premium',
-    description:
-      'Higher native resolution for wallpapers and small prints.',
+    description: 'Computer / monitor resolution for wallpapers and detail.',
   },
 
   print: {
     id: 'print',
     label: 'Print',
     description:
-      'Maximum native resolution (up to ~3840 on the long edge) for posters and archive use.',
+      'Largest native file for posters and archive (provider max tier).',
     requiresPrintJob: false,
   },
 }

@@ -13,6 +13,7 @@ import {
 } from '@/store/ready-template/ready-template-selectors'
 
 import Button from '@/components/shared/button/Button'
+import Checkbox from '@/components/shared/checkbox/Checkbox'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
 import Text from '@/components/shared/text/Text'
@@ -296,11 +297,9 @@ export default function ReadyTemplateAutogeneratePanel() {
         )}
 
         <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={dryRun}
             onChange={(e) => setDryRun(e.target.checked)}
-            className="h-4 w-4 accent-[var(--primary)]"
           />
 
           <Text as="span" variant="body-sm" color="soft" caseMode="sentence">

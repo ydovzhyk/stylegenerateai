@@ -49,8 +49,10 @@ export default function Select({
   isOptionDisabled,
   required = false,
   menuPlacement = 'bottom',
+  menuMinWidth,
   hideHelp = false,
   controlMinHeight = 40,
+  indicatorsCompact = false,
 
   classNamePrefix = 'sg-select',
   components,
@@ -95,7 +97,10 @@ export default function Select({
     [components],
   )
 
-  const resolvedControlMinHeight = Math.max(40, Number(controlMinHeight) || 40)
+  const resolvedControlMinHeight = Math.max(
+    32,
+    Number(controlMinHeight) || 40,
+  )
   const valuePaddingY =
     resolvedControlMinHeight >= 52
       ? '0.375rem'
@@ -113,6 +118,7 @@ export default function Select({
       control: (base) => ({
         ...base,
         minHeight: `${resolvedControlMinHeight}px`,
+        height: `${resolvedControlMinHeight}px`,
         borderRadius: '1rem',
         background: 'rgba(255, 255, 255, 0.04)',
         border: isActive
@@ -126,7 +132,7 @@ export default function Select({
             ? '0 0 0 1px rgba(239, 68, 68, 0.12)'
             : 'none',
         cursor: isDisabled ? 'not-allowed' : 'pointer',
-        transition: 'all 0.2s ease',
+        transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
         '&:hover': {
           borderColor: isActive
             ? 'rgba(124, 92, 255, 0.9)'
@@ -165,8 +171,8 @@ export default function Select({
       dropdownIndicator: (base) => ({
         ...base,
         color: 'var(--text-faint)',
-        paddingLeft: '0.5rem',
-        paddingRight: '0.875rem',
+        paddingLeft: indicatorsCompact ? '0.35rem' : '0.5rem',
+        paddingRight: indicatorsCompact ? '0.55rem' : '0.875rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -178,6 +184,7 @@ export default function Select({
       clearIndicator: (base) => ({
         ...base,
         color: 'var(--text-faint)',
+        padding: indicatorsCompact ? '0 2px 0 4px' : '0 8px',
         '&:hover': {
           color: 'var(--text-soft)',
         },
@@ -193,6 +200,7 @@ export default function Select({
           'linear-gradient(180deg, rgba(20, 23, 32, 0.96), rgba(17, 19, 26, 0.98))',
         boxShadow:
           '0 18px 40px rgba(0,0,0,0.38), 0 0 0 1px rgba(124,92,255,0.08)',
+        ...(menuMinWidth ? { minWidth: menuMinWidth } : null),
       }),
 
       menuList: (base) => ({
@@ -235,6 +243,8 @@ export default function Select({
       isDisabled,
       resolvedControlMinHeight,
       valuePaddingY,
+      menuMinWidth,
+      indicatorsCompact,
     ],
   )
 

@@ -31,6 +31,7 @@ import {
 import ReadyTemplateAutogeneratePanel from '@/components/ready-template/ReadyTemplateAutogeneratePanel'
 
 import Button from '@/components/shared/button/Button'
+import Checkbox from '@/components/shared/checkbox/Checkbox'
 import Input from '@/components/shared/input/Input'
 import Photo from '@/components/shared/photo/Photo'
 import Select from '@/components/shared/select/Select'
@@ -837,11 +838,7 @@ export default function ReadyTemplateForm() {
           />
 
           <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
-            <input
-              type="checkbox"
-              {...register('isPublished')}
-              className="h-4 w-4 accent-[var(--primary)]"
-            />
+            <Checkbox {...register('isPublished')} />
 
             <Text as="span" variant="body-sm" color="soft" caseMode="sentence">
               Published in gallery
@@ -849,11 +846,9 @@ export default function ReadyTemplateForm() {
           </label>
 
           <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-background-soft/80 px-4 py-3">
-            <input
-              type="checkbox"
+            <Checkbox
               {...register('useInCreateYourLook')}
               disabled={!watchedPreviewSourceKey}
-              className="h-4 w-4 accent-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-50"
             />
 
             <div className="flex flex-col">

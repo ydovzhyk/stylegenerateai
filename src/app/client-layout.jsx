@@ -31,6 +31,8 @@ const ClientLayout = ({ children }) => {
     { href: '/photo-lab-preview', label: 'Photo Lab Preview' },
     { href: '/imagine-preview', label: 'Imagine Preview' },
     { href: '/animate-preview', label: 'Animate Preview' },
+    { href: '/cost-report', label: 'Cost Report' },
+    { href: '/error-logs', label: 'Error Logs' },
   ]
 
   return (

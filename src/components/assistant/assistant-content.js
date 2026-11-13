@@ -4,7 +4,7 @@ import { IMAGINE_MODES } from '@/constants/imagine'
 export const PRODUCT_NAME = 'AI Style Generator'
 
 export const EXPORT_SIZE_ASSISTANT_HINT =
-  '**Export size** - choose above the prompt before Generate: Standard = phone-ready, Premium = higher native resolution, Print = max native size (up to ~3840). Pick PNG / JPG / WebP on Download.'
+  '**Export size** - choose above the prompt before Generate: Standard = phone, Premium = computer/monitor, Print = largest file for posters. Pick PNG / JPG / WebP on Download.'
 
 export const ASSISTANT_CONTENT = {
   welcomeBubble:

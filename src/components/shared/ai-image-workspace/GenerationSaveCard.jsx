@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { Download, Lock } from 'lucide-react'
 import Text from '@/components/shared/text/Text'
 import Button from '@/components/shared/button/Button'
+import Checkbox from '@/components/shared/checkbox/Checkbox'
 import Input from '@/components/shared/input/Input'
 import Select from '@/components/shared/select/Select'
 import InfoHint, { HoverTip } from '@/components/shared/info-hint/InfoHint'
@@ -155,12 +156,10 @@ export default function GenerationSaveCard({
           isLogin ? (
             <div className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <input
+                <Checkbox
                   id="save-generated-image"
-                  type="checkbox"
                   checked={saveToGallery}
                   onChange={(e) => setSaveToGallery?.(e.target.checked)}
-                  className="h-4 w-4 accent-primary"
                 />
                 <label
                   htmlFor="save-generated-image"
