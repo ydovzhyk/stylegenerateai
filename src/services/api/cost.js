@@ -22,19 +22,7 @@ export async function axiosDeleteCostUsage(ids = []) {
   return data
 }
 
-export async function axiosGetCostRates(params = {}) {
-  const { data } = await instance.get('/cost/rates', { params })
-  return data
-}
-
 export async function axiosPostCostRate(payload) {
   const { data } = await instance.post('/cost/rates', payload)
-  return data
-}
-
-export async function axiosDeleteCostRates(ids = []) {
-  const { data } = await instance.delete('/cost/rates', {
-    data: { ids },
-  })
   return data
 }

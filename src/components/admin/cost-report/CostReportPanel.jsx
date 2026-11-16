@@ -10,14 +10,13 @@ import Select from '@/components/shared/select/Select'
 
 const USAGE_PAGE_SIZE = 20
 import {
-  axiosDeleteCostRates,
   axiosDeleteCostUsage,
   axiosGetCostBalances,
-  axiosGetCostRates,
   axiosGetCostReport,
   axiosPostCostBalance,
   axiosPostCostRate,
 } from '@/services/api/cost'
+import { notifyError, notifySuccess } from '@/providers/ToastListener'
 
 function CompactClearIndicator({ innerProps, isFocused, selectProps }) {
   const isActive = Boolean(isFocused || selectProps?.menuIsOpen)
@@ -66,8 +65,8 @@ function emptyRateForm(provider = 'openai') {
     modeId: 'ready_template',
     photoQualityId: 'standard',
     model: '',
-    avgCostUsd: '',
-    sampleCount: '',
+    avgCostUsd: '0',
+    avgTotalTokens: '0',
     note: '',
   }
 }
@@ -78,19 +77,20 @@ function inferRateFieldsFromReport(report) {
     (row) => String(row?.status || '').toLowerCase() === 'succeeded',
   )
   const source = succeeded[0] || rows[0] || null
+  const avgTotal = report?.usage?.tokens?.avgTotalTokens
   return {
     productKey: source?.productKey || 'ready_template',
     modeId: source?.modeId || source?.productKey || 'ready_template',
     photoQualityId: source?.photoQualityId || 'standard',
     model: source?.model || '',
-    sampleCount:
-      report?.usage?.succeededCount != null
-        ? String(report.usage.succeededCount)
-        : '',
+    avgTotalTokens:
+      avgTotal != null && Number.isFinite(Number(avgTotal)) && Number(avgTotal) > 0
+        ? String(Number(avgTotal).toFixed(1))
+        : '0',
     avgCostUsd:
       report?.estimatedAvgCostUsd != null
         ? String(Number(report.estimatedAvgCostUsd).toFixed(6))
-        : '',
+        : '0',
   }
 }
 
@@ -177,6 +177,24 @@ function formatDateTime(value) {
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleString()
+}
+
+/** Local calendar day key for When filter (YYYY-MM-DD). */
+function toLocalDateKey(value) {
+  if (!value) return ''
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return ''
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function formatDateDay(value) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString()
 }
 
 function emptyBalanceInputs() {
@@ -318,7 +336,8 @@ export default function CostReportPanel() {
   const [provider, setProvider] = useState('openai')
   const [fromDate, setFromDate] = useState(weekAgo)
   const [toDate, setToDate] = useState(today)
-  const [balanceFromDate, setBalanceFromDate] = useState(today)
+  const [balanceFromDate, setBalanceFromDate] = useState(weekAgo)
+  const [balanceToDate, setBalanceToDate] = useState(today)
 
   const [balanceInputs, setBalanceInputs] = useState(emptyBalanceInputs)
   const [recordedAt, setRecordedAt] = useState(today)
@@ -326,16 +345,12 @@ export default function CostReportPanel() {
 
   const [report, setReport] = useState(null)
   const [balances, setBalances] = useState([])
-  const [rates, setRates] = useState([])
   const [rateForm, setRateForm] = useState(() => emptyRateForm('openai'))
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingRate, setSavingRate] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [deletingRateId, setDeletingRateId] = useState('')
   const [error, setError] = useState('')
-  const [saveMessage, setSaveMessage] = useState('')
-  const [rateMessage, setRateMessage] = useState('')
 
   const [filters, setFilters] = useState({
     when: '',
@@ -359,15 +374,6 @@ export default function CostReportPanel() {
     }
   }, [])
 
-  const loadRates = useCallback(async () => {
-    try {
-      const data = await axiosGetCostRates()
-      setRates(Array.isArray(data?.rates) ? data.rates : [])
-    } catch {
-      // keep existing rates if refresh fails
-    }
-  }, [])
-
   const loadReport = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -380,12 +386,13 @@ export default function CostReportPanel() {
       const balanceParams = {
         provider,
         from: startOfDayIso(balanceFromDate) || undefined,
-        to: endOfDayIso(toDate) || undefined,
+        to: endOfDayIso(balanceToDate) || undefined,
       }
       const [reportData, balanceData] = await Promise.all([
         axiosGetCostReport({
           ...usageParams,
           balanceFrom: balanceParams.from,
+          balanceTo: balanceParams.to,
         }),
         axiosGetCostBalances({ ...balanceParams, limit: 20 }),
       ])
@@ -394,19 +401,17 @@ export default function CostReportPanel() {
       setSelectedIds(new Set())
       setUsagePage(1)
     } catch (err) {
-      setError(String(err?.message || 'Failed to load cost report'))
+      const message = String(err?.message || 'Failed to load cost report')
+      setError(message)
+      notifyError(message)
     } finally {
       setLoading(false)
     }
-  }, [provider, fromDate, toDate, balanceFromDate])
+  }, [provider, fromDate, toDate, balanceFromDate, balanceToDate])
 
   useEffect(() => {
     loadLatestBalancesIntoForm()
   }, [loadLatestBalancesIntoForm])
-
-  useEffect(() => {
-    loadRates()
-  }, [loadRates])
 
   useEffect(() => {
     loadReport()
@@ -424,7 +429,6 @@ export default function CostReportPanel() {
     event.preventDefault()
     if (saving) return
     setSaving(true)
-    setSaveMessage('')
     setError('')
     try {
       const balancesPayload = PROVIDERS.map((item) => ({
@@ -433,7 +437,9 @@ export default function CostReportPanel() {
       })).filter((item) => String(item.balanceUsd || '').trim() !== '')
 
       if (!balancesPayload.length) {
-        setError('Enter at least one provider balance')
+        const message = 'Enter at least one provider balance'
+        setError(message)
+        notifyError(message)
         return
       }
 
@@ -448,13 +454,15 @@ export default function CostReportPanel() {
       const savedCount = Array.isArray(result?.balances)
         ? result.balances.length
         : balancesPayload.length
-      setSaveMessage(
+      notifySuccess(
         `Saved ${savedCount} balance snapshot${savedCount === 1 ? '' : 's'}`,
       )
       setNote('')
       await Promise.all([loadReport(), loadLatestBalancesIntoForm()])
     } catch (err) {
-      setError(String(err?.message || 'Failed to save balance'))
+      const message = String(err?.message || 'Failed to save balance')
+      setError(message)
+      notifyError(message)
     } finally {
       setSaving(false)
     }
@@ -472,23 +480,26 @@ export default function CostReportPanel() {
       provider,
       ...inferred,
     }))
-    setRateMessage('Filled from current report avg')
+    notifySuccess('Filled from current report')
   }
 
   const handleSaveRate = async (event) => {
     event.preventDefault()
     if (savingRate) return
     setSavingRate(true)
-    setRateMessage('')
     setError('')
     try {
       const avgCostUsd = Number(rateForm.avgCostUsd)
       if (!Number.isFinite(avgCostUsd) || avgCostUsd < 0) {
-        setError('Enter a valid avg cost ($)')
+        const message = 'Enter a valid avg cost ($)'
+        setError(message)
+        notifyError(message)
         return
       }
       if (!String(rateForm.productKey || '').trim()) {
-        setError('Product key is required')
+        const message = 'Product key is required'
+        setError(message)
+        notifyError(message)
         return
       }
 
@@ -499,43 +510,30 @@ export default function CostReportPanel() {
         photoQualityId: rateForm.photoQualityId || 'standard',
         model: String(rateForm.model || '').trim(),
         avgCostUsd,
-        sampleCount:
-          String(rateForm.sampleCount || '').trim() === ''
+        avgTotalTokens:
+          String(rateForm.avgTotalTokens || '').trim() === ''
             ? undefined
-            : Number(rateForm.sampleCount),
-        measuredFrom: startOfDayIso(fromDate) || undefined,
-        measuredTo: endOfDayIso(toDate) || undefined,
+            : Number(rateForm.avgTotalTokens),
+        measuredFrom: startOfDayIso(balanceFromDate) || undefined,
+        measuredTo: endOfDayIso(balanceToDate) || undefined,
         recordedAt: new Date().toISOString(),
         note: rateForm.note,
       })
-      setRateMessage('Saved generation cost rate')
+      notifySuccess('Saved generation cost rate')
       setRateForm((prev) => ({
         ...prev,
-        avgCostUsd: '',
-        sampleCount: '',
+        avgCostUsd: '0',
+        avgTotalTokens: '0',
         note: '',
       }))
-      await loadRates()
     } catch (err) {
-      setError(String(err?.message || 'Failed to save generation cost rate'))
+      const message = String(
+        err?.message || 'Failed to save generation cost rate',
+      )
+      setError(message)
+      notifyError(message)
     } finally {
       setSavingRate(false)
-    }
-  }
-
-  const handleDeleteRate = async (id) => {
-    if (!id || deletingRateId) return
-    setDeletingRateId(id)
-    setError('')
-    setRateMessage('')
-    try {
-      await axiosDeleteCostRates([id])
-      setRateMessage('Deleted rate')
-      await loadRates()
-    } catch (err) {
-      setError(String(err?.message || 'Failed to delete rate'))
-    } finally {
-      setDeletingRateId('')
     }
   }
 
@@ -548,6 +546,7 @@ export default function CostReportPanel() {
       entries.map((row) => ({
         ...row,
         whenLabel: formatDateTime(row.createdAt),
+        whenDateKey: toLocalDateKey(row.createdAt) || '—',
         userCode: formatUserCode(row),
         actorLabel: formatActorLabel(row.actorType, row.plan),
         exportSizeLabel: formatExportSizeLabel(row.photoQualityId),
@@ -558,7 +557,14 @@ export default function CostReportPanel() {
 
   const filterOptions = useMemo(
     () => ({
-      when: buildFilterOptions(enrichedEntries, (row) => row.whenLabel),
+      when: buildFilterOptions(
+        enrichedEntries,
+        (row) => row.whenDateKey,
+        (value) => {
+          if (!value || value === '—') return '—'
+          return formatDateDay(`${value}T12:00:00`)
+        },
+      ),
       modeId: buildFilterOptions(enrichedEntries, (row) => row.modeId || '—'),
       model: buildFilterOptions(enrichedEntries, (row) => row.model || '—'),
       userCode: buildFilterOptions(enrichedEntries, (row) => row.userCode),
@@ -579,7 +585,7 @@ export default function CostReportPanel() {
 
   const filteredEntries = useMemo(() => {
     return enrichedEntries.filter((row) => {
-      if (filters.when && row.whenLabel !== filters.when) return false
+      if (filters.when && row.whenDateKey !== filters.when) return false
       if (filters.modeId) {
         const modeValue = row.modeId || '—'
         if (modeValue !== filters.modeId) return false
@@ -704,7 +710,9 @@ export default function CostReportPanel() {
       setDeleteConfirmOpen(false)
       await loadReport()
     } catch (err) {
-      setError(String(err?.message || 'Failed to delete usage logs'))
+      const message = String(err?.message || 'Failed to delete usage logs')
+      setError(message)
+      notifyError(message)
     } finally {
       setDeleting(false)
     }
@@ -796,16 +804,6 @@ export default function CostReportPanel() {
               >
                 {saving ? 'Saving…' : 'Save balances'}
               </Button>
-              {saveMessage ? (
-                <Text
-                  as="span"
-                  variant="caption"
-                  color="soft"
-                  caseMode="sentence"
-                >
-                  {saveMessage}
-                </Text>
-              ) : null}
             </div>
           </form>
         </section>
@@ -935,7 +933,7 @@ export default function CostReportPanel() {
                     handleRateFieldChange('avgCostUsd', e.target.value)
                   }
                   className="box-border h-9 w-full rounded-2xl border border-white/12 bg-black/30 px-3 text-sm text-white"
-                  placeholder="0.055"
+                  placeholder="0"
                 />
               </label>
               <label className="block space-y-1">
@@ -945,21 +943,21 @@ export default function CostReportPanel() {
                   color="soft"
                   caseMode="sentence"
                 >
-                  Sample count
+                  Avg total / gen
                 </Text>
                 <input
                   type="number"
-                  step="1"
+                  step="0.1"
                   min="0"
-                  value={rateForm.sampleCount}
+                  value={rateForm.avgTotalTokens}
                   onChange={(e) =>
-                    handleRateFieldChange('sampleCount', e.target.value)
+                    handleRateFieldChange('avgTotalTokens', e.target.value)
                   }
                   className="box-border h-9 w-full rounded-2xl border border-white/12 bg-black/30 px-3 text-sm text-white"
-                  placeholder="20"
+                  placeholder="0"
                 />
               </label>
-              <label className="block space-y-1 sm:col-span-2">
+              <label className="block space-y-1">
                 <Text
                   as="span"
                   variant="caption"
@@ -975,10 +973,10 @@ export default function CostReportPanel() {
                     handleRateFieldChange('model', e.target.value)
                   }
                   className="box-border h-9 w-full rounded-2xl border border-white/12 bg-black/30 px-3 text-sm text-white"
-                  placeholder="gemini-nano-banana-2.1"
+                  placeholder="model id"
                 />
               </label>
-              <label className="block space-y-1 sm:col-span-2">
+              <label className="block space-y-1">
                 <Text
                   as="span"
                   variant="caption"
@@ -994,7 +992,7 @@ export default function CostReportPanel() {
                     handleRateFieldChange('note', e.target.value)
                   }
                   className="box-border h-9 w-full rounded-2xl border border-white/12 bg-black/30 px-3 text-sm text-white"
-                  placeholder="Gemini Standard CYL baseline"
+                  placeholder="optional"
                 />
               </label>
             </div>
@@ -1008,7 +1006,7 @@ export default function CostReportPanel() {
                 disabled={report?.estimatedAvgCostUsd == null}
                 className="w-[9.5rem] shrink-0"
               >
-                Use report avg
+                Use report data
               </Button>
               <Button
                 type="submit"
@@ -1019,83 +1017,8 @@ export default function CostReportPanel() {
               >
                 {savingRate ? 'Saving…' : 'Save rate'}
               </Button>
-              {rateMessage ? (
-                <Text
-                  as="span"
-                  variant="caption"
-                  color="soft"
-                  caseMode="sentence"
-                >
-                  {rateMessage}
-                </Text>
-              ) : null}
             </div>
           </form>
-
-          <div className="overflow-x-auto rounded-xl border border-white/10">
-            <table className="min-w-full text-left text-sm text-white/90">
-              <thead className="bg-white/[0.04] text-xs uppercase tracking-wide text-white/55">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Key</th>
-                  <th className="px-3 py-2 font-medium">Avg $</th>
-                  <th className="px-3 py-2 font-medium">n</th>
-                  <th className="px-3 py-2 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
-                {rates.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-3 py-3 text-sm text-white/50"
-                    >
-                      No saved rates yet.
-                    </td>
-                  </tr>
-                ) : (
-                  rates.map((rate) => (
-                    <tr key={rate.id} className="border-t border-white/8">
-                      <td className="px-3 py-2">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-white/90">
-                            {rate.provider} · {rate.productKey}
-                            {rate.modeId ? ` · ${rate.modeId}` : ''} ·{' '}
-                            {formatExportSizeLabel(rate.photoQualityId)}
-                          </span>
-                          {rate.model ? (
-                            <span className="font-mono text-[11px] text-white/45">
-                              {rate.model}
-                            </span>
-                          ) : null}
-                          {rate.note ? (
-                            <span className="text-[11px] text-white/40">
-                              {rate.note}
-                            </span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-white/85">
-                        {formatUsd(rate.avgCostUsd)}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-white/70">
-                        {rate.sampleCount ?? '—'}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRate(rate.id)}
-                          disabled={deletingRateId === rate.id}
-                          className="text-xs text-white/45 hover:text-red-300 disabled:opacity-50"
-                        >
-                          {deletingRateId === rate.id ? '…' : 'Delete'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
         </section>
       </div>
 
@@ -1157,6 +1080,17 @@ export default function CostReportPanel() {
                 type="date"
                 value={balanceFromDate}
                 onChange={(e) => setBalanceFromDate(e.target.value)}
+                className="box-border block h-9 w-full rounded-2xl border border-white/12 bg-black/30 px-3 text-sm text-white outline-none transition-[border-color,box-shadow] focus:border-[rgba(124,92,255,0.9)] focus:shadow-[0_0_0_4px_rgba(124,92,255,0.12)]"
+              />
+            </label>
+            <label className="block w-[9.75rem] shrink-0 space-y-1">
+              <Text as="span" variant="caption" color="soft">
+                Balance to
+              </Text>
+              <input
+                type="date"
+                value={balanceToDate}
+                onChange={(e) => setBalanceToDate(e.target.value)}
                 className="box-border block h-9 w-full rounded-2xl border border-white/12 bg-black/30 px-3 text-sm text-white outline-none transition-[border-color,box-shadow] focus:border-[rgba(124,92,255,0.9)] focus:shadow-[0_0_0_4px_rgba(124,92,255,0.12)]"
               />
             </label>
@@ -1301,7 +1235,7 @@ export default function CostReportPanel() {
                     options={filterOptions.when}
                     value={filters.when}
                     onChange={(value) => setFilterValue('when', value)}
-                    placeholder="When"
+                    placeholder="Date"
                   />
                 </th>
                 <th className="px-2 py-2">

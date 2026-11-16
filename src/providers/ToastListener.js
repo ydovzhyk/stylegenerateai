@@ -75,6 +75,28 @@ const toStr = (value) => {
   return String(value)
 }
 
+export function notifySuccess(message) {
+  const raw = toStr(message)
+  if (!raw) return
+  toast.success(raw, {
+    ...toastBaseOptions,
+    className: 'sg-toast sg-toast--success',
+    bodyClassName: 'sg-toast__body',
+    progressClassName: 'sg-toast__progress sg-toast__progress--success',
+  })
+}
+
+export function notifyError(message) {
+  const raw = toStr(message)
+  if (!raw) return
+  toast.error(raw, {
+    ...toastBaseOptions,
+    className: 'sg-toast sg-toast--error',
+    bodyClassName: 'sg-toast__body',
+    progressClassName: 'sg-toast__progress sg-toast__progress--error',
+  })
+}
+
 function useToastPair({ error, message, clearError, clearMessage }) {
   const dispatch = useDispatch()
   const pathname = usePathname()

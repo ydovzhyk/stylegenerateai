@@ -69,51 +69,37 @@ export const axiosExportGenerationJob = async (
   jobId,
   { photoQuality, fileFormat, title, visitorId } = {},
 ) => {
-  // Large Premium/Print PNG (~10MB+) often fails with axios ERR_NETWORK in the
-  // browser even when the server returns 200. Use fetch for the binary body.
-  const API_URL = process.env.NEXT_PUBLIC_API_URL
-  const response = await fetch(
-    `${API_URL}/api/generation-jobs/${encodeURIComponent(jobId)}/export`,
+  // Same path as gallery/print downloads: axios instance + blob so auth
+  // interceptors (refresh → retry) apply like every other API call.
+  const response = await instance.post(
+    `/generation-jobs/${encodeURIComponent(jobId)}/export`,
     {
-      method: 'POST',
-      credentials: 'include',
+      photoQuality,
+      fileFormat: fileFormat || undefined,
+      title: title || undefined,
+      visitorId: visitorId || undefined,
+    },
+    {
+      responseType: 'blob',
       headers: {
-        'Content-Type': 'application/json',
         Accept: 'application/json, image/*, */*',
       },
-      body: JSON.stringify({
-        photoQuality,
-        fileFormat: fileFormat || undefined,
-        title: title || undefined,
-        visitorId: visitorId || undefined,
-      }),
     },
   )
 
-  const contentType = String(response.headers.get('content-type') || '')
+  const contentType = String(response.headers['content-type'] || '')
 
-  if (response.status === 202 || contentType.includes('application/json')) {
-    const payload = await response.json().catch(() => ({}))
-
-    if (!response.ok && response.status !== 202) {
-      const error = new Error(
-        payload?.message || `Export failed (${response.status})`,
-      )
-      error.status = response.status
-      error.data = payload
-      throw error
-    }
-
-    return payload
+  // Print starts async and returns JSON (202); with responseType blob that
+  // body still arrives as a Blob of JSON text.
+  if (
+    response.status === 202 ||
+    contentType.includes('application/json')
+  ) {
+    const text = await response.data.text()
+    return JSON.parse(text || '{}')
   }
 
-  if (!response.ok) {
-    const error = new Error(`Export failed (${response.status})`)
-    error.status = response.status
-    throw error
-  }
-
-  const blob = await response.blob()
+  const blob = response.data
 
   if (!blob || blob.size < 1) {
     throw new Error('Export file is missing')
@@ -122,7 +108,7 @@ export const axiosExportGenerationJob = async (
   return {
     blob,
     contentType,
-    fileFormat: response.headers.get('x-generated-image-format'),
+    fileFormat: response.headers['x-generated-image-format'],
   }
 }
 
