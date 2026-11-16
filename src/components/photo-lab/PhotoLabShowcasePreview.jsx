@@ -30,70 +30,13 @@ import { getUser } from '@/store/auth/auth-selectors'
 
 const CARD_ROTATE_MS = 8200
 
-const SHOWCASE_MODE_ITEMS = [
-  {
-    id: 'professional_portrait',
-    chipLabel: 'Professional look',
-    title: 'Professional portrait',
-    description:
-      'Same you in a clean business look - professional outfit and a modern office setting.',
-  },
-  {
-    id: 'restore_colorize',
-    chipLabel: 'Restored photo',
-    title: 'Restore family memories',
-    description:
-      'Repair damage and fading - keep the original look, or add natural color.',
-  },
-  {
-    id: 'smart_edit',
-    chipLabel: 'Edited look',
-    title: 'Change outfit or scene',
-    description: 'Modify clothing, objects, lighting, and background.',
-  },
-  {
-    id: 'free_prompt',
-    chipLabel: 'Find yourself',
-    title: 'Find yourself',
-    description:
-      'Create your own photo, or edit one you already have.',
-  },
-  {
-    id: 'identity_transfer',
-    chipLabel: 'With your face',
-    title: 'Same shot, your face',
-    description:
-      'Keep the reference pose, clothes, and scene - transfer your face into that photo.',
-  },
-  {
-    id: 'remove_objects',
-    chipLabel: 'Clean photo',
-    title: 'Remove unwanted objects',
-    description:
-      'Clear out distractions - keep the rest of the shot exactly as it was.',
-  },
-  {
-    id: 'enhance_quality',
-    chipLabel: 'Enhanced photo',
-    title: 'Sharper photo quality',
-    description:
-      'Recover detail and cut haze or compression - same photo, easier to read.',
-  },
-  {
-    id: 'creative_retouch',
-    chipLabel: 'Retouched look',
-    title: 'Premium Instagram polish',
-    description:
-      'Same shot, cleaner finish: polished skin, even tone, and a premium look.',
-  },
-  {
-    id: 'photo_styles',
-    chipLabel: 'Styled photo',
-    title: 'Restyle your photo',
-    description:
-      'Turn one photo into a coloring page, cartoon, sticker, clipart, or a professional studio shot.',
-  },
-]
+// Chips / headline use the same names as the mode picker (PHOTO_LAB_MODES).
+const SHOWCASE_MODE_ITEMS = PHOTO_LAB_MODES.map((mode) => ({
+  id: mode.id,
+  chipLabel: mode.title,
+  title: mode.title,
+  description: mode.description,
+}))
 
 function getModeMeta(modeId) {
   return PHOTO_LAB_MODES.find((mode) => mode.id === modeId) || null
