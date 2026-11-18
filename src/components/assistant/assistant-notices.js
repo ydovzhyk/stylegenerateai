@@ -28,19 +28,9 @@ const NOTICE_GUIDES = [
       'This run costs more credits than you have left. Open Pricing to add credits, or choose a smaller export size when that option is available.',
   },
   {
-    includes: 'Daily generation limit reached',
-    guidance:
-      'You have used today’s generation limit. Wait until tomorrow, or open Pricing if a larger plan raises the daily limit.',
-  },
-  {
     includes: 'Monthly generation limit reached',
     guidance:
       'You have used this month’s generation limit. It resets with the monthly window, or open Pricing if a larger plan raises the limit.',
-  },
-  {
-    includes: 'Your plan has expired',
-    guidance:
-      'The paid plan period has ended. Open Pricing and renew a plan to keep generating.',
   },
   {
     includes: 'Your plan is not active',

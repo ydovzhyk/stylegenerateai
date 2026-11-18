@@ -23,6 +23,7 @@ const ClientLayout = ({ children }) => {
     { href: '/photo-lab', label: 'Photo Lab' },
     { href: '/imagine', label: 'Imagine' },
     { href: '/animate', label: 'Animate' },
+    { href: '/on-the-wall', label: 'On the Wall' },
     { href: '/pricing', label: 'Pricing' },
   ]
 

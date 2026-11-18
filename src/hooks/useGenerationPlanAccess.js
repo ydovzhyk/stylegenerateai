@@ -60,11 +60,11 @@ export function getPlanHint({ planKey, activePlan, creditCost }) {
   }
 
   if (planKey === 'pro') {
-    return `Pro plan includes ${activePlan.totalCredits} credits for ${activePlan.durationDays} days. Premium and Print modes are unlocked.`
+    return `Pro plan includes ${activePlan.totalCredits} credits in your wallet. Premium and Print sizes are unlocked.`
   }
 
   if (planKey === 'basic') {
-    return `Basic plan includes ${activePlan.totalCredits} credits for ${activePlan.durationDays} days.`
+    return `Basic plan includes ${activePlan.totalCredits} credits in your wallet.`
   }
 
   if (creditCost != null) {

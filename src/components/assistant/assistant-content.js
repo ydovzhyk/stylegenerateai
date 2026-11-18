@@ -19,6 +19,8 @@ export const ASSISTANT_CONTENT = {
     '/create-your-look':
       'You are on the page for generating your own photos from suggested templates. I can tell you more in detail.',
     '/pricing': 'I can explain plans, credits, and what each option is for.',
+    '/on-the-wall':
+      'You are on On the Wall — place gallery art onto photos of your room.',
   },
   greetings: {
     named: 'Hi, {name}! We are glad to welcome you to our site!',
@@ -34,6 +36,8 @@ export const ASSISTANT_CONTENT = {
       'You are now on the Imagine page, where you generate a new idea from a description.',
     '/pricing':
       'You are now on the Pricing page, where you can review plans and credits.',
+    '/on-the-wall':
+      'You are now on On the Wall, where you preview artwork on your room walls.',
   },
   intros: {
     '/': `${PRODUCT_NAME} is a fun photo studio in the browser. You upload your pictures, choose a direction, and get a polished AI result - without design skills.
@@ -43,6 +47,7 @@ Here is where to go:
 - **Looks** - generate a photo of yourself from ready-made templates. Pick a look, upload your photo, and create.
 - **Photo Lab** - edit a photo you already have: portraits, restore, retouch, identity transfer, object removal, and quality boost.
 - **Imagine** - generate a new idea: a wallpaper, a tattoo sketch, a home design, or a painting.
+- **On the Wall** - place a gallery picture onto photos of your room walls.
 - **Pricing** - plans and credits if you want more generations.
 
 You do not generate images in this chat - I only guide you. Open Looks for a new styled photo, or Photo Lab to transform an existing shot.
@@ -87,6 +92,13 @@ A reference photo is optional on Wallpaper, Tattoo, and Painting.`,
 If you tell me whether you mostly use Looks, Photo Lab, or both, I can help you pick a sensible starting point.
 
 Ask if any option on this page is unclear.`,
+    '/on-the-wall': `On the Wall lets you preview art in your room.
+
+1. Upload one to three wall photos.
+2. Pick artwork (upload now; gallery pick comes next).
+3. Drag and resize it on the selected wall.
+
+AI blending into the room lighting, and multi-wall panorama / prism stitching, are coming next. Ask if a step is unclear.`,
   },
   title: 'AI assistant',
   hintsLabel: 'Hints',

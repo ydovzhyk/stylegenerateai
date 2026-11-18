@@ -17,6 +17,10 @@ import readyTemplateReducer from './ready-template/ready-template-slice'
 import generationUsageReducer from './generation-usage/generation-usage-slice'
 import generatedImageReducer from './generated-image/generated-image-slice'
 import { setupInterceptors } from '../services/api/instance'
+import {
+  generationUsageCrossTabMiddleware,
+  setupGenerationUsageCrossTabSync,
+} from './generation-usage/generation-usage-cross-tab'
 import photoLabReducer from './photo-lab/photo-lab-slice'
 import imagineReducer from './imagine/imagine-slice'
 import assistantReducer from './assistant/assistant-slice'
@@ -56,6 +60,10 @@ export const store = configureStore({
       },
     })
 
+    if (!isServer) {
+      middlewares.push(generationUsageCrossTabMiddleware.middleware)
+    }
+
     // if (!isServer && process.env.NODE_ENV === 'development') {
     //   middlewares.push(logger)
     // }
@@ -68,4 +76,5 @@ export const persistor = isServer ? null : persistStore(store)
 
 if (!isServer) {
   setupInterceptors(store)
+  setupGenerationUsageCrossTabSync(store)
 }

@@ -18,11 +18,9 @@ const emptyUsage = {
   planKey: '',
   isUnlimited: false,
 
-  dailyLimit: null,
   monthlyLimit: null,
   usedDaily: null,
   usedMonthly: null,
-  remainingDaily: null,
   remainingMonthly: null,
 
   usageByType: emptyUsageByType,

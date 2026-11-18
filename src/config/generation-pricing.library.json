@@ -5,27 +5,21 @@
       "title": "Visitor",
       "wallet": {
         "totalCredits": 10,
-        "dailyGenerations": 10,
-        "monthlyGenerations": 10,
-        "durationDays": null
+        "monthlyGenerations": 10
       }
     },
     "free": {
       "title": "Free",
       "wallet": {
         "totalCredits": 30,
-        "dailyGenerations": 5,
-        "monthlyGenerations": 30,
-        "durationDays": null
+        "monthlyGenerations": 30
       }
     },
     "basic": {
       "title": "Basic",
       "wallet": {
         "totalCredits": 120,
-        "dailyGenerations": null,
         "monthlyGenerations": null,
-        "durationDays": 30,
         "priceUsd": 10,
         "priceUah": 399
       }
@@ -34,9 +28,7 @@
       "title": "Pro",
       "wallet": {
         "totalCredits": 350,
-        "dailyGenerations": null,
         "monthlyGenerations": null,
-        "durationDays": 30,
         "priceUsd": 20,
         "priceUah": 899
       }
@@ -45,9 +37,7 @@
       "title": "Admin",
       "wallet": {
         "totalCredits": null,
-        "dailyGenerations": null,
         "monthlyGenerations": null,
-        "durationDays": null,
         "unlimited": true
       }
     }
@@ -105,15 +95,13 @@
                 "label": "Portrait 2:3"
               },
               "square_1_1": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "sign_in_required",
+                "available": true,
+                "credits": 0,
                 "label": "Square 1:1"
               },
               "landscape_3_2": {
-                "available": false,
-                "credits": null,
-                "lockedReason": "sign_in_required",
+                "available": true,
+                "credits": 0,
                 "label": "Landscape 3:2"
               }
             },
@@ -804,18 +792,17 @@
                 "outputFormat": {
                   "portrait_2_3": {
                     "available": true,
+                    "credits": 0,
                     "label": "Portrait 2:3"
                   },
                   "square_1_1": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
+                    "available": true,
+                    "credits": 0,
                     "label": "Square 1:1"
                   },
                   "landscape_3_2": {
-                    "available": false,
-                    "credits": null,
-                    "lockedReason": "sign_in_required",
+                    "available": true,
+                    "credits": 0,
                     "label": "Landscape 3:2"
                   }
                 }
