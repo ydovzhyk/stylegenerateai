@@ -27,10 +27,9 @@ export default function OnTheWallPage() {
           caseMode="sentence"
           className="mt-3 max-w-2xl text-sm leading-6 sm:text-base"
         >
-          Upload one to three photos of your room walls, pick a picture from
-          your gallery (or upload one), place and resize it on the wall. Next
-          we will blend it into the room and stitch multi-wall shots into a
-          prism-style view.
+          Upload any wall photos, confirm Build room for a stitched room view,
+          then preview artwork on it. AI blend into lighting and gallery pick
+          come next.
         </Text>
       </div>
 
